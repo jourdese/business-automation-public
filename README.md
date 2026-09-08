@@ -1,6 +1,8 @@
-# Business Automation Messenger — public information
+# Jourvis
 
-Privacy policy, data deletion instructions and support information for Business Automation Messenger, operated by **Jour**.
+**Business Automation**
+
+Privacy policy, data deletion instructions and support information for Jourvis, operated by **Jour**.
 
 Support: **jourdesepalacio@gmail.com**
 
