@@ -1,0 +1,32 @@
+import Link from 'next/link';
+import type { Metadata } from 'next';
+export const metadata: Metadata = { title: 'Privacy policy', alternates: { canonical: '/privacy' } };
+export default function Privacy() {
+  return <article className="document">
+    <p className="eyebrow">Jourvis</p><h1>Privacy policy</h1>
+    <p className="updated">Effective September 9, 2026</p>
+    <p className="lead">This notice explains how Jour handles information through Jourvis and these public information pages.</p>
+    <section><h2>Who operates the service</h2><p><strong>Jour</strong> operates Jourvis. For privacy questions, requests or support, contact <a href="mailto:jourdesepalacio@gmail.com">jourdesepalacio@gmail.com</a>.</p><p>The platform supports connected businesses through Facebook Messenger. A business may also hold information outside this platform under its own privacy practices. The current Purrthebestclub demonstration uses the fictional business testdentist.</p></section>
+    <section><h2>Information processed</h2><ul>
+      <li><strong>Messages and identifiers:</strong> the message you send, its time and message ID, the business Page ID and your Page-scoped Messenger identifier.</li>
+      <li><strong>Details you provide:</strong> your name, optional email address, requested service, preferred date and time, and information needed to handle a request.</li>
+      <li><strong>Service records:</strong> appointment details and changes, staff requests, conversation state, generated replies, delivery status and records of provider operations.</li>
+      <li><strong>Support correspondence:</strong> information you send directly to Jour when asking for help or exercising a privacy choice.</li>
+    </ul><p>Please share only what is needed for administrative inquiries or appointments. Avoid sending medical records, government identification documents, payment-card details or other unnecessary sensitive information.</p></section>
+    <section><h2>Why information is used</h2><p>Information is used to identify the correct business and conversation, understand your request, answer from approved business information, arrange or change appointments after confirmation, save requests for staff, deliver replies, prevent duplicate actions and investigate errors or privacy requests.</p><p>The receptionist is an automated administrative service. It does not provide diagnosis or medical treatment. A staff request being saved does not mean that a person has already accepted it.</p></section>
+    <section><h2>Service providers</h2>
+<h3>Hosting and site delivery</h3><p>Infrastructure used to host, serve and deliver these public information pages.</p>
+<h3>Messaging and service coordination</h3><p>Services used to receive your messages, route requests to the correct business and deliver replies.</p>
+<h3>Cloud data and service records</h3><p>Services used to store business information, customer details, conversation state, appointment records and requests for staff.</p>
+<h3>AI-assisted request processing</h3><p>Services used to interpret messages and identify request details. Messages that need interpretation may be processed with relevant business information and conversation or appointment context. Simple commands can be handled without AI processing.</p>
+<h3>Appointment scheduling</h3><p>Services used to check availability and store or update appointment events after confirmation.</p>
+<h3>Security and reliability</h3><p>Infrastructure used to restrict access, validate incoming requests, prevent duplicate actions and investigate service errors.</p>
+<h3>Support correspondence</h3><p>Email services used to receive and respond to support, privacy and deletion requests you send to Jour.</p>
+<p>These service providers may process limited personal data only as needed to provide their part of the service. Depending on where their infrastructure operates, some processing may occur outside the Philippines. A messaging or email provider may also process information independently under its own privacy practices when you use its service.</p>
+<p>Jour and authorized business staff can access information needed to handle your request and operate the service. The application checks appointment ownership, confirmation and booking results.</p></section>
+    <section><h2>Storage and retention</h2><p>Operational records are retained while needed to handle requests and appointments, resolve issues and maintain reliable service. The current service has no fixed automatic deletion schedule for all records. Expiry of a conversation session does not erase its appointment, support or delivery records.</p><p>The service stores generated replies, structured conversation state and operational records. It does not routinely save complete processing logs of production conversations. Copies held in backups or provider systems may follow separate retention processes.</p><p>You can ask Jour to review, correct, provide a copy of or delete your information. If specific records need to be retained for an unresolved request or a legal obligation, Jour will explain the reason when handling the request.</p></section>
+    <section><h2>Your choices and requests</h2><p>Email <a href="mailto:jourdesepalacio@gmail.com">jourdesepalacio@gmail.com</a> to ask about access, correction, deletion, or an objection to further use of your information. Rights and any applicable exceptions depend on the law that applies to your request. Reasonable verification may be needed to protect another person&#39;s records.</p><p>See the <Link href="/data-deletion">data deletion instructions</Link> for what to include and how requests are handled. Deleting app records does not delete your Facebook account or automatically remove records kept independently by Meta or a business.</p></section>
+    <section><h2>These information pages</h2><p>Jour has not added advertising, analytics or a data-collection form to this website. The website host may process standard request information, such as an IP address, browser information and access time, to serve and secure the pages. Email links open your email application; sending an email shares its contents with Jour&#39;s support inbox.</p></section>
+    <section><h2>Changes and contact</h2><p>Changes will be published here with an updated effective date. Questions about this notice or how your information is handled can be sent to Jour at <a href="mailto:jourdesepalacio@gmail.com">jourdesepalacio@gmail.com</a>.</p></section>
+  </article>;
+}
