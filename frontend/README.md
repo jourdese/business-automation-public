@@ -30,6 +30,12 @@ The Jourvis Vercel project uses `frontend` as its root directory, the Other fram
 
 No environment secrets are required. The optional Sites development plugin runs only when a local `.openai/hosting.json` exists and the build is outside Vercel; that local hosting file is excluded from the published GitHub source. Vercel deployment does not depend on it. Commits to `main` containing frontend changes trigger the connected Jourvis deployment.
 
+## Public policy maintenance
+
+The root `privacy.html` and `data-deletion.html` are the authoritative published policy text. After editing them, run `npm run sync:policies` from `frontend/` to update the React routes, then `npm run check:policies` to verify parity. The generated routes are checked in so the Vercel build is self-contained.
+
+Site navigation uses ordinary browser links for the static export. This fixes the client-router exception that previously made policy links appear unresponsive. Run `npm run test:policy-navigation` after a build to verify actual clicks, keyboard access, policy cross-links, refresh, mobile layouts and exact policy text against the root documents. It starts a temporary local static server; set `FRONTEND_URL` to test a deployed host instead. It uses the same `PLAYWRIGHT_MODULE` and `CHROME_PATH` settings as the main browser suite.
+
 ## The experience
 
 - A spacious hero introduces Jourvis as an AI business assistant. The wordmark and HTML remain visible while graphics initialize.

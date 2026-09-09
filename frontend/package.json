@@ -14,7 +14,10 @@
     "typecheck": "tsc --noEmit",
     "lint:jourvis": "oxlint app components/jourvis lib/jourvis scripts",
     "test:frontend": "node --experimental-strip-types --test scripts/frontend-state.test.ts",
-    "test:browser": "node scripts/frontend-qa.mjs"
+    "test:browser": "node scripts/frontend-qa.mjs",
+    "sync:policies": "node scripts/sync-policies.mjs",
+    "check:policies": "node scripts/sync-policies.mjs --check",
+    "test:policy-navigation": "node scripts/policy-navigation-qa.mjs"
   },
   "dependencies": {
     "react": "19.2.6",
