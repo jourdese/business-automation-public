@@ -153,7 +153,7 @@ export default function ParticleWorld({
       });
       zones = [
         ...document.querySelectorAll<HTMLElement>(
-          '.hero-copy, [data-quiet-zone], .demo-shell, .principles-layout, .faq-layout',
+          '.hero-copy, [data-quiet-zone], .demo-shell, .principles-layout, .faq-layout, .page-guide',
         ),
       ].map((el) => {
         const r = el.getBoundingClientRect();
@@ -239,7 +239,7 @@ export default function ParticleWorld({
       const cell = target
         ? (Math.min(target.width, target.height) * 0.75) / 14
         : 3.2;
-      const resting = Math.sin(elapsed * 0.7) * 4;
+      const resting = Math.sin(elapsed * 0.55) * 2;
       const lookX = !calm
         ? focusRect
           ? focusRect.x + focusRect.width * 0.5 - cx
@@ -306,16 +306,16 @@ export default function ParticleWorld({
           tx = cx + (p.u - 6.75) * cell;
           ty = cy + (p.v - 6.75) * cell + (calm ? 0 : resting);
           if (!calm) {
-            tx += Math.max(-8, Math.min(8, lookX * 0.02));
-            ty += Math.max(-4, Math.min(4, lookY * 0.01));
+            tx += Math.max(-4, Math.min(4, lookX * 0.012));
+            ty += Math.max(-2, Math.min(2, lookY * 0.008));
           }
           if (p.kind === 3) {
             tx += Math.max(-3, Math.min(3, lookX * 0.01));
             ty += s === 'handoff' ? cell * 0.12 : 0;
           }
-          if (s === 'organizing' && i % 7 === 0 && !calm) {
-            tx += Math.cos(elapsed * 1.7 + p.seed) * cell * 3;
-            ty += Math.sin(elapsed * 1.7 + p.seed) * cell * 3;
+          if (s === 'organizing' && p.kind !== 3 && i % 19 === 0 && !calm) {
+            tx += Math.cos(elapsed * 1.1 + p.seed) * cell * 0.45;
+            ty += Math.sin(elapsed * 1.1 + p.seed) * cell * 0.45;
           }
           size = cell * p.size;
           alpha = target?.key === 'demo' ? 0.86 : 0.94;
@@ -442,7 +442,7 @@ export default function ParticleWorld({
     measure();
     const resize = new ResizeObserver(measure);
     document
-      .querySelectorAll('[data-particle-anchor],.section-wrap,.demo-shell')
+      .querySelectorAll('[data-particle-anchor],.section-wrap,.demo-shell,.page-guide')
       .forEach((el) => resize.observe(el));
     window.addEventListener('resize', measure);
     window.addEventListener('scroll', onScroll, { passive: true });

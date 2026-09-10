@@ -1,0 +1,431 @@
+/* Scoped specificity preserves policy typography and the existing section layout. */
+.jourvis-experience .eyebrow {
+  font-size: 0.8125rem;
+  text-transform: none;
+  letter-spacing: 0.035em;
+  margin-bottom: 1.25rem;
+}
+.jourvis-experience .hero-description {
+  max-width: 410px;
+  margin-top: 1.5rem;
+}
+.jourvis-experience .hero-actions {
+  margin-top: 1.5rem;
+  gap: 1.4rem;
+}
+.jourvis-experience .hero-presence::before {
+  content: '';
+  position: absolute;
+  inset: 8% 0;
+  border: 1px solid #a7e3c50d;
+  border-radius: 50%;
+  background: radial-gradient(ellipse, #2e6b5718, transparent 68%);
+  pointer-events: none;
+}
+.jourvis-experience .orbit-label {
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+}
+.jourvis-experience .hero-baseline .mono {
+  font-family: var(--font-sans);
+  letter-spacing: 0;
+}
+.jourvis-experience #demo-title {
+  font-size: clamp(2.4rem, 3.7vw, 3.5rem);
+  max-width: 900px;
+}
+.jourvis-experience .section-intro {
+  margin-top: 1rem;
+}
+.jourvis-experience .section-side-note {
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  letter-spacing: 0;
+}
+.jourvis-experience .section-side-note:empty {
+  display: none;
+}
+.jourvis-experience .demo-shell {
+  margin-top: 2.4rem;
+  border: 1px solid #4b666d;
+  border-radius: 18px;
+  background: linear-gradient(145deg, #152b3b, #0c1c27 45%);
+  box-shadow:
+    0 0 0 7px #a7e3c506,
+    0 32px 90px #00000035;
+}
+.jourvis-experience .demo-toolbar {
+  background: #1f3a5f28;
+  border-bottom-color: #3a505c;
+}
+.jourvis-experience .preview-label {
+  color: var(--mint);
+}
+.jourvis-experience .demo-configuration {
+  padding-block: 1.4rem;
+}
+.jourvis-experience .task-options > button {
+  min-height: 72px;
+  position: relative;
+}
+.jourvis-experience .task-options > button[aria-selected='true'] {
+  background: #203b41;
+  box-shadow: inset 0 -2px var(--mint) !important;
+}
+.jourvis-experience .conversation {
+  background: #0b1a25;
+  padding: 2rem;
+}
+.jourvis-experience .conversation-heading {
+  font-size: 1rem;
+  gap: 0.85rem;
+}
+.companion-mark {
+  display: block;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+}
+.jourvis-experience .little-presence {
+  background: #17342f;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+}
+.jourvis-experience .assistant-label {
+  font-family: var(--font-sans);
+  font-size: 0.8125rem;
+  letter-spacing: 0;
+  margin-top: 0.15rem;
+}
+.jourvis-experience .conversation-messages {
+  gap: 1.4rem;
+  min-height: 255px;
+}
+.jourvis-experience .assistant-message {
+  background: #1c303e;
+  border: 1px solid #304957;
+  border-radius: 4px 16px 16px 16px;
+}
+.jourvis-experience .customer-message {
+  background: #2a4a40;
+  color: #ecf7f0;
+  border: 1px solid #446858;
+  border-radius: 16px 4px 16px 16px;
+}
+.jourvis-experience .conversation-bottom {
+  padding-top: 0.7rem;
+}
+.jourvis-experience .conversation-bottom .mono {
+  font: 0.8125rem/1.6 var(--font-sans);
+  letter-spacing: 0;
+  max-width: 55%;
+}
+.jourvis-experience .conversation-bottom .quiet-button {
+  color: var(--mint);
+  font-size: 0.875rem;
+}
+.jourvis-experience .result-panel {
+  background: linear-gradient(145deg, #19372f, #10262b);
+  padding: 2rem;
+}
+.jourvis-experience .result-heading > .mono {
+  font: 0.875rem var(--font-sans);
+  letter-spacing: 0;
+}
+.jourvis-experience .result-empty h3 {
+  max-width: 290px;
+  font-size: 1.8rem;
+  line-height: 1.2;
+}
+.jourvis-experience .result-empty p {
+  max-width: 300px;
+}
+.jourvis-experience .result-kicker {
+  font-size: 0.75rem;
+  letter-spacing: 0.07em;
+}
+.jourvis-experience .result-content h3 {
+  font-size: clamp(1.75rem, 2.5vw, 2.2rem);
+}
+.jourvis-experience .result-fact {
+  font-size: 1.25rem;
+}
+.jourvis-experience .result-mark {
+  width: 36px;
+  height: 36px;
+}
+.jourvis-experience .slot-choice {
+  border-radius: 7px;
+}
+.appointment-ticket {
+  border: 1px solid #597765;
+  border-radius: 10px;
+  padding: 1.15rem;
+  background: #a7e3c508;
+  margin-top: 1.4rem;
+}
+.appointment-ticket-heading {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  color: var(--mint);
+}
+.appointment-ticket-heading > div {
+  display: flex;
+  flex-direction: column;
+}
+.appointment-ticket-heading > div > span {
+  font-size: 0.8125rem;
+  color: var(--slate);
+}
+.appointment-ticket-heading strong {
+  font-size: 1.7rem;
+  font-weight: 400;
+  letter-spacing: -0.035em;
+  line-height: 1.4;
+}
+.ticket-label {
+  margin-left: auto;
+  font-size: 0.75rem;
+  border: 1px solid #607a69;
+  border-radius: 4px;
+  padding: 0.15rem 0.5rem;
+}
+.jourvis-experience .appointment-summary {
+  padding-top: 1rem;
+  border-top: 1px dashed #526e61;
+}
+.jourvis-experience .appointment-summary > div {
+  grid-template-columns: 65px minmax(0, 1fr);
+}
+.jourvis-experience .demo-disclosure {
+  font-size: 0.8125rem;
+}
+.jourvis-experience .outcomes-heading {
+  font-size: clamp(2.2rem, 3.4vw, 3.2rem);
+  margin-bottom: 3rem;
+}
+.jourvis-experience .outcome-copy h3 {
+  font-size: clamp(2.25rem, 3.2vw, 3rem);
+}
+.jourvis-experience .outcome-copy p {
+  margin-top: 1.15rem;
+}
+.jourvis-experience .outcome-visual {
+  border: 1px solid #334a56;
+  border-radius: 12px;
+}
+.jourvis-experience .answer-visual {
+  background: linear-gradient(140deg, #12293a, #0c1c26);
+}
+.jourvis-experience .time-visual {
+  background: linear-gradient(140deg, #18352f, #0c1c26);
+}
+.jourvis-experience .handoff-visual {
+  background: linear-gradient(140deg, #242d32, #0c1c26);
+}
+.jourvis-experience .principles-section {
+  background: linear-gradient(120deg, #102b28, #0c1d23);
+}
+.jourvis-experience .principles-layout h2 {
+  font-size: clamp(2.3rem, 3.6vw, 3.5rem);
+  max-width: 520px;
+  line-height: 1.18;
+}
+.jourvis-experience .faq-layout {
+  margin-top: 4rem;
+}
+.jourvis-experience .final-copy h2 {
+  font-size: clamp(3.25rem, 5.4vw, 5rem);
+}
+
+/* An opt-in page guide, separate from the local conversation preview. */
+.page-guide {
+  position: fixed;
+  right: max(18px, env(safe-area-inset-right));
+  bottom: max(18px, env(safe-area-inset-bottom));
+  z-index: 30;
+}
+.guide-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  min-height: 54px;
+  padding: 0.35rem 0.9rem 0.35rem 0.45rem;
+  border: 1px solid #617b75;
+  border-radius: 18px;
+  background: #10262bf5;
+  color: var(--mint);
+  box-shadow: 0 8px 28px #0005;
+}
+.guide-trigger > span {
+  font-size: 0.8125rem;
+}
+.guide-trigger .companion-mark {
+  width: 38px;
+  height: 38px;
+}
+.page-guide[data-in-gap='true'] .guide-trigger {
+  border-color: var(--mint);
+}
+.guide-trigger:hover {
+  background: #1f3b38;
+}
+.guide-panel {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 12px);
+  width: min(350px, calc(100vw - 36px));
+  max-height: calc(100dvh - 110px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border: 1px solid #647c76;
+  border-radius: 16px;
+  background: #11252e;
+  padding: 1.25rem;
+  box-shadow: 0 16px 60px #0008;
+}
+.guide-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  color: var(--mint);
+  font-size: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+.guide-heading .quiet-button {
+  margin: -0.6rem -0.6rem -0.6rem 0;
+}
+.guide-panel h2 {
+  font-size: 1.7rem;
+  line-height: 1.2;
+  margin-bottom: 0.9rem;
+}
+.guide-panel > p {
+  color: var(--slate);
+  font-size: 0.9375rem;
+  line-height: 1.65;
+}
+.guide-action {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  margin: 1.1rem 0;
+  min-height: 48px;
+  padding: 0.7rem 0.9rem;
+  background: var(--mint);
+  border: 0;
+  border-radius: 6px;
+  color: var(--ink);
+  font-size: 0.875rem;
+  text-align: left;
+}
+.guide-panel nav {
+  display: grid;
+  border-top: 1px solid #38514f;
+  padding-top: 0.6rem;
+}
+.guide-panel nav button {
+  min-height: 44px;
+  text-align: left;
+  padding: 0.4rem 0.65rem;
+  font-size: 0.875rem;
+  color: var(--slate);
+  background: transparent;
+  border: 0;
+  border-radius: 5px;
+}
+.guide-panel nav button[aria-current],
+.guide-panel nav button:hover {
+  color: var(--mint);
+  background: #203b3c;
+}
+.guide-panel small {
+  display: block;
+  color: var(--slate);
+  font-size: 0.75rem;
+  line-height: 1.65;
+  margin-top: 1rem;
+}
+body:has(.page-guide) .site-footer {
+  padding-bottom: 6.5rem;
+}
+@media (max-width: 1000px) {
+  .jourvis-experience .conversation,
+  .jourvis-experience .result-panel {
+    padding: 1.4rem;
+  }
+}
+@media (max-width: 700px) {
+  .jourvis-experience .demo-shell {
+    margin-top: 1.7rem;
+    border-radius: 12px;
+  }
+  .jourvis-experience #demo-title {
+    font-size: 2.4rem;
+  }
+  .jourvis-experience .conversation {
+    padding: 1.25rem;
+  }
+  .jourvis-experience .conversation-messages {
+    min-height: 190px;
+  }
+  .jourvis-experience .task-options > button {
+    min-height: 100px;
+  }
+  .jourvis-experience .result-panel {
+    padding: 1.25rem;
+  }
+  .jourvis-experience .demo-disclosure {
+    font-size: 0.75rem;
+  }
+  .jourvis-experience .outcome-copy h3 {
+    font-size: 2.4rem;
+  }
+  .jourvis-experience .principles-layout h2 {
+    font-size: 2.6rem;
+  }
+  .guide-trigger {
+    padding: 0.25rem;
+    width: 54px;
+  }
+  .guide-trigger > span {
+    display: none;
+  }
+  .appointment-ticket {
+    padding: 0.9rem;
+  }
+}
+@media (max-width: 600px) {
+  .jourvis-experience .hero .eyebrow {
+    font-size: 0.8125rem;
+  }
+  .jourvis-experience .hero-description {
+    margin-top: 1.2rem;
+  }
+  .jourvis-experience .hero-actions {
+    margin-top: 1.2rem;
+    gap: 0.5rem 1rem;
+  }
+  .jourvis-experience .hero-baseline {
+    margin-top: 0.5rem;
+    padding-block: 1.1rem;
+  }
+  .jourvis-experience .demo-companion-strip {
+    padding-top: 0.75rem;
+    height: 54px;
+  }
+  .jourvis-experience .demo-section {
+    padding-top: 1.25rem;
+  }
+}
+@media print {
+  .page-guide {
+    display: none;
+  }
+}

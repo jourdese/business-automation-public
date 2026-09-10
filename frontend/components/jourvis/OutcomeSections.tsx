@@ -30,15 +30,13 @@ export default function OutcomeSections({
   return (
     <section
       id="outcomes"
+      tabIndex={-1}
       className="outcomes-section section-wrap"
       aria-labelledby="outcomes-title"
       data-world-section="outcomes"
     >
       <div className="section-topline">
         <p className="eyebrow">02 / From scattered to sorted</p>
-        <span className="section-side-note">
-          A LITTLE ORDER CHANGES THE DAY.
-        </span>
       </div>
       <h2 id="outcomes-title" className="outcomes-heading">
         Less to hold in your head.
