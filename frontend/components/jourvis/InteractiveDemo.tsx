@@ -8,6 +8,7 @@ import {
   RotateCcw,
   UserRound,
   Sparkles,
+  Play,
 } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
@@ -21,6 +22,7 @@ import {
   sampleSlots,
   type Task,
 } from '@/lib/jourvis/scenarios';
+import CompanionMark from './CompanionMark';
 const icons = {
   question: MessageSquare,
   appointment: CalendarDays,
@@ -71,18 +73,16 @@ export default function InteractiveDemo({
       <div className="section-topline">
         <p className="eyebrow">01 / Let me take that</p>
         <span className="section-side-note">
-          SMALL TASKS. A LITTLE MORE SPACE.
+          A conversation. A clear next step.
         </span>
       </div>
       <h2 id="demo-title">
-        A little less back-and-forth.
+        One conversation.
         <br />
-        <span className="muted-heading">A lot more getting things done.</span>
+        <span className="muted-heading">Everything falls into place.</span>
       </h2>
       <p className="section-intro">
-        A question. A time to meet. The right person.
-        <br />
-        Start with one small thing.
+        Choose a business and a task. I’ll show you what happens next.
       </p>
       <div className="demo-shell">
         <div className="demo-toolbar">
@@ -102,7 +102,7 @@ export default function InteractiveDemo({
         </div>
         <div className="demo-configuration">
           <div>
-            <span className="field-label">Choose a setting</span>
+            <span className="field-label">Choose a business</span>
             <ToggleGroup
               value={[state.preset]}
               onValueChange={(values) => {
@@ -153,12 +153,12 @@ export default function InteractiveDemo({
             <div className="conversation">
               <div className="conversation-heading">
                 <span className="little-presence" aria-hidden>
-                  ••
+                  <CompanionMark />
                 </span>
                 <span>
                   Jourvis
                   <span className="assistant-label">
-                    YOUR EVERYDAY ASSISTANT
+                    Your everyday assistant
                   </span>
                 </span>
                 <span className="local-badge">Preview</span>
@@ -202,14 +202,22 @@ export default function InteractiveDemo({
                 )}
               </div>
               <div className="conversation-bottom">
-                <span className="mono">A LITTLE CONTEXT GOES A LONG WAY</span>
+                <span className="mono">Your conversation, made simpler</span>
                 <button
                   className="quiet-button"
                   onClick={() => start(state.task)}
-                  aria-label="Replay this example"
+                  aria-label={
+                    state.phase === 'ready'
+                      ? 'Run this example'
+                      : 'Replay this example'
+                  }
                 >
-                  <RotateCcw size={14} aria-hidden />
-                  Replay
+                  {state.phase === 'ready' ? (
+                    <Play size={14} aria-hidden />
+                  ) : (
+                    <RotateCcw size={14} aria-hidden />
+                  )}
+                  {state.phase === 'ready' ? 'Run example' : 'Replay'}
                 </button>
               </div>
             </div>
@@ -218,7 +226,7 @@ export default function InteractiveDemo({
               data-particle-result
             >
               <div className="result-heading">
-                <span className="mono">THE DETAILS, TOGETHER</span>
+                <span className="mono">Your result</span>
                 <span className="result-mark" aria-hidden>
                   {isDone ? <Check size={18} /> : <Sparkles size={18} />}
                 </span>
@@ -231,14 +239,9 @@ export default function InteractiveDemo({
                       <span />
                       <span />
                     </div>
-                    <h3>
-                      A little order
-                      <br />
-                      is on its way.
-                    </h3>
+                    <h3>See the conversation become a clear next step.</h3>
                     <p>
-                      Your sample answer, appointment preview, or handoff
-                      summary will appear here.
+                      Run an example to see the useful details gathered here.
                     </p>
                   </div>
                 ) : state.task === 'question' ? (
@@ -297,24 +300,34 @@ export default function InteractiveDemo({
                       ))}
                     </RadioGroup>
                     {state.slot && (
-                      <dl className="appointment-summary">
-                        <div>
-                          <dt>Service</dt>
-                          <dd>{scenario.service}</dd>
+                      <div className="appointment-ticket">
+                        <div className="appointment-ticket-heading">
+                          <CalendarDays size={22} aria-hidden />
+                          <div>
+                            <span>Sample Tuesday</span>
+                            <strong>{state.slot}</strong>
+                          </div>
+                          <span className="ticket-label">Preview</span>
                         </div>
-                        <div>
-                          <dt>When</dt>
-                          <dd>Sample Tuesday, {state.slot}</dd>
-                        </div>
-                        <div>
-                          <dt>Duration</dt>
-                          <dd>{scenario.duration}</dd>
-                        </div>
-                        <div>
-                          <dt>Guest</dt>
-                          <dd>Alex Santos · Sample guest</dd>
-                        </div>
-                      </dl>
+                        <dl className="appointment-summary">
+                          <div>
+                            <dt>Service</dt>
+                            <dd>{scenario.service}</dd>
+                          </div>
+                          <div>
+                            <dt>When</dt>
+                            <dd>Sample Tuesday, {state.slot}</dd>
+                          </div>
+                          <div>
+                            <dt>Duration</dt>
+                            <dd>{scenario.duration}</dd>
+                          </div>
+                          <div>
+                            <dt>Guest</dt>
+                            <dd>Alex Santos · Sample guest</dd>
+                          </div>
+                        </dl>
+                      </div>
                     )}
                     <p className="result-footnote">
                       {state.slot
@@ -325,10 +338,7 @@ export default function InteractiveDemo({
                 ) : (
                   <div className="result-content">
                     <span className="result-kicker">PREPARED FOR A PERSON</span>
-                    <h3>
-                      A warm handoff.
-                      <br />A clear starting point.
-                    </h3>
+                    <h3>Ready for a human touch.</h3>
                     <dl className="handoff-summary">
                       <div>
                         <dt>Customer</dt>

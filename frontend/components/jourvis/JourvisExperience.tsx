@@ -11,6 +11,7 @@ import InteractiveDemo from './InteractiveDemo';
 import OutcomeSections from './OutcomeSections';
 import PrinciplesSection from './PrinciplesSection';
 import ParticleWorld from './ParticleWorld';
+import PageGuide from './PageGuide';
 
 export function StaticCompanion() {
   const paths = [1, 2, 3].map((value) =>
@@ -53,6 +54,7 @@ export default function JourvisExperience() {
   return (
     <div className="jourvis-experience" data-companion-state={state}>
       <ParticleWorld state={state} paused={paused} />
+      <PageGuide state={state} />
       <section
         className="hero section-wrap"
         aria-labelledby="hero-title"
@@ -60,10 +62,10 @@ export default function JourvisExperience() {
       >
         <div className="hero-copy">
           <p className="eyebrow">
-            <span className="status-square" />A little help. A lot more
-            possibility.
+            <span className="status-square" />
+            Jourvis / Business Automation
           </p>
-          <h1 id="hero-title">
+          <h1 id="hero-title" tabIndex={-1}>
             Your business,
             <br />
             with room
@@ -71,9 +73,8 @@ export default function JourvisExperience() {
             to <span>breathe.</span>
           </h1>
           <p className="hero-description">
-            Meet Jourvis, your AI business assistant for customer questions,
-            appointment coordination, and the everyday work that takes up your
-            day.
+            Customer questions, appointments, and the details in between. I’m
+            Jourvis. Let me help with the everyday.
           </p>
           <div className="hero-actions">
             <button
@@ -97,7 +98,7 @@ export default function JourvisExperience() {
         </div>
         <div className="hero-presence" data-particle-anchor="hero">
           <StaticCompanion />
-          <span className="orbit-label">A QUIET KIND OF INTELLIGENCE</span>
+          <span className="orbit-label">YOUR EVERYDAY COMPANION</span>
           <button
             className="companion-invitation"
             onClick={() => {
@@ -110,15 +111,15 @@ export default function JourvisExperience() {
             onPointerLeave={() => send('REST')}
             aria-label="Meet Jourvis in the interactive preview"
           >
-            <span className="desktop-invite">Move closer. I’m here.</span>
-            <span className="touch-invite">Tap in. I’m here.</span>
+            <span className="desktop-invite">I’ll show you around.</span>
+            <span className="touch-invite">I’ll show you around.</span>
             <ArrowUpRight size={14} aria-hidden />
           </button>
         </div>
         <div className="hero-baseline">
           <span>Less back-and-forth. More room for you.</span>
           <a href="#demo">
-            <span className="mono">MEET YOUR EVERYDAY ASSISTANT</span>
+            <span className="mono">Explore with Jourvis</span>
             <ArrowDown size={16} aria-hidden />
           </a>
         </div>
@@ -140,8 +141,8 @@ export default function JourvisExperience() {
         data-world-section="final"
       >
         <div className="final-copy">
-          <p className="eyebrow">04 / Your next chapter</p>
-          <h2 id="final-title">
+          <p className="eyebrow">Your next chapter</p>
+          <h2 id="final-title" tabIndex={-1}>
             Let’s make work
             <br />
             feel <span>lighter.</span>

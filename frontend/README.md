@@ -45,6 +45,14 @@ Site navigation uses ordinary browser links for the static export. This fixes th
 - FAQ, header links, closing CTA, replay and reset are functional. The closing CTA scrolls and focuses the actual demo.
 - Privacy and data-deletion routes and their existing policy text are retained.
 
+## Design and guide review
+
+The design branch keeps the hero → demo → outcomes → principles/FAQ → closing sequence, the existing text/visual placement, and all three particle anchors. The first design pass refines hero copy and spacing, the demo frame and conversation bubbles, appointment summaries, and heading sizes. The same pixel silhouette appears in the guide, conversation avatar, favicon and social preview.
+
+`PageGuide.tsx` provides a persistent, compact companion when the large character is outside the viewport. Its panel opens only on request, describes the current section, and offers navigation with focus management. It follows demo state without accepting free text, calling an AI service or storing visitor information. Escape closes it and returns focus; pointer clicks outside dismiss it. The guide remains usable with reduced motion and graphics disabled. The original character animation has smaller eye/body offsets and a restrained organizing gesture.
+
+Review locally with `npm run dev -- --port 3001`. Run `npm run test:guide` with the same browser environment settings as the other QA scripts. Production publication requires the user's review and merge approval; local completion is not deployment.
+
 ## Important files
 
 | File | Responsibility |
@@ -54,6 +62,9 @@ Site navigation uses ordinary browser links for the static export. This fixes th
 | `app/globals.css` | Editorial design, responsive layout, focus and reduced-motion styling |
 | `components/jourvis/JourvisExperience.tsx` | Page composition and explicit companion state machine |
 | `components/jourvis/InteractiveDemo.tsx` | Accessible controls, deterministic conversation and preview results |
+| `components/jourvis/PageGuide.tsx` | Contextual page guidance, scroll navigation and accessible panel |
+| `components/jourvis/CompanionMark.tsx` | Shared small character silhouette |
+| `app/refinements.css` | Scoped design refinement and guide presentation |
 | `components/jourvis/ParticleWorld.tsx` | One animation clock, cached layout anchors, springs, pointer/focus behavior |
 | `lib/jourvis/renderer.ts` | Batched WebGL square points and Canvas 2D fallback |
 | `lib/jourvis/scenarios.ts` | Fictional business fixtures and guarded demo reducer |

@@ -17,7 +17,8 @@
     "test:browser": "node scripts/frontend-qa.mjs",
     "sync:policies": "node scripts/sync-policies.mjs",
     "check:policies": "node scripts/sync-policies.mjs --check",
-    "test:policy-navigation": "node scripts/policy-navigation-qa.mjs"
+    "test:policy-navigation": "node scripts/policy-navigation-qa.mjs",
+    "test:guide": "node scripts/guide-qa.mjs"
   },
   "dependencies": {
     "react": "19.2.6",

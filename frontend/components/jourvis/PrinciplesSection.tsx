@@ -27,6 +27,7 @@ export default function PrinciplesSection() {
     <section
       className="principles-section"
       id="principles"
+      tabIndex={-1}
       data-world-section="principles"
       aria-labelledby="principles-title"
     >
@@ -34,15 +35,9 @@ export default function PrinciplesSection() {
         <p className="eyebrow">03 / Helpful, not in the way</p>
         <div className="principles-layout">
           <h2 id="principles-title">
-            Present when
+            Here when you need me.
             <br />
-            you need me.
-            <br />
-            <span className="muted-heading">
-              Out of the way
-              <br />
-              when you don’t.
-            </span>
+            <span className="muted-heading">Space when you don’t.</span>
           </h2>
           <div className="principles-list">
             <p className="principles-intro">
@@ -75,12 +70,8 @@ export default function PrinciplesSection() {
             </div>
           </div>
         </div>
-        <div className="faq-layout">
-          <h3>
-            A few things
-            <br />
-            you might be wondering.
-          </h3>
+        <div className="faq-layout" id="jourvis-faq" tabIndex={-1}>
+          <h3>A few good questions.</h3>
           <Accordion className="faq" defaultValue={[]} multiple>
             {faqs.map(([question, answer], i) => (
               <AccordionItem key={question} value={'faq-' + i}>
