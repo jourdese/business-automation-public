@@ -54,7 +54,7 @@ try {
       await page.waitForLoadState('networkidle');
       assert.deepEqual((await page.locator('article.document').locator('h1,h2,h3,p,li').allTextContents()).map(normalize), expected[route]);
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
-      assert.equal(await page.locator('link[rel="canonical"]').getAttribute('href'), 'https://jourvis.vercel.app/' + route);
+      assert.equal(await page.locator('link[rel="canonical"]').getAttribute('href'), 'https://jourvis.ai/' + route);
       await page.reload({waitUntil:'networkidle'});
       assert.equal(await page.locator('article.document').count(),1);
     }

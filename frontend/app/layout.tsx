@@ -6,7 +6,7 @@ import './globals.css';
 import './refinements.css';
 export const metadata: Metadata = {
   icons: { icon: '/favicon.svg' },
-  metadataBase: new URL('https://jourvis.vercel.app'),
+  metadataBase: new URL('https://jourvis.ai'),
   title: {
     default: 'Jourvis — Your business, with room to breathe',
     template: '%s | Jourvis',

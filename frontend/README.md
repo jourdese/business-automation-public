@@ -26,7 +26,7 @@ The production build exports static HTML/assets to `dist/client`. A static host 
 
 The React source belongs in [`frontend/` in jourdese/business-automation-public](https://github.com/jourdese/business-automation-public/tree/main/frontend). The original root-level policy website remains in place for the existing Meta policy URLs.
 
-The Jourvis Vercel project uses `frontend` as its root directory, the Other framework preset, `npm ci`, `npm run build`, and `dist/client` as its output. These build settings and extensionless routes are declared in `vercel.json`. The target production address is https://jourvis.vercel.app, including `/privacy` and `/data-deletion`.
+The Jourvis Vercel project uses `frontend` as its root directory, the Other framework preset, `npm ci`, `npm run build`, and `dist/client` as its output. These build settings and extensionless routes are declared in `vercel.json`. The production address is https://jourvis.ai, including `/privacy` and `/data-deletion`. `www.jourvis.ai` redirects to the apex domain. The existing `jourvis.vercel.app` deployment alias remains available.
 
 No environment secrets are required. The optional Sites development plugin runs only when a local `.openai/hosting.json` exists and the build is outside Vercel; that local hosting file is excluded from the published GitHub source. Vercel deployment does not depend on it. Commits to `main` containing frontend changes trigger the connected Jourvis deployment.
 
