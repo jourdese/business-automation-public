@@ -8,7 +8,7 @@ export default function Privacy() {
   return <article className="document">
     <p className="eyebrow">Jourvis</p>
     <h1>Privacy policy</h1>
-    <p className="updated">Effective September 9, 2026</p>
+    <p className="updated">Effective September 13, 2026</p>
     <p className="lead">This notice explains how Jour handles information through Jourvis and these public information pages.</p>
     <section>
     <h2>Who operates the service</h2>
@@ -72,8 +72,14 @@ export default function Privacy() {
     <p>See the <a href="/data-deletion">data deletion instructions</a> for what to include and how requests are handled. Deleting app records does not delete your Facebook account or automatically remove records kept independently by Meta or a business.</p>
     </section>
     <section>
+    <h2>Website demo</h2>
+    <p>The chat on jourvis.ai connects to the Jourvis conversation service using sample business configurations. Messages and structured request details are processed on the server. It is not limited to written browser examples. When you explicitly confirm a test booking, a real demo Calendar event and invitation may be created using the email address you provide.</p>
+    <p>A signed, random visitor token is kept in this tab’s session storage for up to 24 hours. It identifies your web conversation separately from Messenger. The page keeps the visible message history in memory; reloading can recover the latest stored reply and gathered details. Closing the tab or losing this token can prevent you from reopening that web conversation. An appointment is not cancelled when the tab closes; contact Jour with its reference if you need help finding or changing it.</p>
+    <p>The picture option records only that a reference picture was supplied in the simulation. No picture file, image URL or image data is uploaded by this control. Web access information may be used for short-lived abuse limits. The demonstration does not send website push notifications.</p>
+    </section>
+    <section>
     <h2>These information pages</h2>
-    <p>Jour has not added advertising, analytics or a data-collection form to this website. The website host may process standard request information, such as an IP address, browser information and access time, to serve and secure the pages. Email links open your email application; sending an email shares its contents with Jour&#x27;s support inbox.</p>
+    <p>Jour has not added advertising or analytics to this website. Information is sent through the demo only when you start or interact with it. The website host may process standard request information, such as an IP address, browser information and access time, to serve and secure the pages. Email links open your email application; sending an email shares its contents with Jour&#x27;s support inbox.</p>
     </section>
     <section>
     <h2>Changes and contact</h2>

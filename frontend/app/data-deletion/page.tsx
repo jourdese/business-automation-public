@@ -8,7 +8,7 @@ export default function Deletion() {
   return <article className="document">
     <p className="eyebrow">Jourvis</p>
     <h1>Request data deletion</h1>
-    <p className="updated">Effective September 9, 2026</p>
+    <p className="updated">Effective September 13, 2026</p>
     <p className="lead">Contact Jour to request deletion of your information handled by Jourvis. Requests are reviewed manually.</p>
     <section className="contact-box">
     <h2>Send a request</h2>
@@ -28,6 +28,10 @@ export default function Deletion() {
     <li>An email address where Jour can reply, if it differs from the one you are sending from.</li>
     </ol>
     <p>Do not send your password, access token, government ID, medical records or payment details. Jour may ask you to confirm the request from the same Messenger account, or provide another minimal detail, to verify ownership.</p>
+    </section>
+    <section>
+    <h2>Website conversations</h2>
+    <p>If you used the website demo, say that your request concerns a web conversation. Include the sample business, approximate conversation time and any appointment reference or invitation email address you supplied. Do not send your browser session token. Closing the tab does not delete server records or cancel an appointment. Jour can help verify and locate the relevant records.</p>
     </section>
     <section>
     <h2>How the request is handled</h2>

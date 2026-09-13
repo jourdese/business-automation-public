@@ -52,7 +52,7 @@ export default function JourvisExperience() {
   const [state, send] = useReducer(companionTransition, 'idle');
   const [paused, setPaused] = useState(false);
   return (
-    <div className="jourvis-experience" data-companion-state={state}>
+    <div className="jourvis-experience" data-companion-state={state} data-motion-paused={paused}>
       <ParticleWorld state={state} paused={paused} />
       <PageGuide state={state} />
       <section

@@ -4,6 +4,7 @@ import { palette } from '@/lib/jourvis/config';
 import { SiteHeader, SiteFooter } from '@/components/jourvis/SiteChrome';
 import './globals.css';
 import './refinements.css';
+import './live-demo.css';
 export const metadata: Metadata = {
   icons: { icon: '/favicon.svg' },
   metadataBase: new URL('https://jourvis.ai'),

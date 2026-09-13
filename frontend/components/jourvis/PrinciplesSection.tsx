@@ -6,20 +6,20 @@ import {
 } from '@/components/ui/accordion';
 const faqs = [
   [
-    'What can I do in this preview?',
-    'Choose a sample business and try a customer question, select a fictional appointment time, or explore a handoff summary. Everything runs locally in your browser using written example scenarios.',
+    'What can I try with Jourvis?',
+    'Choose from 20 sample businesses and talk naturally. Ask about prices, work through a request, or arrange a test appointment. This uses the same Jourvis conversation engine as the Messenger demo.',
   ],
   [
     'Is this connected to a real business?',
-    'No. Fieldwork Studio and Cedar Dental are fictional demo configurations. The preview does not call an AI service, check a real calendar, send a message, or create an appointment.',
+    'The business details are fictional, but the conversation is live. A test booking can check the demo calendar and send an invitation to the email you provide, after you confirm. It does not reserve a service at a real clinic, studio, or supplier.',
   ],
   [
     'What happens when I ask for a person?',
-    'The preview shows a sample conversation summary that a team member could use. No person is contacted or notified. In a configured service, the handoff process would depend on the business.',
+    'Jourvis gathers the context and follows the selected demo’s handoff process. A saved demo request is not a promise that a real staff member will contact you. For Jourvis sales or support, use the contact link below.',
   ],
   [
     'What information does Jourvis work from?',
-    'The intended experience starts with the business information provided: services, hours, appointment details, and the context relevant to the request. The examples here use sample information only.',
+    'Jourvis uses the selected business’s published demo configuration: services, prices, opening hours, policies, and intake questions. It remembers the useful details within your own web session, separate from Messenger. A language model can help interpret an unfamiliar request; it does not invent business prices or availability.',
   ],
 ];
 export default function PrinciplesSection() {
