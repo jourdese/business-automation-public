@@ -80,7 +80,7 @@ export default function InteractiveDemo({ send }: { send: (event: CompanionEvent
    <h2 id="demo-title">One conversation.<br /><span className="muted-heading">Everything falls into place.</span></h2>
    <p className="section-intro">Step into your customer’s shoes. Pick a business, ask a real question, and watch me keep the useful details together.</p>
    <div className="demo-shell live-shell" data-live-status={busy ? 'working' : started ? 'connected' : 'ready'}>
-    <div className="demo-toolbar"><span className="preview-label"><span className="status-square" />{started ? 'Jourvis · Live demo' : 'The real Jourvis · 20 businesses to explore'}</span>
+    <div className="demo-toolbar"><span className="preview-label"><span className="status-square" />{started ? 'Jourvis · Live demo' : 'The real Jourvis · 21 businesses to explore'}</span>
      {started && <button className="quiet-button" disabled={busy || !!retry} onClick={() => setShowRestart(true)}><RotateCcw size={14} aria-hidden /> Change business</button>}
     </div>
    {showRestart && <section className="restart-note" aria-label="Change business confirmation"><p>Go back to the business selection? Any confirmed appointment stays in place.</p><button className="quiet-button" onClick={() => setShowRestart(false)}>Stay here</button><button className="button primary" onClick={() => { setShowRestart(false); submit('restart'); }}>Choose another business</button></section>}
