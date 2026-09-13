@@ -17,7 +17,7 @@ const sections = [
     key: 'demo',
     label: 'Try the demo',
     title: 'Let’s try one small thing.',
-    text: 'Pick a business, then a customer question, appointment, or handoff. You can change your choice at any time.',
+    text: 'Start a conversation and choose a business. Talk like its customer. I’ll keep the useful details in the notebook beside our conversation.',
     action: 'Go to the demo controls',
     target: 'demo',
   },
@@ -51,10 +51,20 @@ export default function PageGuide({ state }: { state: CompanionState }) {
   const [active, setActive] = useState<string>('hero');
   const [open, setOpen] = useState(false);
   const [inGap, setInGap] = useState(false);
+  const [gathered, setGathered] = useState(0);
   const root = useRef<HTMLElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
   const heading = useRef<HTMLHeadingElement>(null);
   const section = sections.find((item) => item.key === active) ?? sections[0];
+
+  useEffect(() => {
+    const receive = (event: Event) => {
+      const count = (event as CustomEvent<{ count: number }>).detail?.count;
+      if (Number.isInteger(count) && count >= 0) setGathered(count);
+    };
+    window.addEventListener('jourvis-notebook', receive);
+    return () => window.removeEventListener('jourvis-notebook', receive);
+  }, []);
 
   useEffect(() => {
     let frame = 0;
@@ -134,9 +144,9 @@ export default function PageGuide({ state }: { state: CompanionState }) {
     active !== 'demo'
       ? section.text
       : state === 'organizing'
-        ? 'I’m putting this example together. The result will appear beside the conversation, or below it on your phone.'
+        ? 'I’m working on your message. Your gathered details appear beside our conversation, or below it on your phone.'
         : state === 'completed'
-          ? 'Your sample result is ready. For an appointment, choose a time to see the summary. Try another example whenever you like.'
+          ? 'Your latest result is in our conversation. You can copy the gathered details from the notebook and keep exploring at your own pace.'
           : state === 'handoff'
             ? 'Here’s the context a team member could receive. This is a preview; no one has been notified.'
             : section.text;
@@ -185,6 +195,7 @@ export default function PageGuide({ state }: { state: CompanionState }) {
             {section.title}
           </h2>
           <p>{hint}</p>
+          {gathered > 0 && active !== 'demo' && <div className="guide-thread"><p>Your {gathered === 1 ? 'detail is' : `${gathered} details are`} still in our notebook. Explore at your own pace—we can pick up where we left off.</p><button className="guide-action" onClick={() => go('demo')}>Back to our conversation <ArrowRight size={16} aria-hidden /></button></div>}
           <button className="guide-action" onClick={() => go(section.target)}>
             {section.action}
             <ArrowRight size={16} aria-hidden />

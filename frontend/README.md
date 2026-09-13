@@ -1,107 +1,46 @@
-# Jourvis — the living bitfield
+# Jourvis website
 
-A working React frontend, built in the existing Vinext/Vite application. The homepage combines editorial HTML with one persistent WebGL particle field and a small pixel companion. No backend, credentials, authentication, databases or automation workflows were added.
+The React/Vinext homepage at https://jourvis.ai uses the actual Jourvis V2 conversation engine and 20 published sample businesses. Editorial examples in the lower sections remain illustrations. The hero, three numbered sections, closing message and existing particle anchors/animations are preserved.
 
-## Run
+## Run and verify
 
-Requires Node 22.13 or later and npm. The existing package lock and dependencies are preserved.
+Requires Node 22.13 or later. Run `npm ci`, then `npm run dev`. Before publishing run `npm run typecheck`, `npm run lint:jourvis`, `npm run test:frontend`, `npm run check:policies`, and `npm run build`.
 
-```sh
-npm ci
-npm run dev
-```
+Vercel uses `frontend` as its root, `npm run build`, and `dist/client` as its static output. `vercel.json` provides extensionless policy routes. Commits to main publish the connected Jourvis project, including jourvis.ai and jourvis.vercel.app. No provider secrets belong in this repository.
 
-Open the local URL printed by Vinext (normally http://localhost:3000).
+## Live demo
 
-```sh
-npm run build
-npm run typecheck
-npm run lint:jourvis
-npm run test:frontend
-```
+`public/jourvis-demo.json` contains the single public runtime origin. Update that value and deploy if the temporary V2 tunnel changes. The client accepts HTTPS Cloudflare quick tunnels and `api.jourvis.ai`; the latter requires separate verified infrastructure configuration. Local/preview origins are deliberately not allowed by the production runtime.
 
-The production build exports static HTML/assets to `dist/client`. A static host should serve extensionless policy routes from their matching HTML files. The inherited `npm start` command targets a Worker build; use `npm run dev` for local development, or serve the static export for production.
+The runtime exposes a separate `web_chat` / `jourvis.ai` channel. It loads existing published business presets, uses deterministic understanding first and direct optional Groq second, and invokes n8n only for external actions. It does not reuse Messenger customer identities or alter Page routing. The runtime repository documents its private database function, binding, deployment and rollback in `docs/WEBSITE_DEMO_CHANNEL.md`.
 
-## GitHub and Vercel
+Visitors explicitly start the demo. A signed anonymous token lasts up to 24 hours and is kept in tab session storage; conversation text stays in browser memory. Refresh recovers the latest prepared reply, not a full transcript. Closing the tab can lose access to the anonymous conversation and never cancels an appointment. The privacy/deletion pages explain recovery through support. There are no website push reminders.
 
-The React source belongs in [`frontend/` in jourdese/business-automation-public](https://github.com/jourdese/business-automation-public/tree/main/frontend). The original root-level policy website remains in place for the existing Meta policy URLs.
+Retries retain the original message ID, recover its durable receipt and acknowledge the exact reply before allowing another message. Expired choice buttons become a safe resume/help action. A real test Calendar invitation is possible only after the existing email and explicit confirmation gates. The initial notice explains this. The picture control sends only a boolean—no image, URL or file is uploaded.
 
-The Jourvis Vercel project uses `frontend` as its root directory, the Other framework preset, `npm ci`, `npm run build`, and `dist/client` as its output. These build settings and extensionless routes are declared in `vercel.json`. The production address is https://jourvis.ai, including `/privacy` and `/data-deletion`. `www.jourvis.ai` redirects to the apex domain. The existing `jourvis.vercel.app` deployment alias remains available.
+## Design and guidance
 
-No environment secrets are required. The optional Sites development plugin runs only when a local `.openai/hosting.json` exists and the build is outside Vercel; that local hosting file is excluded from the published GitHub source. Vercel deployment does not depend on it. Commits to `main` containing frontend changes trigger the connected Jourvis deployment.
+The conversation sits beside a notebook of explicit gathered facts. It excludes contact details and medical intake, and only shows a confirmed appointment when the database reports that status. Visitors can collapse the notebook or copy their summary. The guide can bring them back to gathered details while exploring other sections; it does not send messages on their behalf.
 
-## Public policy maintenance
+The existing WebGL particle field, Canvas fallback, static companion, motion pause, reduced-motion handling and section order remain. New notebook/companion animations respect the same controls. Phone layouts stack the conversation and notebook.
 
-The root `privacy.html` and `data-deletion.html` are the authoritative published policy text. After editing them, run `npm run sync:policies` from `frontend/` to update the React routes, then `npm run check:policies` to verify parity. The generated routes are checked in so the Vercel build is self-contained.
-
-Site navigation uses ordinary browser links for the static export. This fixes the client-router exception that previously made policy links appear unresponsive. Run `npm run test:policy-navigation` after a build to verify actual clicks, keyboard access, policy cross-links, refresh, mobile layouts and exact policy text against the root documents. It starts a temporary local static server; set `FRONTEND_URL` to test a deployed host instead. It uses the same `PLAYWRIGHT_MODULE` and `CHROME_PATH` settings as the main browser suite.
-
-## The experience
-
-- A spacious hero introduces Jourvis as an AI business assistant. The wordmark and HTML remain visible while graphics initialize.
-- General business / Dental clinic presets contain three deterministic examples: question, appointment and human handoff. Changing a preset resets its conversation, result, slot and pending timer.
-- Appointment times can be selected and changed. Summaries are always labeled previews. No message, booking, calendar invitation or staff notification is sent.
-- Three editorial outcome rows provide their own small, keyboard-operable demonstrations.
-- FAQ, header links, closing CTA, replay and reset are functional. The closing CTA scrolls and focuses the actual demo.
-- Privacy and data-deletion routes and their existing policy text are retained.
-
-## Design and guide review
-
-The design branch keeps the hero → demo → outcomes → principles/FAQ → closing sequence, the existing text/visual placement, and all three particle anchors. The first design pass refines hero copy and spacing, the demo frame and conversation bubbles, appointment summaries, and heading sizes. The same pixel silhouette appears in the guide, conversation avatar, favicon and social preview.
-
-`PageGuide.tsx` provides a persistent, compact companion when the large character is outside the viewport. Its panel opens only on request, describes the current section, and offers navigation with focus management. It follows demo state without accepting free text, calling an AI service or storing visitor information. Escape closes it and returns focus; pointer clicks outside dismiss it. The guide remains usable with reduced motion and graphics disabled. The original character animation has smaller eye/body offsets and a restrained organizing gesture.
-
-Review locally with `npm run dev -- --port 3001`. Run `npm run test:guide` with the same browser environment settings as the other QA scripts. Production publication requires the user's review and merge approval; local completion is not deployment.
-
-## Important files
+## Main files
 
 | File | Responsibility |
 | --- | --- |
-| `app/page.tsx` | Homepage route |
-| `app/layout.tsx` | Shared HTML shell, metadata and server-rendered palette tokens |
-| `app/globals.css` | Editorial design, responsive layout, focus and reduced-motion styling |
-| `components/jourvis/JourvisExperience.tsx` | Page composition and explicit companion state machine |
-| `components/jourvis/InteractiveDemo.tsx` | Accessible controls, deterministic conversation and preview results |
-| `components/jourvis/PageGuide.tsx` | Contextual page guidance, scroll navigation and accessible panel |
-| `components/jourvis/CompanionMark.tsx` | Shared small character silhouette |
-| `app/refinements.css` | Scoped design refinement and guide presentation |
-| `components/jourvis/ParticleWorld.tsx` | One animation clock, cached layout anchors, springs, pointer/focus behavior |
-| `lib/jourvis/renderer.ts` | Batched WebGL square points and Canvas 2D fallback |
-| `lib/jourvis/scenarios.ts` | Fictional business fixtures and guarded demo reducer |
-| `lib/jourvis/config.ts` | Palette, motion budget, companion states and contact destinations |
-| `components/jourvis/OutcomeSections.tsx` | Interactive editorial outcomes |
-| `components/jourvis/PrinciplesSection.tsx` | Operating principles and expandable FAQ |
-| `components/jourvis/SiteChrome.tsx` | Shared navigation and footer |
+| `components/jourvis/InteractiveDemo.tsx` | Live conversation, choices, recovery, notebook and confirmation notice |
+| `lib/jourvis/live-demo.ts` | Session, endpoint configuration and authenticated transport |
+| `public/jourvis-demo.json` | Public runtime origin; no credentials |
+| `components/jourvis/PageGuide.tsx` | Contextual guidance and return-to-conversation navigation |
+| `app/live-demo.css` | Responsive live conversation and notebook design |
+| `components/jourvis/JourvisExperience.tsx` | Existing page composition and character state |
+| `components/jourvis/ParticleWorld.tsx` | Existing particle animation and anchors |
+| `lib/jourvis/scenarios.ts` | Illustrative lower-section examples only |
 
-## Graphics and accessibility
+## Policies and checks
 
-The companion has explicit idle, curious, listening, organizing, completed and handoff states. Processing unfolds part of the constellation; completion briefly introduces gold. A measured, text-free rail carries particles between the conversation and its outcome.
+Root `privacy.html` and `data-deletion.html` are authoritative. Run `npm run sync:policies` after editing them; the generated React routes are committed. Ordinary anchors preserve navigation in the static export.
 
-The renderer batches square particles into one WebGL draw call. Canvas 2D is used if WebGL is unavailable or its context is lost; a static SVG companion remains if neither renderer initializes. High-frequency positions stay outside React. Layout is measured through resize observers and resize/focus events, never repeatedly inside the animation loop.
+Frontend tests cover existing illustration state and the live transport's retry identity, acknowledgement, connection refresh, pending replies and expired-session cleanup. Runtime tests separately cover authentication, Page isolation, all 20 native adapter conversations, database persistence and mock Calendar confirmation gates. Live provider tests require explicit authorization.
 
-Initial ambient budgets are 560 desktop / 200 phone particles, plus the compact companion; device pixel ratio is capped at 1.5. Animation pauses in hidden tabs. Reduced-motion preference disables the pointer wake and continuously running animation; the manual motion control also stops the clock. No custom cursor, sound, camera, microphone or scroll interception is used.
-
-Explicit diagnostic modes are available at `/?graphics=canvas` and `/?graphics=off`. With no graphics, the entire interface and local demo remain usable.
-
-## Contact configuration
-
-`siteConfig` in `lib/jourvis/config.ts` contains the user-supplied Jourvis Facebook Page URL and support email. The Facebook action is separate from the local preview and opens a new tab. Set `messengerUrl` to an empty string to hide it. No provider credentials are needed.
-
-## Validation
-
-Verified in local headless Chrome:
-
-- Both presets, all six task combinations, replay, reset and rapid preset changes.
-- Selecting and changing an appointment time; handoff summary and explicit no-send labels.
-- All editorial controls, FAQ, hero and closing CTA focus behavior.
-- Desktop 1440px, tablet 768px, phone 390px and narrow 320px layouts with no horizontal overflow.
-- Keyboard skip link, task navigation, time selection and FAQ operation.
-- 200% text enlargement at desktop width.
-- Reduced motion, manual clock pause, forced graphics initialization failure, Canvas fallback and actual WebGL context loss.
-- Policy routes, no browser page errors, and no external service requests during the demo.
-
-Four reducer/state regression tests cover stale completions, valid slot selection, reset/replay isolation and contextual companion transitions. Type checking, frontend-scoped lint and the production build pass.
-
-The inherited repository-wide `npm run lint` reports existing findings in unused vendored `components/ui` and `hooks/use-mobile.ts`. These unrelated components were not rewritten. No Lighthouse score, frame-rate guarantee, physical-device Safari test or assistive-technology certification is claimed.
-
-Browser automation is in `scripts/frontend-qa.mjs` and `scripts/frontend-accessibility-qa.mjs`. They use an available Playwright installation without adding a production dependency. Set `PLAYWRIGHT_MODULE` to the module entry-file path and `CHROME_PATH` to a Chrome executable if needed. `FRONTEND_URL` selects the target for the main suite. Screenshots and raw QA results are generated under ignored `outputs/`.
+Legacy `test:browser` and `test:guide` scripts contain assertions for the former scripted demo. Do not interpret those scenarios as tests of this live channel; verify the new start, business selection, choices, typed reply, notebook, recovery and responsive layout directly. Existing policy-navigation checks remain applicable. The broad inherited lint includes unrelated vendored component findings; `lint:jourvis` scopes the maintained frontend.
