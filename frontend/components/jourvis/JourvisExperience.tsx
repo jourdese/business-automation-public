@@ -63,7 +63,7 @@ export default function JourvisExperience() {
         <div className="hero-copy">
           <p className="eyebrow">
             <span className="status-square" />
-            Jourvis / Business Automation
+            Jourvis / Business Automation Layer
           </p>
           <h1 id="hero-title" tabIndex={-1}>
             Your business,
