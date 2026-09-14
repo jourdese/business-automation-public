@@ -7,7 +7,7 @@ import {
 const faqs = [
   [
     'What can I try with Jourvis?',
-    'Choose from 20 sample businesses and talk naturally. Ask about prices, work through a request, or arrange a test appointment. This uses the same Jourvis conversation engine as the Messenger demo.',
+    'Choose from 21 sample businesses and talk naturally. Ask about prices, work through a request, or arrange a test appointment. This uses the same Jourvis conversation engine as the Messenger demo.',
   ],
   [
     'Is this connected to a real business?',
