@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import JourvisExperience from '@/components/jourvis/JourvisExperience';
+import BusinessDemoPage from '@/components/jourvis/BusinessDemoPage';
 import {
   listPublicBusinessRoutes,
   resolvePublicBusinessRoute,
@@ -42,8 +42,8 @@ export default async function BusinessRoutePage({ params }: RoutePageProps) {
   if (!route) notFound();
 
   return (
-    <JourvisExperience
-      initialBusiness={{
+    <BusinessDemoPage
+      business={{
         displayName: route.display_name,
         publicPath: route.public_path,
         adapterKey: route.adapter_key,
