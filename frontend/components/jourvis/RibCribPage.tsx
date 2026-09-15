@@ -1,11 +1,10 @@
 /// <reference types="vite/client" />
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type CSSProperties } from 'react';
 import {
   ArrowRight,
   CalendarDays,
-  Clock3,
   Flame,
   MapPin,
   MessageCircle,
@@ -18,31 +17,33 @@ import {
 } from 'lucide-react';
 import type { InitialBusiness } from './JourvisExperience';
 import RibCribJourvisChat from './RibCribJourvisChat';
+import JourvisCompanion from './JourvisCompanion';
+import styles from './RibCribPage.module.css';
 
-import ribHero from '@/src/assets/rib-crib/rib-crib-hero-bbq-wings.png';
-import ribInterior from '@/src/assets/rib-crib/rib-crib-restaurant-interior.png';
-import ribWood from '@/src/assets/rib-crib/rib-crib-dark-wood-background.png';
-import ribOrders from '@/src/assets/rib-crib/rib-crib-orders-bbq-background.png';
-import ribEmblem from '@/src/assets/rib-crib/rib-crib-emblem.png';
-import ribFooterBrand from '@/src/assets/rib-crib/rib-crib-footer-brand-lockup.png';
-import ribWordmark from '@/src/assets/rib-crib/TheRibCribWhite.png';
-import ribEatMeatRepeat from '@/src/assets/rib-crib/eat-meat-repeat.png';
-import ribGoodFood from '@/src/assets/rib-crib/rib-crib-good-food-good-people.png';
-import ribSignatureIcon from '@/src/assets/rib-crib/rib-crib-icon-signature-flavors.png';
-import ribLifeBbq from '@/src/assets/rib-crib/rib-crib-life-is-better-with-bbq.png';
-import ribFries from '@/src/assets/rib-crib/rib-crib-plain-fries.png';
-import ribSalad from '@/src/assets/rib-crib/rib-crib-salad.png';
-import ribSisigTacos from '@/src/assets/rib-crib/rib-crib-sisig-tacos.png';
-import ribWings6 from '@/src/assets/rib-crib/rib-crib-chicken-wings-6pcs.png';
-import ribBarbecueRibs from '@/src/assets/rib-crib/rib-crib-barbecue-ribs-2pcs.png';
-import ribUnlimitedWings from '@/src/assets/rib-crib/rib-crib-unlimited-wings.png';
-import ribJuice from '@/src/assets/rib-crib/rib-crib-juice.png';
-import ribIcedTea from '@/src/assets/rib-crib/rib-crib-iced-tea.png';
-import ribPlatter from '@/src/assets/rib-crib/rib-crib-platter.png';
-import ribPlatterWithRibs from '@/src/assets/rib-crib/rib-crib-platter-with-ribs.png';
-import ribBarkadaPlatter from '@/src/assets/rib-crib/rib-crib-barkada-platter.png';
-import ribBbqRibsPlatter from '@/src/assets/rib-crib/rib-crib-bbq-ribs-platter.png';
-import ribMegaPlatter from '@/src/assets/rib-crib/rib-crib-mega-platter.png';
+import ribHero from '@/src/assets/rib-crib/rib-crib-hero-bbq-wings.png?url';
+import ribInterior from '@/src/assets/rib-crib/rib-crib-restaurant-interior.png?url';
+import ribWood from '@/src/assets/rib-crib/rib-crib-dark-wood-background.png?url';
+import ribOrders from '@/src/assets/rib-crib/rib-crib-orders-bbq-background.png?url';
+import ribEmblem from '@/src/assets/rib-crib/rib-crib-emblem.png?url';
+import ribFooterBrand from '@/src/assets/rib-crib/rib-crib-footer-brand-lockup.png?url';
+import ribWordmark from '@/src/assets/rib-crib/TheRibCribWhite.png?url';
+import ribEatMeatRepeat from '@/src/assets/rib-crib/eat-meat-repeat.png?url';
+import ribGoodFood from '@/src/assets/rib-crib/rib-crib-good-food-good-people.png?url';
+import ribSignatureIcon from '@/src/assets/rib-crib/rib-crib-icon-signature-flavors.png?url';
+import ribLifeBbq from '@/src/assets/rib-crib/rib-crib-life-is-better-with-bbq.png?url';
+import ribFries from '@/src/assets/rib-crib/rib-crib-plain-fries.png?url';
+import ribSalad from '@/src/assets/rib-crib/rib-crib-salad.png?url';
+import ribSisigTacos from '@/src/assets/rib-crib/rib-crib-sisig-tacos.png?url';
+import ribWings6 from '@/src/assets/rib-crib/rib-crib-chicken-wings-6pcs.png?url';
+import ribBarbecueRibs from '@/src/assets/rib-crib/rib-crib-barbecue-ribs-2pcs.png?url';
+import ribUnlimitedWings from '@/src/assets/rib-crib/rib-crib-unlimited-wings.png?url';
+import ribJuice from '@/src/assets/rib-crib/rib-crib-juice.png?url';
+import ribIcedTea from '@/src/assets/rib-crib/rib-crib-iced-tea.png?url';
+import ribPlatter from '@/src/assets/rib-crib/rib-crib-platter.png?url';
+import ribPlatterWithRibs from '@/src/assets/rib-crib/rib-crib-platter-with-ribs.png?url';
+import ribBarkadaPlatter from '@/src/assets/rib-crib/rib-crib-barkada-platter.png?url';
+import ribBbqRibsPlatter from '@/src/assets/rib-crib/rib-crib-bbq-ribs-platter.png?url';
+import ribMegaPlatter from '@/src/assets/rib-crib/rib-crib-mega-platter.png?url';
 
 const MENU_ITEMS = [
   { name: 'Plain Fries', price: 115, image: ribFries, note: 'Crispy golden fries.' },
@@ -110,14 +111,15 @@ export default function RibCribPage({ business }: { business: InitialBusiness })
           style={{ backgroundImage: `url("${ribWordmark}")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'left center', backgroundSize: 'contain' }}
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
         >
-          The Rib Crib
+          <span className={styles.wordmarkText}>The Rib Crib</span>
         </button>
         <div className="rib-nav-links">
           <button type="button" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>Home</button>
           <button type="button" onClick={() => scrollTo('rib-menu')}>Menu</button>
           <button type="button" onClick={() => scrollTo('rib-reservations')}>Reservations</button>
           <button type="button" onClick={() => scrollTo('rib-orders')}>Orders</button>
-          <button type="button" onClick={() => scrollTo('rib-about')}>About</button>
+          <button type="button" onClick={() => scrollTo('rib-jourvis')}>About</button>
+          <button type="button" onClick={() => scrollTo('rib-contact')}>Contact</button>
         </div>
         <button className="rib-nav-chat" type="button" onClick={() => openJourvis()}>
           <MessageCircle size={16} aria-hidden /> Ask Jourvis
@@ -175,7 +177,7 @@ export default function RibCribPage({ business }: { business: InitialBusiness })
         </article>
         <div
           className="rib-feature-interior"
-          style={{ backgroundImage: `linear-gradient(90deg, rgba(255,255,255,.12), transparent 30%), url("${ribInterior}")` }}
+          style={{ backgroundImage: `linear-gradient(90deg, rgba(255,255,255,.12), transparent 30%), url("${ribInterior}")`, backgroundSize: 'cover', backgroundPosition: 'center' }}
           aria-label="The Rib Crib restaurant interior"
           role="img"
         />
@@ -198,7 +200,7 @@ export default function RibCribPage({ business }: { business: InitialBusiness })
 
         <div className="rib-menu-grid">
           {MENU_ITEMS.map((item, position) => (
-            <article className="rib-menu-card" key={item.name} style={{ '--rib-delay': `${position * 45}ms` } as React.CSSProperties}>
+            <article className="rib-menu-card" key={item.name} style={{ '--rib-delay': `${position * 45}ms` } as CSSProperties}>
               <div
                 className="rib-menu-photo"
                 style={{ backgroundImage: `url("${item.image}")`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }}
@@ -219,7 +221,7 @@ export default function RibCribPage({ business }: { business: InitialBusiness })
         </div>
         <div className="rib-platter-grid">
           {PLATTERS.map((item, position) => (
-            <article className="rib-platter-card" key={item.name} style={{ '--rib-delay': `${position * 60}ms` } as React.CSSProperties}>
+            <article className="rib-platter-card" key={item.name} style={{ '--rib-delay': `${position * 60}ms` } as CSSProperties}>
               <div
                 className="rib-platter-photo"
                 style={{ backgroundImage: `url("${item.image}")`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }}
@@ -233,41 +235,40 @@ export default function RibCribPage({ business }: { business: InitialBusiness })
       </section>
 
       <section className="rib-service-grid" data-rib-reveal>
-        <article
-          className="rib-reservation-panel"
-          id="rib-reservations"
-          style={{ background: `linear-gradient(90deg, rgba(255,255,255,.12) 0 112px, #fff 112px), url("${ribInterior}") left center / 112px 100% no-repeat` }}
-        >
-          <div className="rib-panel-title"><CalendarDays size={28} aria-hidden /><div><h2>Table Reservations</h2><p>Plan a table with Jourvis in a few taps.</p></div></div>
-          <div className="rib-reservation-form">
-            <label>Date<input type="date" value={date} onChange={(event) => setDate(event.target.value)} /></label>
-            <label>Time<input type="time" value={time} onChange={(event) => setTime(event.target.value)} /></label>
-            <label>Party Size<select value={party} onChange={(event) => setParty(event.target.value)}>{[1,2,3,4,5,6].map((count) => <option key={count} value={count}>{count} {count === 1 ? 'person' : 'people'}</option>)}</select></label>
+        <article className={`rib-reservation-panel ${styles.servicePanel} ${styles.reservationPanel}`} id="rib-reservations">
+          <div
+            className={styles.reservationVisual}
+            style={{ backgroundImage: `url("${ribInterior}")` }}
+            role="img"
+            aria-label="The Rib Crib restaurant interior"
+          />
+          <div className={styles.reservationContent}>
+            <div className="rib-panel-title"><CalendarDays size={28} aria-hidden /><div><h2>Table Reservations</h2><p>Reserve a table quickly and easily through Jourvis.</p></div></div>
+            <div className="rib-reservation-form">
+              <label>Date<input type="date" value={date} onChange={(event) => setDate(event.target.value)} /></label>
+              <label>Time<input type="time" value={time} onChange={(event) => setTime(event.target.value)} /></label>
+              <label>Party Size<select value={party} onChange={(event) => setParty(event.target.value)}>{[1,2,3,4,5,6].map((count) => <option key={count} value={count}>{count} {count === 1 ? 'person' : 'people'}</option>)}</select></label>
+            </div>
+            <button className="rib-reserve-button" type="button" onClick={() => openJourvis(reservationPrompt)}>
+              Reserve with Jourvis <ArrowRight size={18} aria-hidden />
+            </button>
+            <small>Demo only: no real table is reserved until restaurant staff confirms outside this simulation.</small>
           </div>
-          <button className="rib-reserve-button" type="button" onClick={() => openJourvis(reservationPrompt)}>
-            Reserve with Jourvis <ArrowRight size={18} aria-hidden />
-          </button>
-          <small>Demo only: no real table is reserved until restaurant staff confirms outside this simulation.</small>
         </article>
 
-        <article
-          className="rib-orders-panel"
-          id="rib-orders"
-          style={{ position: 'relative', background: `linear-gradient(90deg, #fff 0%, #fff 72%, rgba(255,255,255,.28) 100%), url("${ribOrders}") right center / 42% 100% no-repeat` }}
-        >
-          <div className="rib-panel-title"><MessageCircle size={28} aria-hidden /><div><h2>Orders &amp; Questions</h2><p>Use Jourvis as the front door to the menu.</p></div></div>
-          <div className="rib-order-actions">
-            <button type="button" onClick={() => openJourvis('What are your bestsellers?')}><UtensilsCrossed size={22} aria-hidden /><span><strong>Menu questions</strong><small>Ask about items and prices.</small></span></button>
-            <button type="button" onClick={() => openJourvis('I want to order for pickup.')}><ShoppingBag size={22} aria-hidden /><span><strong>Pickup requests</strong><small>Build a draft pickup request.</small></span></button>
-            <button type="button" onClick={() => openJourvis('Recommend a platter for my group.')}><Users size={22} aria-hidden /><span><strong>Group platters</strong><small>Find the best sharing option.</small></span></button>
-            <button type="button" onClick={() => openJourvis('Can you recommend something based on my budget?')}><Star size={22} aria-hidden /><span><strong>Recommendations</strong><small>Get suggestions from Jourvis.</small></span></button>
+        <article className={`rib-orders-panel ${styles.servicePanel} ${styles.ordersPanel}`} id="rib-orders">
+          <div className={styles.ordersContent}>
+            <div className="rib-panel-title"><MessageCircle size={28} aria-hidden /><div><h2>Orders &amp; Questions</h2><p>Ask Jourvis about the menu, pickup, platters, and recommendations.</p></div></div>
+            <div className="rib-order-actions">
+              <button type="button" onClick={() => openJourvis('What are your bestsellers?')}><UtensilsCrossed size={22} aria-hidden /><span><strong>Menu questions</strong><small>Ask about items, prices, and ingredients.</small></span></button>
+              <button type="button" onClick={() => openJourvis('I want to order for pickup.')}><ShoppingBag size={22} aria-hidden /><span><strong>Pickup requests</strong><small>Build a draft pickup request.</small></span></button>
+              <button type="button" onClick={() => openJourvis('Recommend a platter for my group.')}><Users size={22} aria-hidden /><span><strong>Group platters</strong><small>Find the best sharing option.</small></span></button>
+              <button type="button" onClick={() => openJourvis('Can you recommend something based on my budget?')}><Star size={22} aria-hidden /><span><strong>Recommendations</strong><small>Get suggestions from Jourvis.</small></span></button>
+            </div>
           </div>
-          <img
-            src={ribLifeBbq}
-            alt=""
-            aria-hidden
-            style={{ position: 'absolute', right: 14, bottom: 12, width: 120, height: 160, objectFit: 'contain', pointerEvents: 'none' }}
-          />
+          <div className={styles.ordersVisual} style={{ backgroundImage: `url("${ribOrders}")` }} aria-hidden>
+            <img className={styles.lifeBbq} src={ribLifeBbq} alt="" />
+          </div>
         </article>
       </section>
 
@@ -277,19 +278,18 @@ export default function RibCribPage({ business }: { business: InitialBusiness })
           <h2>Ask like a customer would.</h2>
           <div className="rib-preview-thread">
             <p className="customer">What do you recommend for 4 people?</p>
-            <div className="jourvis"><img src="/rib-crib/jourvis.png" alt="" aria-hidden /><p>For four people, the Rib Crib Platter at ₱875 is a great place to start. If you want more ribs and a bigger spread, I can compare the Barkada Platter too.</p></div>
+            <div className="jourvis"><span className={styles.previewAvatar}><JourvisCompanion size={30} molecules={false} /></span><p>For four people, the Rib Crib Platter at ₱875 is a great place to start. If you want more ribs and a bigger spread, I can compare the Barkada Platter too.</p></div>
             <p className="customer">Do you have unlimited wings?</p>
-            <div className="jourvis"><img src="/rib-crib/jourvis.png" alt="" aria-hidden /><p>Yes — the supplied menu lists Unlimited Wings at ₱325 with rice and iced tea.</p></div>
+            <div className="jourvis"><span className={styles.previewAvatar}><JourvisCompanion size={30} molecules={false} /></span><p>Yes — the supplied menu lists Unlimited Wings at ₱325 with rice and iced tea.</p></div>
           </div>
         </article>
         <article className="rib-full-jourvis">
-          <div className="rib-jourvis-character-stage">
-            <span className="rib-ai-orbit" aria-hidden />
-            <img src="/rib-crib/jourvis.png" alt="Jourvis AI assistant" />
+          <div className={`rib-jourvis-character-stage ${styles.fullCompanionStage}`}>
+            <JourvisCompanion size={88} molecules />
           </div>
           <p className="rib-overline">Powered by Jourvis</p>
-          <h2>Menu. Recommendations. Reservations. Orders.</h2>
-          <p>The live demo is preloaded with The Rib Crib’s restaurant preset and the supplied menu information.</p>
+          <h2>Try the Full Jourvis Experience</h2>
+          <p>Chat with a real assistant for menu questions, recommendations, reservations, orders, and more.</p>
           <div className="rib-quick-pills">
             <button type="button" onClick={() => openJourvis('What are your bestsellers?')}>What are your bestsellers?</button>
             <button type="button" onClick={() => openJourvis('Recommend a platter for 6 people.')}>Platter for 6</button>
@@ -317,12 +317,12 @@ export default function RibCribPage({ business }: { business: InitialBusiness })
         </div>
       </section>
 
-      <footer className="rib-footer">
+      <footer className="rib-footer" id="rib-contact">
         <div className="rib-footer-brand"><img src={ribFooterBrand} alt="" aria-hidden /><div><strong>The Rib Crib</strong><span>Eat Meat Repeat</span></div></div>
-        <div className="rib-footer-item"><MapPin size={20} aria-hidden /><div><strong>Visit</strong><span>Tagum City, Davao del Norte</span></div></div>
-        <div className="rib-footer-item"><Clock3 size={20} aria-hidden /><div><strong>Demo hours</strong><span>Daily · 11 AM–9 PM</span></div></div>
-        <div className="rib-footer-item"><Phone size={20} aria-hidden /><div><strong>Contact</strong><a href="tel:+639270874592">0927 087 4592</a></div></div>
-        <button className="rib-footer-powered" type="button" onClick={() => openJourvis()}><Sparkles size={19} aria-hidden /><span><strong>Powered by Jourvis</strong><small>AI for menu questions, requests &amp; reservations</small></span></button>
+        <div className="rib-footer-item"><MapPin size={20} aria-hidden /><div><strong>Visit Us</strong><span>Tagum City, Davao del Norte</span></div></div>
+        <div className="rib-footer-item"><Phone size={20} aria-hidden /><div><strong>Contact Us</strong><a href="tel:+639270874592">0927 087 4592</a></div></div>
+        <div className="rib-footer-item"><MessageCircle size={20} aria-hidden /><div><strong>Follow Us</strong><a href="https://facebook.com/theribcrib.tcph" target="_blank" rel="noreferrer">facebook.com/theribcrib.tcph</a></div></div>
+        <button className="rib-footer-powered" type="button" onClick={() => openJourvis()}><JourvisCompanion size={34} molecules={false} className={styles.footerCompanion} /><span><strong>Powered by Jourvis</strong><small>AI for menu questions, requests &amp; reservations</small></span></button>
         <div className="rib-footer-bottom"><span>© 2026 The Rib Crib demo page.</span><span>Restaurant information shown for Jourvis demonstration; confirm current details with staff.</span></div>
       </footer>
 
