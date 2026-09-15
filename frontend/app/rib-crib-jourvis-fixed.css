@@ -1,5 +1,6 @@
 /* Fixed bottom-right Jourvis companion for The Rib Crib.
-   Keeps the normal mint/teal Jourvis artwork and adds a stepped pixel-bit idle animation. */
+   Keeps the normal mint/teal Jourvis artwork and adds a stepped pixel-bit idle animation.
+   Production redeploy trigger: 2026-09-16. */
 
 .rib-crib-page .rib-jourvis-launcher {
   left: auto !important;
