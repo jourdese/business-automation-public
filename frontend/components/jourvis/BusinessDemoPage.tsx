@@ -10,6 +10,7 @@ import {
   UtensilsCrossed,
 } from 'lucide-react';
 import InteractiveDemo from './InteractiveDemo';
+import RibCribPage from './RibCribPage';
 import type { InitialBusiness } from './JourvisExperience';
 import type { CompanionEvent } from '@/lib/jourvis/config';
 
@@ -26,6 +27,10 @@ function scrollToConversation() {
 const noCompanionTransition = (_event: CompanionEvent) => {};
 
 export default function BusinessDemoPage({ business }: { business: InitialBusiness }) {
+  if (business.publicPath === '/restaurant/the-rib-crib') {
+    return <RibCribPage business={business} />;
+  }
+
   const category = titleCase(business.adapterKey);
   const restaurant = business.adapterKey === 'restaurant';
 
