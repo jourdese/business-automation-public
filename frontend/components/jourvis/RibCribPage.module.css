@@ -33,14 +33,31 @@
 
 .reservationVisual {
   position: relative;
+  isolation: isolate;
   overflow: hidden;
   border-right: 1px solid #eadfd6;
   background-image:
     url('../../src/assets/rib-crib/rib-crib-restaurant-interior.png'),
     url('../../src/assets/rib-crib/rib-crib-restaurant-interior.jpg') !important;
   background-repeat: no-repeat, no-repeat !important;
-  background-position: center center, center center !important;
-  background-size: contain, cover !important;
+  background-position: left 6% bottom 4%, center center !important;
+  background-size: auto 76%, cover !important;
+}
+
+.reservationVisual::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    transparent 50%,
+    rgba(255,255,255,.24) 70%,
+    rgba(255,255,255,.72) 87%,
+    rgba(255,255,255,.96) 100%
+  );
+  pointer-events: none;
 }
 
 .reservationContent,
@@ -139,6 +156,15 @@
     min-height: 190px;
     border: 0;
     border-bottom: 1px solid #eadfd6;
+  }
+
+  .reservationVisual {
+    background-position: left 5% center, center center !important;
+    background-size: auto 78%, cover !important;
+  }
+
+  .reservationVisual::after {
+    background: linear-gradient(180deg, transparent 45%, rgba(255,255,255,.28) 70%, rgba(255,255,255,.94) 100%);
   }
 
   .ordersVisual {
