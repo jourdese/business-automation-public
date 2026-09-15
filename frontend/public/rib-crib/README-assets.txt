@@ -1,0 +1,1 @@
+Rib Crib imagery is sourced from the supplied brand pack and optimized for responsive web delivery.
