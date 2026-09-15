@@ -1,0 +1,146 @@
+.wordmarkText {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.servicePanel {
+  padding: 0 !important;
+  overflow: hidden !important;
+  min-height: 245px;
+  display: grid !important;
+  background: #fff !important;
+  border: 1px solid #eadfd6 !important;
+}
+
+.reservationPanel {
+  grid-template-columns: minmax(150px, 28%) minmax(0, 1fr);
+}
+
+.reservationVisual,
+.ordersVisual {
+  min-height: 100%;
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: center;
+}
+
+.reservationVisual {
+  border-right: 1px solid #eadfd6;
+}
+
+.reservationContent,
+.ordersContent {
+  min-width: 0;
+  padding: 18px 20px;
+}
+
+.ordersPanel {
+  grid-template-columns: minmax(0, 1fr) minmax(190px, 34%);
+  color: #3c2522 !important;
+}
+
+.ordersPanel :global(.rib-panel-title),
+.ordersPanel :global(.rib-order-actions) {
+  max-width: none !important;
+}
+
+.ordersVisual {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border-left: 1px solid #eadfd6;
+}
+
+.ordersVisual::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: linear-gradient(90deg, rgba(255,255,255,.92) 0%, rgba(255,255,255,.28) 22%, transparent 52%);
+  pointer-events: none;
+}
+
+.lifeBbq {
+  position: absolute;
+  z-index: 2;
+  right: 6%;
+  bottom: 4%;
+  width: min(155px, 78%);
+  height: min(205px, 76%);
+  object-fit: contain;
+  object-position: right bottom;
+  filter: drop-shadow(0 5px 16px rgba(0,0,0,.24));
+  pointer-events: none;
+}
+
+.previewAvatar {
+  flex: 0 0 auto;
+  width: 31px;
+  height: 31px;
+  display: grid;
+  place-items: center;
+}
+
+.fullCompanionStage {
+  position: absolute;
+  right: 17px;
+  top: 17px;
+  width: 112px;
+  height: 112px;
+  display: grid;
+  place-items: center;
+}
+
+.fullCompanionStage::before {
+  content: '';
+  position: absolute;
+  inset: 2px;
+  border-radius: 50%;
+  border: 1px dashed rgba(247, 244, 238, .35);
+}
+
+.footerCompanion {
+  margin-right: 4px;
+}
+
+@media (max-width: 900px) {
+  .reservationPanel,
+  .ordersPanel {
+    grid-template-columns: 1fr;
+  }
+
+  .reservationVisual,
+  .ordersVisual {
+    min-height: 190px;
+    border: 0;
+    border-bottom: 1px solid #eadfd6;
+  }
+
+  .ordersVisual {
+    order: -1;
+  }
+
+  .lifeBbq {
+    height: 150px;
+    width: 120px;
+  }
+}
+
+@media (max-width: 560px) {
+  .reservationContent,
+  .ordersContent {
+    padding: 16px;
+  }
+
+  .reservationVisual,
+  .ordersVisual {
+    min-height: 155px;
+  }
+}
