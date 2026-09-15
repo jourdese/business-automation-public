@@ -1,0 +1,108 @@
+.root {
+  --jourvis-size: 96px;
+  --jourvis-ink: #08141f;
+  --jourvis-navy: #1f3a5f;
+  --jourvis-emerald: #2e6b57;
+  --jourvis-mint: #a7e3c5;
+  --jourvis-gold: #c8a96b;
+  --jourvis-ivory: #f7f4ee;
+  position: relative;
+  display: inline-grid;
+  width: var(--jourvis-size);
+  height: var(--jourvis-size);
+  place-items: center;
+  isolation: isolate;
+  flex: 0 0 auto;
+}
+
+.character {
+  position: relative;
+  z-index: 3;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  filter: drop-shadow(0 12px 18px rgba(8, 20, 31, .28));
+  animation: breathe 3.8s ease-in-out infinite;
+  transform-origin: 50% 78%;
+}
+
+.aura {
+  position: absolute;
+  z-index: 0;
+  inset: 16%;
+  border-radius: 28%;
+  background: radial-gradient(circle, rgba(167, 227, 197, .18), rgba(46, 107, 87, .05) 52%, transparent 72%);
+  animation: aura 3.2s ease-out infinite;
+}
+
+.bits {
+  position: absolute;
+  z-index: 2;
+  inset: -34%;
+  pointer-events: none;
+}
+
+.bit {
+  --x: 50%;
+  --y: 50%;
+  --s: 3px;
+  --delay: 0s;
+  --duration: 3.2s;
+  --c: var(--jourvis-mint);
+  position: absolute;
+  left: var(--x);
+  top: var(--y);
+  width: var(--s);
+  height: var(--s);
+  border-radius: 1px;
+  background: var(--c);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--c) 45%, transparent);
+  opacity: 0;
+  animation: molecule var(--duration) steps(8, end) var(--delay) infinite;
+}
+
+.shadow {
+  position: absolute;
+  z-index: 1;
+  left: 22%;
+  right: 22%;
+  bottom: 7%;
+  height: 8%;
+  border-radius: 50%;
+  background: rgba(31, 58, 95, .18);
+  filter: blur(5px);
+  animation: shadow 3.8s ease-in-out infinite;
+}
+
+@keyframes breathe {
+  0%, 100% { transform: translateY(0) scale(1) rotate(-.6deg); }
+  48%, 56% { transform: translateY(-5%) scale(1.012) rotate(.65deg); }
+}
+
+@keyframes aura {
+  0% { transform: scale(.82); opacity: .52; }
+  76%, 100% { transform: scale(1.34); opacity: 0; }
+}
+
+@keyframes molecule {
+  0%, 12% { opacity: 0; transform: translate3d(0, 7px, 0) scale(.65); }
+  24% { opacity: .28; }
+  42% { opacity: .9; transform: translate3d(0, 0, 0) scale(1); }
+  67% { opacity: .44; }
+  100% { opacity: 0; transform: translate3d(0, -10px, 0) scale(1.18); }
+}
+
+@keyframes shadow {
+  0%, 100% { transform: scaleX(1); opacity: .2; }
+  50% { transform: scaleX(.72); opacity: .09; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .character,
+  .aura,
+  .bit,
+  .shadow {
+    animation: none !important;
+  }
+  .bit { opacity: .45; }
+}
