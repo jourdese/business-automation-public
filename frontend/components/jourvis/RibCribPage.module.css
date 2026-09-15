@@ -10,6 +10,15 @@
   border: 0;
 }
 
+:global(.rib-feature-interior) {
+  background-image:
+    linear-gradient(90deg, rgba(255,255,255,.08), transparent 24%),
+    url('../../src/assets/rib-crib/rib-crib-restaurant-interior.jpg') !important;
+  background-repeat: no-repeat, no-repeat !important;
+  background-size: cover, cover !important;
+  background-position: center center, center center !important;
+}
+
 .servicePanel {
   padding: 0 !important;
   overflow: hidden !important;
