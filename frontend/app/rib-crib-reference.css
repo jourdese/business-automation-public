@@ -1,0 +1,304 @@
+/* Reference fidelity layer. This file intentionally wins over rib-crib.css and rib-crib-polish.css. */
+body:has(.rib-crib-page) { background:#171311; }
+
+.rib-crib-page {
+  --rib-reference-red:#a40d17;
+  --rib-reference-dark:#171311;
+  --rib-reference-wood:#2b1a13;
+  --rib-reference-paper:#f8f4ee;
+  max-width:1440px;
+  margin:0 auto;
+  background:var(--rib-reference-paper);
+  box-shadow:0 0 80px rgba(0,0,0,.28);
+}
+
+/* Compact red navigation from the supplied composition. */
+.rib-nav {
+  min-height:52px;
+  height:52px;
+  padding:0 4.2%;
+  grid-template-columns:220px 1fr 180px;
+  gap:18px;
+  background:#a40d17;
+  box-shadow:none;
+  border-bottom:1px solid rgba(255,255,255,.12);
+}
+.rib-wordmark {
+  font:italic 800 27px/1 Georgia,serif;
+  letter-spacing:-.055em;
+}
+.rib-nav-links { justify-content:center; gap:26px; }
+.rib-nav-links button { padding:17px 0 16px; font-size:12px; font-weight:700; }
+.rib-nav-links button::after { bottom:9px; }
+.rib-nav-chat { padding:8px 17px; border-radius:5px; font-size:12px; box-shadow:none; }
+
+/* Hero: compact, dark wood left, food image right, logo + EAT MEAT REPEAT side-by-side. */
+.rib-hero {
+  min-height:390px;
+  height:clamp(390px,36vw,515px);
+  align-items:stretch;
+  background:#1b100c;
+}
+.rib-hero::before {
+  background:
+    linear-gradient(90deg,rgba(23,13,9,.98) 0%,rgba(23,13,9,.96) 36%,rgba(23,13,9,.63) 52%,rgba(23,13,9,.12) 72%,rgba(23,13,9,.02) 100%),
+    repeating-linear-gradient(90deg,rgba(255,255,255,.015) 0 1px,transparent 1px 6px);
+}
+.rib-hero-food { width:59%; left:auto; right:0; filter:saturate(1.08) contrast(1.03); }
+.rib-hero-copy {
+  width:min(690px,58%);
+  margin:0;
+  padding:28px 0 22px 3.2%;
+  display:grid;
+  grid-template-columns:190px minmax(260px,1fr);
+  grid-template-rows:auto auto auto 1fr auto;
+  grid-template-areas:
+    "emblem title"
+    "emblem kicker"
+    "emblem description"
+    ". description"
+    "actions actions";
+  column-gap:24px;
+  align-content:center;
+}
+.rib-hero-emblem {
+  grid-area:emblem;
+  width:185px;
+  max-width:100%;
+  margin:0;
+  align-self:center;
+  transform:none;
+  filter:drop-shadow(0 13px 25px rgba(0,0,0,.34));
+}
+.rib-hero h1 {
+  grid-area:title;
+  margin:0;
+  font-size:0;
+  line-height:1;
+  letter-spacing:0;
+  align-self:end;
+}
+.rib-hero h1::before {
+  content:"EAT MEAT\A REPEAT";
+  display:block;
+  white-space:pre;
+  color:#fff;
+  font:950 clamp(50px,5.4vw,79px)/.78 Impact,Haettenschweiler,"Arial Black",sans-serif;
+  letter-spacing:-.025em;
+  text-shadow:0 3px 0 rgba(0,0,0,.24);
+}
+.rib-hero-kicker {
+  grid-area:kicker;
+  margin:10px 0 0;
+  color:#fff;
+  font:700 13px/1.25 Inter,system-ui,sans-serif;
+  letter-spacing:0;
+}
+.rib-hero-description {
+  grid-area:description;
+  max-width:410px;
+  margin:4px 0 0;
+  color:rgba(255,255,255,.78);
+  font:400 13px/1.42 Inter,system-ui,sans-serif;
+}
+.rib-hero-actions {
+  grid-area:actions;
+  margin-top:17px;
+  gap:10px;
+}
+.rib-hero-actions .rib-btn {
+  min-width:0;
+  min-height:40px;
+  height:40px;
+  padding:0 18px;
+  border-radius:4px;
+  font-size:12px;
+}
+.rib-hero-script {
+  right:2.2%;
+  bottom:52px;
+  max-width:150px;
+  font-size:27px;
+  line-height:.92;
+}
+.rib-hero-script::after { height:4px; margin-top:8px; }
+
+/* Reference feature strip: three compact white blocks + interior photo. */
+.rib-feature-strip {
+  min-height:148px;
+  grid-template-columns:repeat(3,1fr) 1.35fr;
+  box-shadow:none;
+  border-bottom:1px solid #d9d0c7;
+}
+.rib-feature-strip article { min-height:148px; padding:25px 22px; gap:12px; align-items:flex-start; }
+.rib-feature-strip article > span { width:38px; height:38px; flex:0 0 38px; }
+.rib-feature-strip h2 { margin:2px 0 8px; font-size:19px; }
+.rib-feature-strip p { font-size:12px; line-height:1.42; }
+.rib-feature-interior { min-height:148px; height:148px; }
+
+/* Dense wood menu block like the supplied reference. */
+.rib-menu-section {
+  padding:23px 22px 26px;
+  background:
+    linear-gradient(rgba(18,11,8,.64),rgba(18,11,8,.78)),
+    url('/rib-crib/interior.webp') center 38%/cover fixed,
+    #24150f;
+}
+.rib-menu-section::after { background:linear-gradient(90deg,rgba(0,0,0,.16),transparent 10%,transparent 90%,rgba(0,0,0,.16)); }
+.rib-section-head,.rib-platter-head { margin-bottom:11px; align-items:end; }
+.rib-section-head p { display:none; }
+.rib-section-head h2,.rib-platter-head h2 { font-size:31px; line-height:1; }
+.rib-section-head span,.rib-platter-head p { margin-top:4px; font-size:12px; }
+.rib-section-head > button { padding:5px 0; font-size:11px; }
+.rib-menu-grid { grid-template-columns:repeat(8,minmax(0,1fr)); gap:6px; }
+.rib-menu-card,.rib-platter-card { border-radius:3px; box-shadow:none; }
+.rib-menu-photo { height:102px; }
+.rib-menu-card-copy { padding:8px 6px 9px; text-align:center; }
+.rib-menu-card h3 { min-height:28px; font-size:11px; line-height:1.15; }
+.rib-menu-card strong { margin-top:2px; font-size:16px; }
+.rib-menu-card p { display:none; }
+.rib-platter-head { margin-top:20px; }
+.rib-platter-head > span { display:none; }
+.rib-platter-grid { grid-template-columns:repeat(5,1fr); gap:7px; }
+.rib-platter-photo { height:118px; }
+.rib-platter-card > div:last-child { padding:8px; text-align:center; }
+.rib-platter-card h3 { min-height:29px; font-size:11px; }
+.rib-platter-card strong { margin-top:2px; font-size:17px; }
+.rib-platter-card p { display:none; }
+.rib-menu-note { margin:12px 0 0; font-size:9px; }
+
+/* Two compact white service panels as in the screenshot. */
+.rib-service-grid {
+  padding:14px 18px 16px;
+  grid-template-columns:1fr 1.05fr;
+  gap:10px;
+  background:#f8f5f1;
+}
+.rib-reservation-panel,.rib-orders-panel {
+  min-height:245px;
+  padding:18px 20px;
+  border-radius:4px;
+  box-shadow:0 5px 18px rgba(47,25,17,.07);
+}
+.rib-reservation-panel {
+  padding-left:120px;
+  background:
+    linear-gradient(90deg,rgba(255,255,255,.12) 0 112px,#fff 112px),
+    url('/rib-crib/interior.webp') left center/112px 100% no-repeat;
+}
+.rib-orders-panel {
+  color:#3c2522;
+  background:
+    linear-gradient(90deg,#fff 0%,#fff 78%,rgba(255,255,255,.24) 100%),
+    url('/rib-crib/hero.webp') right center/31% 100% no-repeat;
+}
+.rib-panel-title { gap:9px; }
+.rib-panel-title svg { width:23px; height:23px; color:#a40d17; }
+.rib-panel-title h2 { font-size:22px; }
+.rib-panel-title p { margin-top:3px; font-size:11px; }
+.rib-reservation-form { margin-top:14px; gap:8px; }
+.rib-reservation-form label { font-size:10px; }
+.rib-reservation-form input,.rib-reservation-form select { height:37px; margin-top:5px; padding:0 9px; font-size:11px; }
+.rib-reserve-button { min-height:39px; margin-top:13px; border-radius:4px; font-size:12px; }
+.rib-reservation-panel > small { display:none; }
+.rib-orders-panel .rib-panel-title,.rib-orders-panel .rib-order-actions { max-width:78%; }
+.rib-order-actions { margin-top:13px; grid-template-columns:1fr 1fr; gap:7px; }
+.rib-order-actions button { min-height:67px; padding:9px; border-radius:4px; }
+.rib-order-actions button svg { width:20px; height:20px; }
+.rib-order-actions strong { font-size:10px; }
+.rib-order-actions small { margin-top:2px; font-size:9px; line-height:1.3; }
+
+/* Chat row: compact two-column presentation, red Jourvis panel on right. */
+.rib-jourvis-showcase {
+  padding:0 18px 16px;
+  grid-template-columns:1fr 1.04fr;
+  gap:10px;
+  background:#f8f5f1;
+}
+.rib-chat-preview,.rib-full-jourvis {
+  min-height:275px;
+  border-radius:5px;
+  padding:17px 18px;
+}
+.rib-chat-preview h2,.rib-full-jourvis h2 { font-size:22px; line-height:1.05; }
+.rib-preview-thread { margin-top:12px; gap:7px; }
+.rib-preview-thread .customer { font-size:10px; padding:8px 10px; }
+.rib-preview-thread .jourvis { gap:7px; }
+.rib-preview-thread .jourvis img { width:30px; height:30px; }
+.rib-preview-thread .jourvis p { padding:8px 10px; font-size:10px; }
+.rib-full-jourvis { padding-right:130px; }
+.rib-full-jourvis > p:not(.rib-overline) { font-size:11px; line-height:1.4; }
+.rib-jourvis-character-stage { width:112px; height:112px; right:12px; top:14px; }
+.rib-jourvis-character-stage img { width:82px; height:82px; }
+.rib-full-jourvis h2 { max-width:none; }
+.rib-quick-pills { margin-top:15px; gap:5px; }
+.rib-quick-pills button { padding:6px 8px; font-size:9px; }
+.rib-full-chat-button { margin-top:13px; min-height:36px; height:36px; font-size:10px; }
+
+/* The supplied reference ends at the branded footer; remove the extra marketing-style about band. */
+.rib-about { display:none; }
+
+.rib-footer {
+  grid-template-columns:1.35fr 1fr .8fr 1fr 1.3fr;
+  background:#a40d17;
+}
+.rib-footer > *:not(.rib-footer-bottom) { min-height:94px; padding:14px 16px; }
+.rib-footer-brand img { width:56px; height:56px; }
+.rib-footer-brand strong { font-size:21px; }
+.rib-footer-brand span,.rib-footer-item span,.rib-footer-item a { font-size:9px; }
+.rib-footer-item strong { font-size:10px; }
+.rib-footer-powered { min-height:68px !important; margin:10px; }
+.rib-footer-powered strong { font-size:12px; }
+.rib-footer-bottom { padding:12px 22px; font-size:9px; }
+
+/* Jourvis remains visually separate from the Rib Crib palette. */
+.rib-jourvis-launcher {
+  width:82px;
+  height:82px;
+  border-radius:25px;
+  background:rgba(247,244,238,.95);
+  box-shadow:0 13px 34px rgba(18,43,37,.22),0 0 0 1px rgba(46,107,87,.13);
+}
+.rib-jourvis-launcher > img { width:68px; height:68px; filter:none !important; }
+.rib-jourvis-pulse { background:rgba(167,227,197,.3); }
+.rib-jourvis-thought { color:#1f3a5f; border-color:rgba(46,107,87,.18); font-size:9px; }
+
+@media (max-width:1000px) {
+  .rib-nav { grid-template-columns:1fr auto; }
+  .rib-hero { height:auto; min-height:540px; }
+  .rib-hero-copy { width:65%; grid-template-columns:150px 1fr; padding-left:24px; }
+  .rib-hero-emblem { width:145px; }
+  .rib-hero h1::before { font-size:58px; }
+  .rib-feature-strip { grid-template-columns:repeat(3,1fr); }
+  .rib-feature-interior { grid-column:1/-1; height:190px; }
+  .rib-menu-grid { grid-template-columns:repeat(4,1fr); }
+  .rib-platter-grid { grid-template-columns:repeat(3,1fr); }
+}
+
+@media (max-width:720px) {
+  .rib-crib-page { max-width:none; }
+  .rib-nav { height:58px; min-height:58px; }
+  .rib-hero { min-height:650px; align-items:flex-end; }
+  .rib-hero-food { width:100%; height:48%; top:0; bottom:auto; }
+  .rib-hero-copy {
+    width:100%; padding:235px 16px 24px; margin:0;
+    display:grid; grid-template-columns:92px 1fr;
+    grid-template-areas:"emblem title" "emblem kicker" "description description" "actions actions";
+    column-gap:12px;
+  }
+  .rib-hero-emblem { width:92px; }
+  .rib-hero h1::before { font-size:44px; }
+  .rib-hero-kicker { font-size:10px; }
+  .rib-hero-description { margin-top:8px; font-size:12px; }
+  .rib-feature-strip { grid-template-columns:1fr; }
+  .rib-feature-strip article { min-height:auto; padding:18px; }
+  .rib-feature-interior { grid-column:auto; height:190px; }
+  .rib-menu-grid { grid-template-columns:repeat(2,1fr); }
+  .rib-platter-grid { grid-template-columns:1fr 1fr; }
+  .rib-service-grid,.rib-jourvis-showcase { grid-template-columns:1fr; padding-left:10px; padding-right:10px; }
+  .rib-reservation-panel { padding-left:18px; background:#fff; }
+  .rib-orders-panel .rib-panel-title,.rib-orders-panel .rib-order-actions { max-width:100%; }
+  .rib-full-jourvis { padding-right:18px; padding-top:115px; }
+  .rib-footer { grid-template-columns:1fr 1fr; }
+  .rib-footer-powered { grid-column:1/-1; }
+}
