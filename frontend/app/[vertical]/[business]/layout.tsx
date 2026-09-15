@@ -6,7 +6,7 @@ import { RIB_MENU } from '@/lib/rib-crib/assets/menu';
 type RouteParams = { vertical: string; business: string };
 type Props = { children: ReactNode; params: Promise<RouteParams> | RouteParams };
 
-// Keep high-resolution Rib Crib imagery scoped to this public route only.
+// Final high-resolution Rib Crib preview assets remain scoped to this public route only.
 const RIB_CRIB_OVERRIDES = `
 .rib-crib-page .rib-hero-food {
   background-image: var(--rib-hero-hires, url('/rib-crib/hero.webp')) !important;
