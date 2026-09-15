@@ -25,6 +25,11 @@ import ribWood from '@/src/assets/rib-crib/rib-crib-dark-wood-background.png';
 import ribOrders from '@/src/assets/rib-crib/rib-crib-orders-bbq-background.png';
 import ribEmblem from '@/src/assets/rib-crib/rib-crib-emblem.png';
 import ribFooterBrand from '@/src/assets/rib-crib/rib-crib-footer-brand-lockup.png';
+import ribWordmark from '@/src/assets/rib-crib/TheRibCribWhite.png';
+import ribEatMeatRepeat from '@/src/assets/rib-crib/eat-meat-repeat.png';
+import ribGoodFood from '@/src/assets/rib-crib/rib-crib-good-food-good-people.png';
+import ribSignatureIcon from '@/src/assets/rib-crib/rib-crib-icon-signature-flavors.png';
+import ribLifeBbq from '@/src/assets/rib-crib/rib-crib-life-is-better-with-bbq.png';
 import ribFries from '@/src/assets/rib-crib/rib-crib-plain-fries.png';
 import ribSalad from '@/src/assets/rib-crib/rib-crib-salad.png';
 import ribSisigTacos from '@/src/assets/rib-crib/rib-crib-sisig-tacos.png';
@@ -57,28 +62,6 @@ const PLATTERS = [
   { name: 'BBQ Ribs Platter', price: 2225, image: ribBbqRibsPlatter, note: 'Built around the Rib Crib ribs.' },
   { name: 'Mega Platter', price: 2950, image: ribMegaPlatter, note: 'The biggest spread for a hungry group.' },
 ];
-
-const RIB_ASSET_STYLE = {
-  '--rib-hero-original': `url("${ribHero}")`,
-  '--rib-interior-original': `url("${ribInterior}")`,
-  '--rib-wood-original': `url("${ribWood}")`,
-  '--rib-orders-original': `url("${ribOrders}")`,
-  '--rib-emblem-original': `url("${ribEmblem}")`,
-  '--rib-footer-brand-original': `url("${ribFooterBrand}")`,
-  '--rib-menu-fries': `url("${ribFries}")`,
-  '--rib-menu-salad': `url("${ribSalad}")`,
-  '--rib-menu-sisig': `url("${ribSisigTacos}")`,
-  '--rib-menu-wings6': `url("${ribWings6}")`,
-  '--rib-menu-ribs': `url("${ribBarbecueRibs}")`,
-  '--rib-menu-unli-wings': `url("${ribUnlimitedWings}")`,
-  '--rib-menu-juice': `url("${ribJuice}")`,
-  '--rib-menu-iced-tea': `url("${ribIcedTea}")`,
-  '--rib-platter': `url("${ribPlatter}")`,
-  '--rib-platter-ribs': `url("${ribPlatterWithRibs}")`,
-  '--rib-barkada': `url("${ribBarkadaPlatter}")`,
-  '--rib-bbq-ribs-platter': `url("${ribBbqRibsPlatter}")`,
-  '--rib-mega-platter': `url("${ribMegaPlatter}")`,
-} as React.CSSProperties;
 
 function peso(value: number) {
   return new Intl.NumberFormat('en-PH', {
@@ -118,9 +101,15 @@ export default function RibCribPage({ business }: { business: InitialBusiness })
   const reservationPrompt = `I want to reserve a table for ${party} people${date ? ` on ${date}` : ''}${time ? ` at ${time}` : ''}.`;
 
   return (
-    <div className="rib-crib-page" style={RIB_ASSET_STYLE}>
+    <div className="rib-crib-page">
       <nav className="rib-nav" aria-label="The Rib Crib navigation">
-        <button className="rib-wordmark" type="button" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
+        <button
+          className="rib-wordmark"
+          type="button"
+          aria-label="The Rib Crib home"
+          style={{ backgroundImage: `url("${ribWordmark}")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'left center', backgroundSize: 'contain' }}
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+        >
           The Rib Crib
         </button>
         <div className="rib-nav-links">
@@ -135,13 +124,18 @@ export default function RibCribPage({ business }: { business: InitialBusiness })
         </button>
       </nav>
 
-      <section className="rib-hero" aria-labelledby="rib-hero-title">
+      <section className="rib-hero" aria-label="The Rib Crib — Eat Meat Repeat">
         <div className="rib-hero-shade" />
-        <div className="rib-hero-food" aria-hidden />
+        <div className="rib-hero-food" style={{ backgroundImage: `url("${ribHero}")` }} aria-hidden />
         <div className="rib-hero-copy">
           <img className="rib-hero-emblem" src={ribEmblem} alt="The Rib Crib — Let’s Meat Here, established 2018" />
+          <img
+            className="rib-hero-tagline-img"
+            src={ribEatMeatRepeat}
+            alt="Eat Meat Repeat"
+            style={{ gridArea: 'title', width: 'min(310px, 100%)', maxHeight: 150, objectFit: 'contain', objectPosition: 'left bottom' }}
+          />
           <p className="rib-hero-kicker">Ribs. Wings. Platters. Good food. Great company.</p>
-          <h1 id="rib-hero-title">EAT<br />MEAT<br />REPEAT</h1>
           <p className="rib-hero-description">
             The Rib Crib is your go-to spot for smoky flavors, hearty meals, and food made to be shared.
           </p>
@@ -157,12 +151,18 @@ export default function RibCribPage({ business }: { business: InitialBusiness })
             </button>
           </div>
         </div>
-        <div className="rib-hero-script" aria-hidden>Good Food<br />Brings People<br />Together</div>
+        <div
+          className="rib-hero-script"
+          style={{ backgroundImage: `url("${ribGoodFood}")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'center', backgroundSize: 'contain' }}
+          aria-hidden
+        >
+          Good Food Brings People Together
+        </div>
       </section>
 
       <section className="rib-feature-strip" data-rib-reveal>
         <article>
-          <span><Flame size={28} aria-hidden /></span>
+          <span style={{ backgroundImage: `url("${ribSignatureIcon}")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'center', backgroundSize: 'contain' }}><Flame size={28} aria-hidden /></span>
           <div><h2>Signature Flavors</h2><p>Juicy ribs, flavorful wings, hearty platters, and more.</p></div>
         </article>
         <article>
@@ -173,10 +173,20 @@ export default function RibCribPage({ business }: { business: InitialBusiness })
           <span><ShoppingBag size={28} aria-hidden /></span>
           <div><h2>Easy Ordering</h2><p>Dine-in, pickup requests, or ask Jourvis what fits your craving.</p></div>
         </article>
-        <div className="rib-feature-interior" aria-label="The Rib Crib restaurant interior" role="img" />
+        <div
+          className="rib-feature-interior"
+          style={{ backgroundImage: `linear-gradient(90deg, rgba(255,255,255,.12), transparent 30%), url("${ribInterior}")` }}
+          aria-label="The Rib Crib restaurant interior"
+          role="img"
+        />
       </section>
 
-      <section className="rib-menu-section" id="rib-menu" data-rib-reveal>
+      <section
+        className="rib-menu-section"
+        id="rib-menu"
+        style={{ backgroundImage: `linear-gradient(rgba(18,11,8,.58), rgba(18,11,8,.76)), url("${ribWood}")` }}
+        data-rib-reveal
+      >
         <div className="rib-section-head">
           <div>
             <p>Our menu</p>
@@ -191,7 +201,7 @@ export default function RibCribPage({ business }: { business: InitialBusiness })
             <article className="rib-menu-card" key={item.name} style={{ '--rib-delay': `${position * 45}ms` } as React.CSSProperties}>
               <div
                 className="rib-menu-photo"
-                style={{ backgroundImage: `url("${item.image}")`, backgroundSize: 'cover', backgroundPosition: 'center' }}
+                style={{ backgroundImage: `url("${item.image}")`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }}
                 aria-hidden
               />
               <div className="rib-menu-card-copy">
@@ -212,7 +222,7 @@ export default function RibCribPage({ business }: { business: InitialBusiness })
             <article className="rib-platter-card" key={item.name} style={{ '--rib-delay': `${position * 60}ms` } as React.CSSProperties}>
               <div
                 className="rib-platter-photo"
-                style={{ backgroundImage: `url("${item.image}")`, backgroundSize: 'cover', backgroundPosition: 'center' }}
+                style={{ backgroundImage: `url("${item.image}")`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }}
                 aria-hidden
               />
               <div><h3>{item.name}</h3><strong>{peso(item.price)}</strong><p>{item.note}</p></div>
@@ -223,7 +233,11 @@ export default function RibCribPage({ business }: { business: InitialBusiness })
       </section>
 
       <section className="rib-service-grid" data-rib-reveal>
-        <article className="rib-reservation-panel" id="rib-reservations">
+        <article
+          className="rib-reservation-panel"
+          id="rib-reservations"
+          style={{ background: `linear-gradient(90deg, rgba(255,255,255,.12) 0 112px, #fff 112px), url("${ribInterior}") left center / 112px 100% no-repeat` }}
+        >
           <div className="rib-panel-title"><CalendarDays size={28} aria-hidden /><div><h2>Table Reservations</h2><p>Plan a table with Jourvis in a few taps.</p></div></div>
           <div className="rib-reservation-form">
             <label>Date<input type="date" value={date} onChange={(event) => setDate(event.target.value)} /></label>
@@ -236,7 +250,11 @@ export default function RibCribPage({ business }: { business: InitialBusiness })
           <small>Demo only: no real table is reserved until restaurant staff confirms outside this simulation.</small>
         </article>
 
-        <article className="rib-orders-panel" id="rib-orders">
+        <article
+          className="rib-orders-panel"
+          id="rib-orders"
+          style={{ position: 'relative', background: `linear-gradient(90deg, #fff 0%, #fff 72%, rgba(255,255,255,.28) 100%), url("${ribOrders}") right center / 42% 100% no-repeat` }}
+        >
           <div className="rib-panel-title"><MessageCircle size={28} aria-hidden /><div><h2>Orders &amp; Questions</h2><p>Use Jourvis as the front door to the menu.</p></div></div>
           <div className="rib-order-actions">
             <button type="button" onClick={() => openJourvis('What are your bestsellers?')}><UtensilsCrossed size={22} aria-hidden /><span><strong>Menu questions</strong><small>Ask about items and prices.</small></span></button>
@@ -244,6 +262,12 @@ export default function RibCribPage({ business }: { business: InitialBusiness })
             <button type="button" onClick={() => openJourvis('Recommend a platter for my group.')}><Users size={22} aria-hidden /><span><strong>Group platters</strong><small>Find the best sharing option.</small></span></button>
             <button type="button" onClick={() => openJourvis('Can you recommend something based on my budget?')}><Star size={22} aria-hidden /><span><strong>Recommendations</strong><small>Get suggestions from Jourvis.</small></span></button>
           </div>
+          <img
+            src={ribLifeBbq}
+            alt=""
+            aria-hidden
+            style={{ position: 'absolute', right: 14, bottom: 12, width: 120, height: 160, objectFit: 'contain', pointerEvents: 'none' }}
+          />
         </article>
       </section>
 
@@ -278,7 +302,12 @@ export default function RibCribPage({ business }: { business: InitialBusiness })
       </section>
 
       <section className="rib-about" id="rib-about" data-rib-reveal>
-        <div className="rib-about-photo" role="img" aria-label="Inside The Rib Crib restaurant" />
+        <div
+          className="rib-about-photo"
+          style={{ backgroundImage: `url("${ribInterior}")`, backgroundSize: 'cover', backgroundPosition: 'center' }}
+          role="img"
+          aria-label="Inside The Rib Crib restaurant"
+        />
         <div className="rib-about-copy">
           <p className="rib-overline">Our place</p>
           <h2>Good food.<br />Great company.</h2>
