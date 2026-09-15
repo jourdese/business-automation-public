@@ -11,12 +11,12 @@
 }
 
 :global(.rib-feature-interior) {
-  background-image:
-    linear-gradient(90deg, rgba(255,255,255,.08), transparent 24%),
-    url('../../src/assets/rib-crib/rib-crib-restaurant-interior.jpg') !important;
-  background-repeat: no-repeat, no-repeat !important;
-  background-size: cover, cover !important;
-  background-position: center center, center center !important;
+  background-image: url('../../src/assets/rib-crib/rib-crib-restaurant-interior.jpg') !important;
+  background-repeat: no-repeat !important;
+  background-size: cover !important;
+  background-position: center center !important;
+  margin-left: -1px;
+  width: calc(100% + 1px);
 }
 
 .servicePanel {
