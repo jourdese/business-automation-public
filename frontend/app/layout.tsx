@@ -6,6 +6,7 @@ import './globals.css';
 import './refinements.css';
 import './live-demo.css';
 import './business-demo.css';
+import './rib-crib.css';
 export const metadata: Metadata = {
   icons: { icon: '/favicon.svg' },
   metadataBase: new URL('https://jourvis.ai'),
