@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import type { CSSProperties } from 'react';
 import { palette } from '@/lib/jourvis/config';
 import { SiteHeader, SiteFooter } from '@/components/jourvis/SiteChrome';
+import RibCribAssetBridge from '@/components/jourvis/RibCribAssetBridge';
 import './globals.css';
 import './refinements.css';
 import './live-demo.css';
@@ -44,7 +45,7 @@ export default function RootLayout({
     Object.entries(palette).map(([name, value]) => ['--' + name, value]),
   ) as CSSProperties;
   return (
-    <html lang="en" style={theme} data-build="rib-crib-latest">
+    <html lang="en" style={theme} data-build="rib-crib-url-bridge">
       <body>
         <a className="skip" href="#main">
           Skip to content
@@ -54,6 +55,7 @@ export default function RootLayout({
           {children}
         </main>
         <SiteFooter />
+        <RibCribAssetBridge />
       </body>
     </html>
   );
