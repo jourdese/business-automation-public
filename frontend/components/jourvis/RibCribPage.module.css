@@ -33,6 +33,9 @@
 
 .reservationVisual {
   border-right: 1px solid #eadfd6;
+  background-image: url('../../src/assets/rib-crib/rib-crib-restaurant-interior.jpg') !important;
+  background-position: center center !important;
+  background-size: cover !important;
 }
 
 .reservationContent,
