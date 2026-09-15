@@ -10,6 +10,7 @@ import {
 } from '@/lib/jourvis/live-demo';
 import type { InitialBusiness } from './JourvisExperience';
 import JourvisCompanion from './JourvisCompanion';
+import JourvisLauncher from './JourvisLauncher';
 
 type ChatMessage = {
   id: string;
@@ -37,7 +38,20 @@ export default function RibCribJourvisChat({ business }: { business: InitialBusi
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const initialized = useRef(false);
   const logRef = useRef<HTMLDivElement>(null);
+  const launcherRef = useRef<HTMLButtonElement>(null);
+  const composerRef = useRef<HTMLTextAreaElement>(null);
   const scope = business.publicPath;
+
+  const closeChat = useCallback(() => {
+    setOpen(false);
+    window.requestAnimationFrame(() => launcherRef.current?.focus({ preventScroll: true }));
+  }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    const frame = window.requestAnimationFrame(() => composerRef.current?.focus({ preventScroll: true }));
+    return () => window.cancelAnimationFrame(frame);
+  }, [open]);
 
   const accept = useCallback(async (result: DemoReply, visible = true) => {
     if (visible && result.reply) {
@@ -138,18 +152,29 @@ export default function RibCribJourvisChat({ business }: { business: InitialBusi
 
   return (
     <>
-      <button
-        className={`rib-jourvis-launcher${open ? ' is-chat-open' : ''}`}
-        type="button"
-        aria-label="Chat with Jourvis for The Rib Crib"
-        aria-expanded={open}
-        onClick={() => setOpen((value) => !value)}
-      >
-        <JourvisCompanion size={104} molecules />
-      </button>
+      <JourvisLauncher
+        open={open}
+        onOpen={() => setOpen(true)}
+        buttonRef={launcherRef}
+        controls="rib-jourvis-panel"
+        label="Chat with Jourvis for The Rib Crib"
+        hint="Menu, platters & reservations"
+      />
 
       {open && (
-        <aside className="rib-jourvis-chat" aria-label="Chat with Jourvis">
+        <aside
+          id="rib-jourvis-panel"
+          className="rib-jourvis-chat"
+          role="dialog"
+          aria-label="Chat with Jourvis"
+          onKeyDown={(event) => {
+            if (event.key === 'Escape') {
+              event.preventDefault();
+              event.stopPropagation();
+              closeChat();
+            }
+          }}
+        >
           <header className="rib-jourvis-chat-head">
             <div className="rib-jourvis-chat-identity">
               <span className="rib-jourvis-mini">
@@ -160,7 +185,7 @@ export default function RibCribJourvisChat({ business }: { business: InitialBusi
                 <span><i /> The Rib Crib restaurant preset loaded</span>
               </div>
             </div>
-            <button type="button" onClick={() => setOpen(false)} aria-label="Close chat">
+            <button type="button" onClick={closeChat} aria-label="Close chat">
               <X size={18} aria-hidden />
             </button>
           </header>
@@ -218,6 +243,7 @@ export default function RibCribJourvisChat({ business }: { business: InitialBusi
             <label className="sr-only" htmlFor="rib-jourvis-message">Message Jourvis</label>
             <textarea
               id="rib-jourvis-message"
+              ref={composerRef}
               rows={1}
               maxLength={4000}
               value={draft}
