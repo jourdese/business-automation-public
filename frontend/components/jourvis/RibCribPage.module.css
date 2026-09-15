@@ -16,7 +16,10 @@
   background-size: cover !important;
   background-position: center center !important;
   margin-left: -1px;
-  width: calc(100% + 1px);
+  margin-right: -2px;
+  width: calc(100% + 3px);
+  border-right: 0 !important;
+  outline: 0 !important;
 }
 
 .servicePanel {
