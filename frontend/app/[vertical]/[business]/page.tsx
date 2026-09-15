@@ -47,6 +47,7 @@ export default async function BusinessRoutePage({ params }: RoutePageProps) {
         displayName: route.display_name,
         publicPath: route.public_path,
         adapterKey: route.adapter_key,
+        presetKey: route.preset_key,
       }}
     />
   );
