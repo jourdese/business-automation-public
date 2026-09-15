@@ -44,7 +44,7 @@ export default function RootLayout({
     Object.entries(palette).map(([name, value]) => ['--' + name, value]),
   ) as CSSProperties;
   return (
-    <html lang="en" style={theme}>
+    <html lang="en" style={theme} data-build="rib-crib-latest">
       <body>
         <a className="skip" href="#main">
           Skip to content
