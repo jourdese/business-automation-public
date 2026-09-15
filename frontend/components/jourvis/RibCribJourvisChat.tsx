@@ -9,6 +9,7 @@ import {
   type DemoReply,
 } from '@/lib/jourvis/live-demo';
 import type { InitialBusiness } from './JourvisExperience';
+import JourvisCompanion from './JourvisCompanion';
 
 type ChatMessage = {
   id: string;
@@ -17,7 +18,6 @@ type ChatMessage = {
 };
 
 type LauncherEvent = CustomEvent<{ prompt?: string }>;
-type RoamPoint = { x: number; y: number; label: string };
 
 const QUICK_PROMPTS = [
   'What are your bestsellers?',
@@ -25,14 +25,6 @@ const QUICK_PROMPTS = [
   'Do you have unlimited wings?',
   'I want to order for pickup.',
   'Reserve a table.',
-];
-
-const ROAM_LABELS = [
-  'Need help choosing?',
-  'Ask me about the menu',
-  'Planning a barkada meal?',
-  'I can help reserve a table',
-  'Tap me anytime',
 ];
 
 export default function RibCribJourvisChat({ business }: { business: InitialBusiness }) {
@@ -43,10 +35,8 @@ export default function RibCribJourvisChat({ business }: { business: InitialBusi
   const [draft, setDraft] = useState('');
   const [reply, setReply] = useState<DemoReply | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [roamPoint, setRoamPoint] = useState<RoamPoint>({ x: -180, y: -180, label: ROAM_LABELS[0] });
   const initialized = useRef(false);
   const logRef = useRef<HTMLDivElement>(null);
-  const roamStep = useRef(0);
   const scope = business.publicPath;
 
   const accept = useCallback(async (result: DemoReply, visible = true) => {
@@ -127,28 +117,6 @@ export default function RibCribJourvisChat({ business }: { business: InitialBusi
     }
   }, [accept, busy, ensureRestaurant, ready, scope]);
 
-  const positionJourvis = useCallback(() => {
-    if (typeof window === 'undefined' || open) return;
-    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const mobile = window.innerWidth < 780;
-    const size = mobile ? 72 : 94;
-    const margin = mobile ? 12 : 24;
-    const safeTop = mobile ? 84 : 105;
-    const safeBottom = mobile ? 104 : 30;
-    const width = window.innerWidth;
-    const height = window.innerHeight;
-    const points: Array<[number, number]> = [
-      [width - size - margin, height - size - safeBottom],
-      [margin, Math.max(safeTop, height * 0.34)],
-      [width - size - margin, Math.max(safeTop, height * 0.22)],
-      [margin, Math.max(safeTop, height - size - 135)],
-      [Math.max(margin, width * 0.58 - size / 2), Math.max(safeTop, height * 0.52)],
-    ];
-    const index = reducedMotion ? 0 : roamStep.current % points.length;
-    const [x, y] = points[index];
-    setRoamPoint({ x, y, label: ROAM_LABELS[index % ROAM_LABELS.length] });
-  }, [open]);
-
   useEffect(() => {
     const openChat = (event: Event) => {
       const custom = event as LauncherEvent;
@@ -168,35 +136,16 @@ export default function RibCribJourvisChat({ business }: { business: InitialBusi
     logRef.current.scrollTo({ top: logRef.current.scrollHeight, behavior: 'smooth' });
   }, [messages, busy]);
 
-  useEffect(() => {
-    if (open) return;
-    positionJourvis();
-    const timer = window.setInterval(() => {
-      roamStep.current += 1;
-      positionJourvis();
-    }, 7600);
-    const onResize = () => positionJourvis();
-    window.addEventListener('resize', onResize);
-    return () => {
-      window.clearInterval(timer);
-      window.removeEventListener('resize', onResize);
-    };
-  }, [open, positionJourvis]);
-
   return (
     <>
       <button
         className={`rib-jourvis-launcher${open ? ' is-chat-open' : ''}`}
-        style={{ left: roamPoint.x, top: roamPoint.y }}
         type="button"
         aria-label="Chat with Jourvis for The Rib Crib"
         aria-expanded={open}
         onClick={() => setOpen((value) => !value)}
       >
-        <span className="rib-jourvis-pulse" aria-hidden />
-        <span className="rib-jourvis-shadow" aria-hidden />
-        <img src="/rib-crib/jourvis.png" alt="" aria-hidden />
-        {!open && <span className="rib-jourvis-thought">{roamPoint.label}</span>}
+        <JourvisCompanion size={104} molecules />
       </button>
 
       {open && (
@@ -204,7 +153,7 @@ export default function RibCribJourvisChat({ business }: { business: InitialBusi
           <header className="rib-jourvis-chat-head">
             <div className="rib-jourvis-chat-identity">
               <span className="rib-jourvis-mini">
-                <img src="/rib-crib/jourvis.png" alt="" aria-hidden />
+                <JourvisCompanion size={34} molecules={false} />
               </span>
               <div>
                 <strong>Jourvis × The Rib Crib</strong>
@@ -226,7 +175,7 @@ export default function RibCribJourvisChat({ business }: { business: InitialBusi
               <div key={message.id} className={`rib-chat-message ${message.role}`}>
                 {message.role === 'jourvis' && (
                   <span className="rib-chat-avatar" aria-hidden>
-                    <img src="/rib-crib/jourvis.png" alt="" />
+                    <JourvisCompanion size={28} molecules={false} />
                   </span>
                 )}
                 <p>{message.text}</p>
