@@ -2,6 +2,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import ParticleWorld from './ParticleWorld';
 
 import ribHero from '@/src/assets/rib-crib/rib-crib-hero-bbq-wings.png?url';
 import ribInterior from '@/src/assets/rib-crib/rib-crib-restaurant-interior.png?url';
@@ -116,5 +117,5 @@ export default function RibCribAssetBridge() {
     setImage('.rib-footer-brand img', ribFooterBrand);
   }, []);
 
-  return null;
+  return <ParticleWorld state="idle" paused={false} />;
 }
