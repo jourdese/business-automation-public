@@ -17,8 +17,12 @@
   background-position: center center !important;
   margin-left: -1px;
   margin-right: -2px;
+  margin-bottom: -2px;
   width: calc(100% + 3px);
+  min-height: calc(100% + 2px);
+  align-self: stretch;
   border-right: 0 !important;
+  border-bottom: 0 !important;
   outline: 0 !important;
 }
 
