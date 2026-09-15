@@ -4,6 +4,7 @@ export type PublicBusinessRoute = {
   public_path: string;
   display_name: string;
   adapter_key: string;
+  preset_key: string | null;
   is_demo: boolean;
 };
 
@@ -12,7 +13,7 @@ const SUPABASE_URL = 'https://pqdagfmhixblthnrfdcv.supabase.co';
 // constrained by the database grants and RLS policy on the route source table.
 const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_ujHCyx5WcG3ziS8q56Tf_g_qd4h7LNj';
 const ROUTE_COLUMNS =
-  'vertical_slug,business_slug,public_path,display_name,adapter_key,is_demo';
+  'vertical_slug,business_slug,public_path,display_name,adapter_key,preset_key,is_demo';
 const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 function endpoint(params: URLSearchParams) {
