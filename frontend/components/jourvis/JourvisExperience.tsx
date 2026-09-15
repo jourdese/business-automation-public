@@ -13,6 +13,13 @@ import PrinciplesSection from './PrinciplesSection';
 import ParticleWorld from './ParticleWorld';
 import PageGuide from './PageGuide';
 
+export type InitialBusiness = {
+  displayName: string;
+  publicPath: string;
+  adapterKey: string;
+  presetKey: string | null;
+};
+
 export function StaticCompanion() {
   const paths = [1, 2, 3].map((value) =>
     botPixels
@@ -48,7 +55,11 @@ function focusDemo() {
   });
   demo.focus({ preventScroll: true });
 }
-export default function JourvisExperience() {
+export default function JourvisExperience({
+  initialBusiness,
+}: {
+  initialBusiness?: InitialBusiness;
+}) {
   const [state, send] = useReducer(companionTransition, 'idle');
   const [paused, setPaused] = useState(false);
   return (
@@ -132,7 +143,7 @@ export default function JourvisExperience() {
           <StaticCompanion />
         </span>
       </div>
-      <InteractiveDemo send={send} />
+      <InteractiveDemo send={send} initialBusiness={initialBusiness} />
       <OutcomeSections send={send} />
       <PrinciplesSection />
       <section

@@ -5,10 +5,11 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { ArrowRight, ArrowUpRight, Check, ChevronDown, Copy, FileImage, MessageSquare, RotateCcw, Send, Sparkles } from 'lucide-react';
 import { type CompanionEvent, siteConfig } from '@/lib/jourvis/config';
 import { connectDemo, demoRequest, loadDemo, type DemoReply, type Outgoing } from '@/lib/jourvis/live-demo';
+import type { InitialBusiness } from './JourvisExperience';
 import CompanionMark from './CompanionMark';
 
 type Message = { id: string; role: 'jourvis' | 'customer'; text: string };
-export default function InteractiveDemo({ send }: { send: (event: CompanionEvent) => void }) {
+export default function InteractiveDemo({ send, initialBusiness }: { send: (event: CompanionEvent) => void; initialBusiness?: InitialBusiness }) {
  const [messages, setMessages] = useState<Message[]>([]);
  const [reply, setReply] = useState<DemoReply | null>(null);
  const [text, setText] = useState('');
@@ -25,16 +26,18 @@ export default function InteractiveDemo({ send }: { send: (event: CompanionEvent
  const input = useRef<HTMLTextAreaElement>(null);
  const lock = useRef(false);
  const bottom = useRef(true);
- const accept = useCallback(async (result: DemoReply) => {
-  if (result.reply) {
+ const demoScope = initialBusiness?.publicPath || 'home';
+ const selectionMarker = initialBusiness ? `jourvis.web.route-selection.v1:${initialBusiness.publicPath}` : '';
+ const accept = useCallback(async (result: DemoReply, visible = true) => {
+  if (result.reply && visible) {
    setMessages(current => current.some(m => m.id === result.receiptId) ? current : [...current, { id: result.receiptId!, role: 'jourvis' as const, text: result.reply! }].slice(-60));
    setReply(result); setCopied(false);
    setChoicesExpired((result.choicesExpireAt || 0) <= Date.now());
-   window.dispatchEvent(new CustomEvent('jourvis-notebook', { detail: { count: result.notebook?.entries.length || 0, business: result.notebook?.business || null } }));
+   window.dispatchEvent(new CustomEvent('jourvis-notebook', { detail: { count: result.notebook?.entries.length || 0, business: initialBusiness?.displayName || result.notebook?.business || null } }));
    send(result.notebook?.phase === 'booked' ? 'COMPLETE' : 'LISTEN');
   }
-  if (result.requiresAcknowledgement) await demoRequest('ack', { receiptId: result.receiptId, messageId: result.messageId });
- }, [send]);
+  if (result.requiresAcknowledgement) await demoRequest('ack', { receiptId: result.receiptId, messageId: result.messageId }, demoScope);
+ }, [demoScope, initialBusiness?.displayName, send]);
  const transmit = useCallback(async (request: Outgoing, repeating = false) => {
   if (lock.current) return;
   lock.current = true; setBusy(true); setError(''); setRetry(null); send('ORGANIZE');
@@ -42,17 +45,37 @@ export default function InteractiveDemo({ send }: { send: (event: CompanionEvent
    setMessages(current => [...current, { id: request.messageId, role: 'customer', text: request.text }]);
    setText(''); setPictureSupplied(false); bottom.current = true;
   }
-  try { await accept(await demoRequest('turn', request)); }
+  try { await accept(await demoRequest('turn', request, demoScope)); }
   catch (err) { setError(err instanceof Error ? err.message : 'The connection paused. Please try again.'); setRetry(request); send('LISTEN'); }
   finally { setBusy(false); lock.current = false; }
- }, [accept, send]);
+ }, [accept, demoScope, send]);
  const start = async () => {
   if (lock.current) return;
   lock.current = true; setBusy(true); setError(''); send('LISTEN');
   try {
-   await connectDemo(); const state = await loadDemo(); setStarted(true);
-   if (state.reply) await accept(state);
-   else await accept(await demoRequest('turn', { messageId: crypto.randomUUID(), text: 'Hi' }));
+   const session = await connectDemo(demoScope);
+   let state = await loadDemo(demoScope);
+   if (!state.reply) state = await demoRequest('turn', { messageId: crypto.randomUUID(), text: 'Hi' }, demoScope);
+
+   if (initialBusiness) {
+    let selectedForSession = false;
+    try { selectedForSession = sessionStorage.getItem(selectionMarker) === session.token; } catch { /* Storage is optional. */ }
+    if (!selectedForSession) {
+     await accept(state, false);
+     if (state.notebook?.business) {
+      const restarted = await demoRequest('turn', { messageId: crypto.randomUUID(), text: 'restart' }, demoScope);
+      await accept(restarted, false);
+     }
+     const selectionText = initialBusiness.presetKey || initialBusiness.adapterKey;
+     state = await demoRequest('turn', { messageId: crypto.randomUUID(), text: selectionText }, demoScope);
+     if (state.notebook?.business) {
+      try { sessionStorage.setItem(selectionMarker, session.token); } catch { /* Storage is optional. */ }
+     }
+    }
+   }
+
+   setStarted(true);
+   await accept(state);
   } catch (err) { setError(err instanceof Error ? err.message : 'Jourvis is temporarily unavailable. Please try again.'); }
   finally { setBusy(false); lock.current = false; }
  };
@@ -70,28 +93,29 @@ export default function InteractiveDemo({ send }: { send: (event: CompanionEvent
   void transmit({ messageId: crypto.randomUUID(), text: value.trim(), ...(choiceId ? { choiceId } : {}), ...(pictureSupplied ? { pictureSupplied: true } : {}) });
  };
  const notes = reply?.notebook; const entries = notes?.entries || [];
+ const visibleBusiness = initialBusiness?.displayName || notes?.business || null;
  const copyNotes = async () => {
-  try { await navigator.clipboard.writeText(['Jourvis demo · Details gathered', notes?.business || 'Exploring businesses', ...entries.map(e => `${e.label}: ${e.value}`), 'A conversation summary. Check the latest reply for appointment confirmation.'].join('\n')); setCopied(true); }
+  try { await navigator.clipboard.writeText(['Jourvis demo · Details gathered', visibleBusiness || 'Exploring businesses', ...entries.map(e => `${e.label}: ${e.value}`), 'A conversation summary. Check the latest reply for appointment confirmation.'].join('\n')); setCopied(true); }
   catch { setCopied(false); }
  };
  return (
   <section className="demo-section section-wrap live-demo" id="demo" aria-labelledby="demo-title" tabIndex={-1} data-world-section="demo">
    <div className="section-topline"><p className="eyebrow">01 / Let me take that</p><span className="section-side-note">Your words. A little less work.</span></div>
    <h2 id="demo-title">One conversation.<br /><span className="muted-heading">Everything falls into place.</span></h2>
-   <p className="section-intro">Step into your customer’s shoes. Pick a business, ask a real question, and watch me keep the useful details together.</p>
+   <p className="section-intro">{initialBusiness ? `You’re visiting ${initialBusiness.displayName}. Ask about prices, services, availability, or work through a request naturally.` : 'Step into your customer’s shoes. Pick a business, ask a real question, and watch me keep the useful details together.'}</p>
    <div className="demo-shell live-shell" data-live-status={busy ? 'working' : started ? 'connected' : 'ready'}>
-    <div className="demo-toolbar"><span className="preview-label"><span className="status-square" />{started ? 'Jourvis · Live demo' : 'Jourvis · Explore 21 businesses'}</span>
-     {started && <button className="quiet-button" disabled={busy || !!retry} onClick={() => setShowRestart(true)}><RotateCcw size={14} aria-hidden /> Change business</button>}
+    <div className="demo-toolbar"><span className="preview-label"><span className="status-square" />{started ? `Jourvis · ${visibleBusiness || 'Live demo'}` : initialBusiness ? `Jourvis · ${initialBusiness.displayName}` : 'Jourvis · Explore 21 businesses'}</span>
+     {started && !initialBusiness && <button className="quiet-button" disabled={busy || !!retry} onClick={() => setShowRestart(true)}><RotateCcw size={14} aria-hidden /> Change business</button>}
     </div>
    {showRestart && <section className="restart-note" aria-label="Change business confirmation"><p>Go back to the business selection? Any confirmed appointment stays in place.</p><button className="quiet-button" onClick={() => setShowRestart(false)}>Stay here</button><button className="button primary" onClick={() => { setShowRestart(false); submit('restart'); }}>Choose another business</button></section>}
     <div className="live-stage">
      <div className="conversation live-conversation">
-      <div className="conversation-heading"><span className="little-presence" aria-hidden><CompanionMark /></span><span>Jourvis<span className="assistant-label">{notes?.business || 'Let’s make this easy.'}</span></span><span className="local-badge">Sample businesses</span></div>
+      <div className="conversation-heading"><span className="little-presence" aria-hidden><CompanionMark /></span><span>Jourvis<span className="assistant-label">{visibleBusiness || 'Let’s make this easy.'}</span></span><span className="local-badge">{initialBusiness ? 'Business demo' : 'Sample businesses'}</span></div>
       {!started ? <div className="live-welcome">
        <div className="welcome-constellation" aria-hidden><span>“How much?”</span><CompanionMark /><span>“Can I book?”</span><span>“I have an idea…”</span></div>
-       <h3>Bring me a little<br />of your everyday.</h3>
-       <p>A price question. A dragon tattoo idea. A few kilos of liempo. You can talk normally—I’ll help with the next step.</p>
-       <button className="button primary" disabled={busy} onClick={() => void start()} data-assist>{busy ? 'Connecting…' : 'Start a conversation'}<ArrowRight size={18} aria-hidden /></button>
+       <h3>{initialBusiness ? <>Talk with Jourvis<br />for {initialBusiness.displayName}.</> : <>Bring me a little<br />of your everyday.</>}</h3>
+       <p>{initialBusiness ? `Try ${initialBusiness.displayName}’s customer experience using the same Jourvis conversation engine as the main demo.` : 'A price question. A dragon tattoo idea. A few kilos of liempo. You can talk normally—I’ll help with the next step.'}</p>
+       <button className="button primary" disabled={busy} onClick={() => void start()} data-assist>{busy ? 'Connecting…' : initialBusiness ? 'Start this business demo' : 'Start a conversation'}<ArrowRight size={18} aria-hidden /></button>
        <p className="live-consent">This is a simulation of a business Page. Play the customer. A confirmed test booking can send a real Calendar invitation to the email you provide.</p>
       </div> : <>
        <div ref={log} className="conversation-messages live-messages" role="log" aria-label="Your conversation with Jourvis" aria-live="polite" aria-relevant="additions" onScroll={() => { const el = log.current; if (el) bottom.current = el.scrollHeight - el.scrollTop - el.clientHeight < 100; }}>
@@ -110,8 +134,8 @@ export default function InteractiveDemo({ send }: { send: (event: CompanionEvent
      <aside className="live-notebook" aria-label="Details Jourvis has gathered" data-particle-result>
       <div className="notebook-heading"><span className="notebook-presence" aria-hidden><CompanionMark /></span><div><span className="mono">A LITTLE LESS TO HOLD</span><h3>I’ll keep the thread.</h3></div><button className="quiet-button notebook-toggle" aria-expanded={showNotebook} aria-label="Toggle gathered details" onClick={() => setShowNotebook(!showNotebook)}><ChevronDown size={17} aria-hidden /></button></div>
       {showNotebook && <div className="notebook-body">
-       <p className="notebook-caption">{busy ? 'Listening for what matters…' : notes?.business ? `You’re exploring ${notes.business}.` : 'As we talk, the useful details find a home here.'}</p>
-       <ol className="thread-progress" aria-label="Conversation progress"><li data-done={!!notes?.business}><span>{notes?.business ? <Check size={12} aria-hidden /> : '1'}</span>Understand</li><li data-done={entries.length > 0}><span>{entries.length ? <Check size={12} aria-hidden /> : '2'}</span>Gather</li><li data-done={notes?.phase === 'booked'}><span>3</span>Next step</li></ol>
+       <p className="notebook-caption">{busy ? 'Listening for what matters…' : visibleBusiness ? `You’re exploring ${visibleBusiness}.` : 'As we talk, the useful details find a home here.'}</p>
+       <ol className="thread-progress" aria-label="Conversation progress"><li data-done={!!visibleBusiness}><span>{visibleBusiness ? <Check size={12} aria-hidden /> : '1'}</span>Understand</li><li data-done={entries.length > 0}><span>{entries.length ? <Check size={12} aria-hidden /> : '2'}</span>Gather</li><li data-done={notes?.phase === 'booked'}><span>3</span>Next step</li></ol>
        <div className="notebook-paper" aria-live="polite" aria-atomic="true">
         <span className="notebook-label">{notes?.phase === 'review' ? 'Ready for your review' : 'Details gathered'}</span>
         {entries.length ? <dl>{entries.map((entry, i) => <div key={entry.label + i}><dt>{entry.label}</dt><dd>{entry.value}</dd></div>)}</dl> : <div className="notebook-empty"><span className="sorted-lines" aria-hidden><span /><span /><span /></span><p>No need to have it<br />all figured out.</p><small>We’ll take it one detail at a time.</small></div>}

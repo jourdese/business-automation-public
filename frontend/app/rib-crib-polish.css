@@ -1,0 +1,398 @@
+/* Final Rib Crib fidelity pass: keep restaurant branding dominant and Jourvis mint/teal. */
+body:has(.rib-crib-page) {
+  background: #f5efe8;
+}
+
+.rib-crib-page {
+  --jourvis-mint: #a7e3c5;
+  --jourvis-emerald: #2e6b57;
+  --jourvis-navy: #1f3a5f;
+  --jourvis-ivory: #f7f4ee;
+}
+
+/* Header closer to supplied reference */
+.rib-nav {
+  min-height: 64px;
+  background: linear-gradient(90deg, #85070e 0%, #a40d17 42%, #8e0810 100%);
+  border-bottom: 1px solid rgba(255,255,255,.13);
+  box-shadow: 0 12px 34px rgba(62,5,8,.2);
+}
+.rib-wordmark {
+  font-size: clamp(25px,2.25vw,35px);
+  letter-spacing: -.055em;
+}
+.rib-nav-chat {
+  border-radius: 6px;
+  padding-inline: 20px;
+  box-shadow: 0 7px 24px rgba(55,0,4,.22);
+}
+
+/* Hero: supplied emblem + supplied food photograph are the visual priority. */
+.rib-hero {
+  min-height: clamp(560px, 67vw, 720px);
+  background: #150d0a;
+}
+.rib-hero::before {
+  background:
+    linear-gradient(90deg,#150d09 0%,rgba(21,13,9,.98) 25%,rgba(21,13,9,.86) 39%,rgba(21,13,9,.28) 66%,rgba(21,13,9,.06) 100%),
+    linear-gradient(180deg,rgba(0,0,0,.08),rgba(0,0,0,.38));
+}
+.rib-hero-food {
+  width: 72%;
+  background-position: center center;
+  filter: saturate(1.09) contrast(1.04);
+}
+.rib-hero-copy {
+  width: min(590px,48vw);
+  margin-left: clamp(28px,4.6vw,78px);
+  padding-block: 46px 54px;
+}
+.rib-hero-emblem {
+  width: clamp(145px,15vw,218px);
+  filter: drop-shadow(0 16px 34px rgba(0,0,0,.38));
+}
+.rib-hero-kicker {
+  margin-top: 16px;
+  font-size: 13px;
+  letter-spacing: .035em;
+  text-transform: none;
+  font-family: Georgia,serif;
+}
+.rib-hero h1 {
+  margin-top: 4px;
+  font-size: clamp(64px,7.7vw,122px);
+  line-height: .82;
+  text-shadow: 0 5px 0 rgba(0,0,0,.25),0 18px 36px rgba(0,0,0,.2);
+}
+.rib-hero-description {
+  max-width: 470px;
+  margin-top: 18px;
+}
+.rib-hero-actions .rib-btn {
+  min-width: 148px;
+  border-radius: 6px;
+}
+.rib-hero-script {
+  right: 3.2vw;
+  bottom: 44px;
+  max-width: 240px;
+  font-size: clamp(24px,2.8vw,46px);
+}
+
+/* Reference-style feature strip with the supplied restaurant interior clearly visible. */
+.rib-feature-strip {
+  grid-template-columns: repeat(3,minmax(0,1fr)) minmax(330px,1.35fr);
+  min-height: 185px;
+}
+.rib-feature-strip article {
+  align-items: center;
+  padding: 30px clamp(20px,2.7vw,40px);
+  background: linear-gradient(180deg,#fff,#fbf8f3);
+}
+.rib-feature-strip article > span {
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  color: #a40d17;
+}
+.rib-feature-interior {
+  min-height: 225px;
+  background-image: linear-gradient(90deg,rgba(255,255,255,.04),transparent 20%),url('/rib-crib/interior.webp');
+  box-shadow: inset 20px 0 30px rgba(0,0,0,.08);
+}
+
+/* Menu: dark wood atmosphere, large supplied food crops. */
+.rib-menu-section {
+  padding-top: 46px;
+  background:
+    linear-gradient(rgba(17,10,7,.72),rgba(17,10,7,.9)),
+    url('/rib-crib/interior.webp') center 38%/cover fixed,
+    #20130e;
+}
+.rib-menu-section::after {
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  background: linear-gradient(90deg,rgba(0,0,0,.18),transparent 14%,transparent 86%,rgba(0,0,0,.2));
+}
+.rib-menu-section > * { z-index:1; }
+.rib-section-head h2,.rib-platter-head h2 {
+  font-size: clamp(36px,4vw,58px);
+  text-shadow: 0 3px 18px rgba(0,0,0,.24);
+}
+.rib-menu-grid {
+  grid-template-columns: repeat(8,minmax(118px,1fr));
+  gap: 8px;
+}
+.rib-menu-card,.rib-platter-card {
+  border-color: rgba(255,255,255,.24);
+  background: linear-gradient(180deg,rgba(37,32,29,.96),rgba(19,18,17,.98));
+  box-shadow: 0 18px 38px rgba(0,0,0,.28);
+}
+.rib-menu-photo {
+  height: clamp(118px,10vw,155px);
+  background-color:#2a1c16;
+  background-position-y:center !important;
+  transition: transform .35s ease,filter .35s ease;
+}
+.rib-menu-card:hover .rib-menu-photo,
+.rib-platter-card:hover .rib-platter-photo {
+  transform: scale(1.045);
+  filter: saturate(1.12) contrast(1.03);
+}
+.rib-menu-card-copy { padding: 12px 10px 14px; }
+.rib-menu-card h3,.rib-platter-card h3 { font-size: 13px; }
+.rib-menu-card strong,.rib-platter-card strong {
+  color:#ff4d57;
+  font-size:19px;
+  letter-spacing:-.02em;
+}
+.rib-platter-grid { gap:10px; }
+.rib-platter-photo {
+  height: clamp(150px,13vw,205px);
+  background-color:#291b15;
+  transition: transform .35s ease,filter .35s ease;
+}
+
+/* Reservations / order area follows the supplied white-panel composition. */
+.rib-service-grid {
+  position:relative;
+  padding: 28px clamp(16px,4vw,62px) 36px;
+  gap: 14px;
+  background: linear-gradient(180deg,#fff 0%,#f5eee7 100%);
+}
+.rib-reservation-panel,.rib-orders-panel {
+  border-radius: 10px;
+  min-height: 390px;
+  box-shadow: 0 18px 50px rgba(48,23,14,.1);
+}
+.rib-reservation-panel {
+  position:relative;
+  overflow:hidden;
+  padding-left: clamp(24px,3.2vw,52px);
+  background:
+    linear-gradient(90deg,rgba(255,255,255,.98) 0%,rgba(255,255,255,.96) 70%,rgba(255,255,255,.36) 100%),
+    url('/rib-crib/interior.webp') right center/48% 100% no-repeat;
+}
+.rib-orders-panel {
+  position:relative;
+  overflow:hidden;
+  color:#3b2020;
+  background:
+    linear-gradient(90deg,rgba(255,255,255,.98) 0%,rgba(255,255,255,.95) 64%,rgba(255,255,255,.42) 100%),
+    url('/rib-crib/hero.webp') right center/50% 100% no-repeat;
+  border:1px solid #eadfd8;
+}
+.rib-orders-panel .rib-panel-title,
+.rib-orders-panel .rib-order-actions { position:relative; z-index:1; max-width:74%; }
+.rib-orders-panel .rib-panel-title > svg { color:#a40d17; }
+.rib-order-actions button {
+  color:#3a2020;
+  background:rgba(255,255,255,.9);
+  border-color:#e4d7d1;
+  backdrop-filter:blur(8px);
+}
+.rib-order-actions button:hover {
+  border-color:#a40d17;
+  transform:translateY(-2px);
+}
+
+/* Jourvis showcase: Rib Crib red around him, but Jourvis himself stays mint/teal. */
+.rib-jourvis-showcase {
+  background: linear-gradient(180deg,#faf7f2,#fff);
+}
+.rib-chat-preview {
+  background:#fff;
+}
+.rib-full-jourvis {
+  background: linear-gradient(140deg,#a40d17,#7b080e);
+}
+.rib-jourvis-character-stage img,
+.rib-preview-thread .jourvis img,
+.rib-chat-avatar img,
+.rib-jourvis-mini img,
+.rib-jourvis-launcher img {
+  filter: none !important;
+  mix-blend-mode: normal;
+}
+.rib-ai-orbit {
+  border-color: rgba(167,227,197,.72);
+  box-shadow: 0 0 28px rgba(167,227,197,.12);
+}
+
+/* Roaming Jourvis: freely strolls between safe viewport anchors. */
+.rib-jourvis-launcher {
+  position:fixed;
+  z-index:125;
+  width:94px;
+  height:94px;
+  min-height:0;
+  display:grid;
+  place-items:center;
+  grid-template-columns:1fr;
+  gap:0;
+  padding:7px;
+  border:0;
+  border-radius:28px;
+  color:var(--jourvis-navy);
+  background:rgba(247,244,238,.94);
+  box-shadow:0 18px 45px rgba(18,43,37,.24),0 0 0 1px rgba(46,107,87,.13);
+  backdrop-filter:blur(13px);
+  transition:left 2.7s cubic-bezier(.22,.8,.2,1),top 2.7s cubic-bezier(.22,.8,.2,1),transform .22s ease,box-shadow .22s ease,opacity .25s ease;
+  animation: ribJourvisFloat 3.4s ease-in-out infinite;
+}
+.rib-jourvis-launcher:hover {
+  transform:translateY(-6px) scale(1.045);
+  box-shadow:0 26px 58px rgba(18,43,37,.31),0 0 0 5px rgba(167,227,197,.2);
+}
+.rib-jourvis-launcher.is-chat-open {
+  opacity:0;
+  pointer-events:none;
+}
+.rib-jourvis-launcher > img {
+  width:78px;
+  height:78px;
+  object-fit:contain;
+  position:relative;
+  z-index:3;
+  animation:none;
+}
+.rib-jourvis-pulse {
+  position:absolute;
+  inset:8px;
+  width:auto;
+  height:auto;
+  left:auto;
+  border-radius:24px;
+  background:rgba(167,227,197,.28);
+  animation:ribMintPulse 2.8s ease-out infinite;
+}
+.rib-jourvis-shadow {
+  position:absolute;
+  left:18px;
+  right:18px;
+  bottom:7px;
+  height:12px;
+  border-radius:50%;
+  background:rgba(22,55,45,.2);
+  filter:blur(5px);
+  animation:ribJourvisShadow 3.4s ease-in-out infinite;
+}
+.rib-jourvis-thought {
+  position:absolute;
+  left:50%;
+  bottom:calc(100% + 9px);
+  transform:translateX(-50%);
+  width:max-content;
+  max-width:180px;
+  padding:8px 11px;
+  border:1px solid rgba(46,107,87,.18);
+  border-radius:12px 12px 12px 4px;
+  color:#1f3a5f;
+  background:rgba(255,255,255,.97);
+  box-shadow:0 9px 25px rgba(22,55,45,.13);
+  font-size:10px;
+  font-weight:800;
+  white-space:nowrap;
+  pointer-events:none;
+  animation:ribThoughtIn .45s ease both;
+}
+.rib-jourvis-thought::after {
+  content:"";
+  position:absolute;
+  left:18px;
+  top:100%;
+  width:9px;
+  height:9px;
+  background:white;
+  border-right:1px solid rgba(46,107,87,.13);
+  border-bottom:1px solid rgba(46,107,87,.13);
+  transform:translateY(-5px) rotate(45deg);
+}
+.rib-jourvis-launcher-copy { display:none !important; }
+
+/* Chat adopts Jourvis colors in its own chrome while Rib Crib stays red behind it. */
+.rib-jourvis-chat {
+  z-index:140;
+  right:22px;
+  bottom:22px;
+  height:min(700px,calc(100dvh - 44px));
+  border-color:rgba(46,107,87,.22);
+  box-shadow:0 38px 100px rgba(16,40,34,.35);
+}
+.rib-jourvis-chat-head {
+  background:linear-gradient(135deg,#1f3a5f,#2e6b57);
+}
+.rib-jourvis-chat-head > button { background:rgba(255,255,255,.13); }
+.rib-jourvis-mini {
+  background:rgba(247,244,238,.98);
+  box-shadow:inset 0 0 0 1px rgba(167,227,197,.45);
+}
+.rib-jourvis-chat-intro {
+  color:#365a50;
+  background:#f4fbf7;
+  border-bottom-color:#dcece4;
+}
+.rib-jourvis-chat-intro svg { color:#2e6b57; }
+.rib-chat-message.customer p { background:#a40d17; }
+.rib-chat-message.jourvis p { color:#19352d; background:#eaf5ef; }
+.rib-chat-avatar { border-color:#d6ebe1; background:#fbfffd; }
+.rib-chat-choices button { border-color:#cfe2d9; color:#285548; }
+.rib-chat-choices button:hover { border-color:#2e6b57; background:#eff8f3; }
+.rib-chat-composer { border-color:#c8ddd4; }
+.rib-chat-composer > button { background:#2e6b57; }
+
+/* Give the supplied interior photography more visual presence in the lower page. */
+.rib-about-photo {
+  min-height:500px;
+  background-image:linear-gradient(90deg,transparent 70%,#ece1d2 100%),url('/rib-crib/interior.webp');
+  background-position:center;
+  filter:saturate(1.03) contrast(1.01);
+}
+
+@keyframes ribJourvisFloat {
+  0%,100% { transform:translateY(0) rotate(-1deg); }
+  50% { transform:translateY(-8px) rotate(1deg); }
+}
+@keyframes ribJourvisShadow {
+  0%,100% { transform:scaleX(1); opacity:.22; }
+  50% { transform:scaleX(.78); opacity:.11; }
+}
+@keyframes ribMintPulse {
+  0% { transform:scale(.84); opacity:.5; }
+  78%,100% { transform:scale(1.18); opacity:0; }
+}
+@keyframes ribThoughtIn {
+  from { opacity:0; transform:translate(-50%,6px) scale(.96); }
+  to { opacity:1; transform:translate(-50%,0) scale(1); }
+}
+
+@media (max-width:1100px) {
+  .rib-menu-grid { grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; }
+  .rib-feature-strip { grid-template-columns:repeat(3,1fr); }
+  .rib-feature-interior { min-height:300px; }
+}
+
+@media (max-width:780px) {
+  .rib-hero { min-height:730px; }
+  .rib-hero-food { height:55%; width:100%; opacity:.95; }
+  .rib-hero-copy { padding-top:270px; }
+  .rib-hero-emblem { width:112px; }
+  .rib-menu-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .rib-menu-photo { height:132px; }
+  .rib-platter-photo { height:175px; }
+  .rib-reservation-panel,.rib-orders-panel { min-height:auto; background-size:cover; }
+  .rib-orders-panel .rib-panel-title,.rib-orders-panel .rib-order-actions { max-width:none; }
+  .rib-jourvis-launcher { width:72px; height:72px; border-radius:22px; padding:5px; }
+  .rib-jourvis-launcher > img { width:62px; height:62px; }
+  .rib-jourvis-thought { display:none; }
+  .rib-jourvis-chat { right:8px; bottom:8px; width:calc(100vw - 16px); height:calc(100dvh - 16px); border-radius:18px; }
+}
+
+@media (prefers-reduced-motion:reduce) {
+  .rib-jourvis-launcher { transition:none !important; animation:none !important; }
+  .rib-jourvis-pulse,.rib-jourvis-shadow,.rib-jourvis-thought { animation:none !important; }
+}

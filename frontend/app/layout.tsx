@@ -5,6 +5,11 @@ import { SiteHeader, SiteFooter } from '@/components/jourvis/SiteChrome';
 import './globals.css';
 import './refinements.css';
 import './live-demo.css';
+import './business-demo.css';
+import './rib-crib.css';
+import './rib-crib-polish.css';
+import './rib-crib-reference.css';
+import './rib-crib-hires.css';
 export const metadata: Metadata = {
   icons: { icon: '/favicon.svg' },
   metadataBase: new URL('https://jourvis.ai'),
