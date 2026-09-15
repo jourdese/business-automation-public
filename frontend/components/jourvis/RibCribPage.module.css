@@ -32,10 +32,15 @@
 }
 
 .reservationVisual {
+  position: relative;
+  overflow: hidden;
   border-right: 1px solid #eadfd6;
-  background-image: url('../../src/assets/rib-crib/rib-crib-restaurant-interior.jpg') !important;
-  background-position: center center !important;
-  background-size: cover !important;
+  background-image:
+    url('../../src/assets/rib-crib/rib-crib-restaurant-interior.png'),
+    url('../../src/assets/rib-crib/rib-crib-restaurant-interior.jpg') !important;
+  background-repeat: no-repeat, no-repeat !important;
+  background-position: center center, center center !important;
+  background-size: contain, cover !important;
 }
 
 .reservationContent,
