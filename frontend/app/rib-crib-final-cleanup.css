@@ -1,0 +1,128 @@
+/* Final Rib Crib cleanup. Everything here is route-scoped and never changes the Jourvis homepage. */
+
+/* One Rib Crib wordmark only: keep the supplied image, hide fallback button text. */
+.rib-crib-page .rib-wordmark {
+  width: 190px !important;
+  height: 46px !important;
+  font-size: 0 !important;
+  line-height: 0 !important;
+  color: transparent !important;
+  text-shadow: none !important;
+  overflow: hidden !important;
+  white-space: nowrap !important;
+  background-repeat: no-repeat !important;
+  background-position: left center !important;
+  background-size: contain !important;
+}
+.rib-crib-page .rib-wordmark::before,
+.rib-crib-page .rib-wordmark::after {
+  content: none !important;
+  display: none !important;
+}
+
+/* Reuse the homepage particle engine on Rib Crib only. */
+body:has(.rib-crib-page) .particle-world {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100dvh !important;
+  z-index: 70 !important;
+  overflow: hidden !important;
+  pointer-events: none !important;
+  opacity: .46 !important;
+}
+body:has(.rib-crib-page) .particle-world canvas {
+  width: 100% !important;
+  height: 100% !important;
+  display: block !important;
+  pointer-events: none !important;
+}
+
+/* Keep restaurant chrome above ambient molecules, but below the chat. */
+.rib-crib-page .rib-nav { z-index: 80 !important; }
+.rib-crib-page .rib-jourvis-launcher { z-index: 125 !important; }
+.rib-crib-page .rib-jourvis-chat { z-index: 140 !important; }
+
+/* Fixed, clean Jourvis companion. Original artwork colors are never recolored. */
+.rib-crib-page .rib-jourvis-thought {
+  display: none !important;
+}
+.rib-crib-page .rib-jourvis-launcher {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  left: auto !important;
+  top: auto !important;
+  right: max(18px, env(safe-area-inset-right)) !important;
+  bottom: max(18px, env(safe-area-inset-bottom)) !important;
+  width: 104px !important;
+  height: 112px !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  outline: 0 !important;
+  border-radius: 30px !important;
+  color: transparent !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  overflow: visible !important;
+  text-indent: 0 !important;
+}
+.rib-crib-page .rib-jourvis-launcher:hover {
+  transform: translateY(-5px) scale(1.04) !important;
+  box-shadow: none !important;
+}
+.rib-crib-page .rib-jourvis-launcher > img,
+.rib-crib-page .rib-jourvis-mini img,
+.rib-crib-page .rib-chat-avatar img,
+.rib-crib-page .rib-preview-thread .jourvis img,
+.rib-crib-page .rib-jourvis-character-stage img {
+  filter: none !important;
+  mix-blend-mode: normal !important;
+}
+.rib-crib-page .rib-jourvis-launcher > img {
+  position: relative !important;
+  z-index: 5 !important;
+  width: 94px !important;
+  height: 94px !important;
+  object-fit: contain !important;
+  filter: drop-shadow(0 12px 16px rgba(26,61,50,.26)) !important;
+  animation: ribFixedJourvisIdle 3.6s ease-in-out infinite !important;
+  transform-origin: 50% 82% !important;
+}
+.rib-crib-page .rib-jourvis-launcher-copy {
+  display: none !important;
+}
+
+/* Suppress any legacy arrow/bubble decorations while preserving the bit halo. */
+.rib-crib-page .rib-jourvis-launcher::before,
+.rib-crib-page .rib-jourvis-launcher::after,
+.rib-crib-page .rib-jourvis-pulse::before,
+.rib-crib-page .rib-jourvis-pulse::after {
+  border: 0 !important;
+  outline: 0 !important;
+  pointer-events: none !important;
+}
+
+@media (max-width: 760px) {
+  body:has(.rib-crib-page) .particle-world { opacity: .34 !important; }
+  .rib-crib-page .rib-wordmark {
+    width: 150px !important;
+    height: 40px !important;
+  }
+  .rib-crib-page .rib-jourvis-launcher {
+    right: max(10px, env(safe-area-inset-right)) !important;
+    bottom: max(12px, env(safe-area-inset-bottom)) !important;
+    width: 82px !important;
+    height: 90px !important;
+  }
+  .rib-crib-page .rib-jourvis-launcher > img {
+    width: 76px !important;
+    height: 76px !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body:has(.rib-crib-page) .particle-world { opacity: .28 !important; }
+}
