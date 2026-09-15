@@ -44,6 +44,16 @@
   padding: 18px 20px;
 }
 
+.reservationContent :global(.rib-panel-title p)::after {
+  content: 'Dine with us and make it a memorable experience!';
+  display: block;
+  margin-top: 2px;
+}
+
+.reservationContent > small {
+  display: none !important;
+}
+
 .ordersPanel {
   grid-template-columns: minmax(0, 1fr) minmax(190px, 34%);
   color: #3c2522 !important;
