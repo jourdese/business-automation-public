@@ -114,7 +114,7 @@ export default function InteractiveDemo({ send, initialBusiness }: { send: (even
       {!started ? <div className="live-welcome">
        <div className="welcome-constellation" aria-hidden><span>“How much?”</span><CompanionMark /><span>“Can I book?”</span><span>“I have an idea…”</span></div>
        <h3>{initialBusiness ? <>Talk with Jourvis<br />for {initialBusiness.displayName}.</> : <>Bring me a little<br />of your everyday.</>}</h3>
-       <p>{initialBusiness ? `Try the ${initialBusiness.displayName} customer experience using the same Jourvis conversation engine as the main demo.` : 'A price question. A dragon tattoo idea. A few kilos of liempo. You can talk normally—I’ll help with the next step.'}</p>
+       <p>{initialBusiness ? `Try ${initialBusiness.displayName}’s customer experience using the same Jourvis conversation engine as the main demo.` : 'A price question. A dragon tattoo idea. A few kilos of liempo. You can talk normally—I’ll help with the next step.'}</p>
        <button className="button primary" disabled={busy} onClick={() => void start()} data-assist>{busy ? 'Connecting…' : initialBusiness ? 'Start this business demo' : 'Start a conversation'}<ArrowRight size={18} aria-hidden /></button>
        <p className="live-consent">This is a simulation of a business Page. Play the customer. A confirmed test booking can send a real Calendar invitation to the email you provide.</p>
       </div> : <>
