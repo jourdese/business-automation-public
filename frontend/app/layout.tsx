@@ -10,6 +10,7 @@ import './rib-crib.css';
 import './rib-crib-polish.css';
 import './rib-crib-reference.css';
 import './rib-crib-hires.css';
+import './rib-crib-jourvis-fixed.css';
 export const metadata: Metadata = {
   icons: { icon: '/favicon.svg' },
   metadataBase: new URL('https://jourvis.ai'),
