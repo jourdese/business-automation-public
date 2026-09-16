@@ -163,12 +163,12 @@ test('viewport binding cleans up listeners and pending animation frames on close
   assert.equal(events.size, 0);
 });
 
-test('restaurant metadata uses the exact supplied square JPEG without replacing homepage metadata', () => {
+test('restaurant metadata uses fitted social-card artwork without replacing homepage metadata', () => {
   const source = readFileSync(new URL('../app/[vertical]/[business]/page.tsx', import.meta.url), 'utf8');
-  const image = readFileSync(new URL('../public/rib-crib/337696127_892397995373233_2982850852035596824_n.jpg', import.meta.url));
+  const image = readFileSync(new URL('../public/rib-crib/rib-crib-social-fit.jpg', import.meta.url));
   assert.match(source, /route\.public_path === '\/restaurant\/the-rib-crib'/);
-  assert.match(source, /images: \[\{ url: thumbnail, width: 2048, height: 2048/);
-  assert.match(source, /card: 'summary'/);
+  assert.match(source, /images: \[\{ url: thumbnail, width: 600, height: 315/);
+  assert.match(source, /card: 'summary_large_image'/);
   assert.equal(image[0], 0xff);
   assert.equal(image[1], 0xd8);
 });
