@@ -25,8 +25,8 @@ export async function generateMetadata({ params }: RoutePageProps): Promise<Meta
   if (!route) return { title: 'Business not found', robots: { index: false, follow: false } };
 
   const ribCrib = route.public_path === '/restaurant/the-rib-crib';
-  // Original supplied square artwork, not the very wide navigation wordmark.
-  const thumbnail = 'https://jourvis.ai/rib-crib/337696127_892397995373233_2982850852035596824_n.jpg';
+  // The supplied square artwork is fitted inside a social-card canvas so preview apps do not crop the logo.
+  const thumbnail = 'https://jourvis.ai/rib-crib/rib-crib-social-fit.jpg';
   const title = `${route.display_name} | Jourvis`;
   const description = `Try the Jourvis business assistant with ${route.display_name}.`;
 
@@ -40,12 +40,12 @@ export async function generateMetadata({ params }: RoutePageProps): Promise<Meta
       url: route.public_path,
       ...(ribCrib ? {
         type: 'website' as const,
-        images: [{ url: thumbnail, width: 2048, height: 2048, type: 'image/jpeg', alt: 'The Rib Crib — Let’s Meat Here. Eat Meat Repeat.' }],
+        images: [{ url: thumbnail, width: 600, height: 315, type: 'image/jpeg', alt: 'The Rib Crib — Let’s Meat Here. Eat Meat Repeat.' }],
       } : {}),
     },
     ...(ribCrib ? {
       twitter: {
-        card: 'summary' as const,
+        card: 'summary_large_image' as const,
         title,
         description,
         images: [{ url: thumbnail, alt: 'The Rib Crib — Eat Meat Repeat' }],
