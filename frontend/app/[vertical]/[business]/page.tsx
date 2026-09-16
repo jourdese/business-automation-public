@@ -27,7 +27,7 @@ export async function generateMetadata({ params }: RoutePageProps): Promise<Meta
   const ribCrib = route.public_path === '/restaurant/the-rib-crib';
   // Keep the fitted social card, but version its URL so preview services re-fetch
   // instead of reusing the earlier cached/cropped Rib Crib preview.
-  const thumbnail = 'https://jourvis.ai/rib-crib/rib-crib-social-fit.jpg?v=20260916-2';
+  const thumbnail = 'https://jourvis.ai/rib-crib/rib-crib-thumbnail.png';
   const title = `${route.display_name} | Jourvis`;
   const description = `Try the Jourvis business assistant with ${route.display_name}.`;
 
@@ -41,7 +41,7 @@ export async function generateMetadata({ params }: RoutePageProps): Promise<Meta
       url: route.public_path,
       ...(ribCrib ? {
         type: 'website' as const,
-        images: [{ url: thumbnail, width: 600, height: 315, type: 'image/jpeg', alt: 'The Rib Crib — Let’s Meat Here. Eat Meat Repeat.' }],
+        images: [{ url: thumbnail, width: 1200, height: 630, type: 'image/png', alt: 'The Rib Crib — Let’s Meat Here. Eat Meat Repeat.' }],
       } : {}),
     },
     ...(ribCrib ? {
