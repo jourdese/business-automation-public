@@ -6,6 +6,9 @@
   left: 50%;
   right: auto;
   bottom: auto;
+  /* The global ribChatIn animation ends at transform:none with fill-mode:both.
+     Disable it here: animation values otherwise override the centering transform. */
+  animation: none;
   transform: translate(-50%, -50%);
   width: min(410px, calc(100vw - var(--rib-chat-gap) - var(--rib-chat-gap)));
   height: min(650px, calc(100dvh - var(--rib-chat-gap) - var(--rib-chat-gap)));
