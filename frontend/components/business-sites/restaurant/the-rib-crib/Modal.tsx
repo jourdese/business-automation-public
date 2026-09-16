@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useRef, type ReactNode } from 'react';
 import Icon from './Icon';
-import styles from './RibCribV2.module.css';
+import styles from './RibCribPage.module.css';
 
 /** Native dialog gives keyboard containment and top-layer rendering without a new dependency. */
 export default function Modal({ titleId, onClose, children, drawer = false }: { titleId: string; onClose: () => void; children: ReactNode; drawer?: boolean }) {

@@ -13,12 +13,7 @@ import PrinciplesSection from './PrinciplesSection';
 import ParticleWorld from './ParticleWorld';
 import PageGuide from './PageGuide';
 
-export type InitialBusiness = {
-  displayName: string;
-  publicPath: string;
-  adapterKey: string;
-  presetKey: string | null;
-};
+import type { InitialBusiness } from '@/lib/businesses/types';
 
 export function StaticCompanion() {
   const paths = [1, 2, 3].map((value) =>

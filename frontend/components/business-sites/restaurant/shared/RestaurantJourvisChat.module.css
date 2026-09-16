@@ -1,0 +1,239 @@
+/* Preserved chat defaults from the old global cascade. Every rule is panel-scoped. */
+.theme {
+  --rib-red: #a40d17;
+  --rib-red-bright: #c21922;
+  --rib-deep: #69080d;
+  --rib-charcoal: #171513;
+  --rib-wood: #291a14;
+  --rib-cream: #f8f3eb;
+  --rib-warm: #efe4d3;
+  --rib-gold: #d5a33b;
+  --rib-white: #fff;
+  --rib-shadow: 0 24px 70px rgba(20, 9, 5, .22);
+}
+:where(.theme):global(.rib-jourvis-chat) {
+  position: fixed;
+  z-index: 130;
+  right: 22px;
+  bottom: 105px;
+  width: min(430px, calc(100vw - 32px));
+  height: min(680px, calc(100vh - 135px));
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr) auto auto auto;
+  overflow: hidden;
+  border: 1px solid rgba(112,63,50,.17);
+  border-radius: 20px;
+  color: #291917;
+  background: #fff;
+  box-shadow: 0 35px 90px rgba(38,10,7,.34);
+  animation: ribChatIn .26s both cubic-bezier(.2,.8,.2,1);
+}
+:where(.theme) :global(.rib-jourvis-chat-head) { min-height: 70px; display: flex; align-items: center; justify-content: space-between; padding: 10px 12px 10px 10px; color: white; background: linear-gradient(135deg, var(--rib-red), #78070d); }
+:where(.theme) :global(.rib-jourvis-chat-head > button) { display: grid; place-items: center; width: 34px; height: 34px; border: 0; border-radius: 50%; color: white; background: rgba(255,255,255,.12); }
+:where(.theme) :global(.rib-jourvis-chat-identity) { display: flex; align-items: center; gap: 9px; }
+:where(.theme) :global(.rib-jourvis-mini) { width: 48px; height: 48px; border-radius: 14px; display: grid; place-items: center; background: rgba(255,255,255,.95); }
+:where(.theme) :global(.rib-jourvis-mini img) { width: 43px; height: 43px; object-fit: contain; }
+:where(.theme) :global(.rib-jourvis-chat-identity > div) { display: grid; gap: 4px; }
+:where(.theme) :global(.rib-jourvis-chat-identity strong) { font-size: 14px; }
+:where(.theme) :global(.rib-jourvis-chat-identity span) { display: flex; align-items: center; gap: 6px; color: rgba(255,255,255,.7); font-size: 10px; }
+:where(.theme) :global(.rib-jourvis-chat-identity i) { width: 7px; height: 7px; border-radius: 50%; background: #72e4a3; box-shadow: 0 0 0 4px rgba(114,228,163,.12); }
+:where(.theme) :global(.rib-jourvis-chat-intro) { display: flex; align-items: center; gap: 8px; padding: 10px 15px; color: #6d5150; background: #fff7f4; border-bottom: 1px solid #f0e3dd; font-size: 10px; }
+:where(.theme) :global(.rib-jourvis-chat-intro svg) { color: var(--rib-red); }
+:where(.theme) :global(.rib-jourvis-log) { overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 11px; background: linear-gradient(180deg, #fff, #fbfaf8); }
+:where(.theme) :global(.rib-chat-message) { display: flex; gap: 7px; max-width: 88%; }
+:where(.theme) :global(.rib-chat-message.customer) { align-self: flex-end; }
+:where(.theme) :global(.rib-chat-message p) { margin: 0; padding: 10px 12px; border-radius: 13px; font-size: 12px; line-height: 1.45; }
+:where(.theme) :global(.rib-chat-message.customer p) { color: white; background: var(--rib-red); border-bottom-right-radius: 4px; }
+:where(.theme) :global(.rib-chat-message.jourvis p) { background: #f0ece9; border-bottom-left-radius: 4px; }
+:where(.theme) :global(.rib-chat-avatar) { width: 29px; height: 29px; border-radius: 10px; display: grid; place-items: center; background: #fff; border: 1px solid #eee2dc; flex: 0 0 auto; }
+:where(.theme) :global(.rib-chat-avatar img) { width: 26px; height: 26px; object-fit: contain; }
+:where(.theme) :global(.rib-chat-typing) { width: 55px; height: 30px; display: flex; align-items: center; justify-content: center; gap: 4px; border-radius: 12px; background: #f0ece9; }
+:where(.theme) :global(.rib-chat-typing span) { width: 5px; height: 5px; border-radius: 50%; background: #a58f87; animation: ribTyping 1.1s infinite; }
+:where(.theme) :global(.rib-chat-typing span:nth-child(2)) { animation-delay: .13s; }
+:where(.theme) :global(.rib-chat-typing span:nth-child(3)) { animation-delay: .26s; }
+:where(.theme) :global(.rib-chat-choices) { padding: 8px 12px; display: flex; gap: 6px; overflow-x: auto; border-top: 1px solid #eee5e0; background: white; }
+:where(.theme) :global(.rib-chat-choices button) { flex: 0 0 auto; border: 1px solid #d8cbc5; border-radius: 99px; padding: 7px 9px; color: #5b3a36; background: white; font-size: 9px; }
+:where(.theme) :global(.rib-chat-composer) { margin: 0 11px 10px; display: grid; grid-template-columns: 1fr 40px; gap: 7px; align-items: end; border: 1px solid #dbd1cc; border-radius: 13px; padding: 6px; }
+:where(.theme) :global(.rib-chat-composer textarea) { resize: none; border: 0; outline: 0; min-height: 38px; max-height: 90px; padding: 9px; color: #291917; background: transparent; font-size: 12px; }
+:where(.theme) :global(.rib-chat-composer > button) { width: 40px; height: 40px; border: 0; border-radius: 10px; display: grid; place-items: center; color: white; background: var(--rib-red); }
+:where(.theme) :global(.rib-chat-composer > button:disabled) { opacity: .4; cursor: not-allowed; }
+:where(.theme) :global(.rib-chat-error) { margin: 0 12px 8px; padding: 8px 10px; border-radius: 8px; color: #8b1018; background: #fff0f0; font-size: 10px; }
+:where(.theme) :global(.rib-chat-disclaimer) { margin: 0; padding: 0 12px 9px; color: #a18e86; font-size: 9px; text-align: center; }
+@keyframes ribChatIn { from { opacity: 0; transform: translateY(18px) scale(.97); } to { opacity: 1; transform: none; } }@keyframes ribTyping { 50% { transform: translateY(-3px); opacity: .45; } }@media (max-width: 780px) {
+:where(.theme):global(.rib-jourvis-chat) { right: 8px; bottom: 103px; width: calc(100vw - 16px); height: min(680px, calc(100dvh - 118px)); border-radius: 18px; }
+}
+:where(.theme) :global(.rib-chat-avatar img),
+:where(.theme) :global(.rib-jourvis-mini img) {
+  filter: none !important;
+  mix-blend-mode: normal;
+}
+:where(.theme):global(.rib-jourvis-chat) {
+  z-index:140;
+  right:22px;
+  bottom:22px;
+  height:min(700px,calc(100dvh - 44px));
+  border-color:rgba(46,107,87,.22);
+  box-shadow:0 38px 100px rgba(16,40,34,.35);
+}
+:where(.theme) :global(.rib-jourvis-chat-head) {
+  background:linear-gradient(135deg,#1f3a5f,#2e6b57);
+}
+:where(.theme) :global(.rib-jourvis-chat-head > button) { background:rgba(255,255,255,.13); }
+:where(.theme) :global(.rib-jourvis-mini) {
+  background:rgba(247,244,238,.98);
+  box-shadow:inset 0 0 0 1px rgba(167,227,197,.45);
+}
+:where(.theme) :global(.rib-jourvis-chat-intro) {
+  color:#365a50;
+  background:#f4fbf7;
+  border-bottom-color:#dcece4;
+}
+:where(.theme) :global(.rib-jourvis-chat-intro svg) { color:#2e6b57; }
+:where(.theme) :global(.rib-chat-message.customer p) { background:#a40d17; }
+:where(.theme) :global(.rib-chat-message.jourvis p) { color:#19352d; background:#eaf5ef; }
+:where(.theme) :global(.rib-chat-avatar) { border-color:#d6ebe1; background:#fbfffd; }
+:where(.theme) :global(.rib-chat-choices button) { border-color:#cfe2d9; color:#285548; }
+:where(.theme) :global(.rib-chat-choices button:hover) { border-color:#2e6b57; background:#eff8f3; }
+:where(.theme) :global(.rib-chat-composer) { border-color:#c8ddd4; }
+:where(.theme) :global(.rib-chat-composer > button) { background:#2e6b57; }
+@media (max-width:780px) {
+:where(.theme):global(.rib-jourvis-chat) { right:8px; bottom:8px; width:calc(100vw - 16px); height:calc(100dvh - 16px); border-radius:18px; }
+}
+
+/* Active restaurant chat theme, formerly inside the Rib Crib page module. */
+.theme { --brand: #a7e3c5; --mint: #a7e3c5; position: fixed; z-index: 140; right: max(20px,env(safe-area-inset-right,0px)); bottom: max(20px,env(safe-area-inset-bottom,0px)); width: min(410px,calc(100vw - 28px)); height: min(650px,calc(100dvh - 110px)); display: flex; flex-direction: column; color: #23332e; background: #fffcf7; border: 1px solid #d7ded6; border-radius: 15px; overflow: hidden; box-shadow: 0 20px 80px #09182045; font-family: 'Segoe UI',Arial,sans-serif; }
+.theme :global(.rib-jourvis-chat-head) { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 16px; background: #08141f; color: #f7f4ee; }
+.theme :global(.rib-jourvis-chat-identity) { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.theme :global(.rib-jourvis-chat-identity) strong { font-family: inherit; display: block; font-size: 13px; font-weight: 600; }
+.theme :global(.rib-jourvis-chat-identity) span:not(:global(.rib-jourvis-mini)) { font-size: 10px; color: #baccc8; }
+.theme :global(.rib-jourvis-chat-head) button { border: 1px solid #48605f; border-radius: 50%; display: grid; place-items: center; width: 34px; height: 34px; background: transparent; color: #f7f4ee; padding: 0; }
+.theme :global(.rib-jourvis-chat-intro) { padding: 12px 16px; border-bottom: 1px solid #e1e5dc; display: flex; align-items: flex-start; gap: 10px; color: #65746d; font-size: 11px; }
+.theme :global(.rib-jourvis-log) { flex: 1; min-height: 80px; overflow-y: auto; overscroll-behavior: contain; padding: 20px 15px; }
+.theme :global(.rib-chat-message) { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 14px; }
+.theme :global(.rib-chat-message) p { padding: 11px 12px; border-radius: 8px; background: #edf1e9; color: #274337; font-size: 12px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.theme :global(.rib-chat-message.customer) { justify-content: flex-end; }
+.theme :global(.rib-chat-message.customer) p { background: #e5eaf0; color: #263846; max-width: 88%; }
+.theme :global(.rib-chat-avatar) { flex-shrink: 0; }
+.theme :global(.rib-chat-typing) { display: flex; align-items: center; gap: 4px; height: 28px; }
+.theme :global(.rib-chat-typing) span { width: 5px; height: 5px; background: #6b9580; border-radius: 50%; animation: typing 1.2s ease infinite; }
+.theme :global(.rib-chat-typing) span:nth-child(2) { animation-delay: .15s; }
+.theme :global(.rib-chat-typing) span:nth-child(3) { animation-delay: .3s; }
+.theme :global(.rib-chat-choices) { display: flex; flex-wrap: wrap; gap: 6px; padding: 10px 14px; }
+.theme :global(.rib-chat-choices) button { background: transparent; border: 1px solid #c4d4c7; color: #305743; padding: 8px 10px; border-radius: 16px; font-size: 10px; min-height: 34px; }
+.theme :global(.rib-chat-composer) { display: flex; align-items: flex-end; gap: 8px; padding: 12px 14px; border-top: 1px solid #dce2d7; }
+.theme textarea { flex: 1; min-width: 0; min-height: 43px; max-height: 90px; resize: vertical; border: 1px solid #c2cec1; border-radius: 6px; padding: 10px; background: white; color: #233c30; font-size: 12px; }
+.theme :global(.rib-chat-composer) button { width: 41px; height: 41px; border: 0; border-radius: 6px; display: grid; place-items: center; background: #2e6b57; color: #fff; padding: 0; }
+.theme :global(.rib-chat-disclaimer) { font-size: 9px; color: #727c72; padding: 0 14px 12px; margin: 0; text-align: center; }
+.theme :global(.rib-chat-error) { margin: 0 14px; padding: 9px 11px; font-size: 11px; background: #faebe5; color: #973f32; border-radius: 5px; }
+.theme :global(.rib-chat-empty) { color: #62766c; font-size: 12px; text-align: center; margin: 22px 10px; }
+.theme :global(.rib-chat-retry) { display: block; margin: 9px auto; background: #ebf1e9; color: #315e45; border: 1px solid #b7cdbb; border-radius: 5px; padding: 8px 14px; font-size: 12px; }
+
+@keyframes typing { 50% { opacity: .4; transform: translateY(-2px); } }
+@media (max-width: 600px) {
+  .theme { right: 12px; bottom: max(12px,env(safe-area-inset-bottom,0px)); width: calc(100vw - 24px); height: min(650px,calc(100dvh - 92px)); max-height: calc(100dvh - 92px); }
+  .theme textarea { font-size: 16px; }
+}
+
+/* The panel is portalled to body. Keep layout independent of restaurant/global CSS. */
+.panel:global(.rib-jourvis-chat) {
+  --rib-chat-gap: max(20px, env(safe-area-inset-top, 0px), env(safe-area-inset-bottom, 0px), env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px));
+  position: fixed;
+  top: auto;
+  left: auto;
+  right: var(--rib-chat-gap);
+  bottom: var(--rib-chat-gap);
+  /* Do not inherit the legacy transform animation or the former centering offset. */
+  animation: none;
+  transform: none;
+  width: min(410px, calc(100vw - var(--rib-chat-gap) - var(--rib-chat-gap)));
+  height: min(650px, calc(100dvh - var(--rib-chat-gap) - var(--rib-chat-gap)));
+  max-height: calc(100dvh - var(--rib-chat-gap) - var(--rib-chat-gap));
+  min-width: 0;
+  min-height: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+.panel:global(.rib-jourvis-chat) *,
+.panel:global(.rib-jourvis-chat) *::before,
+.panel:global(.rib-jourvis-chat) *::after { box-sizing: border-box; }
+.panel:global(.rib-jourvis-chat) > :not(:global(.rib-jourvis-log)) { flex-shrink: 0; }
+.panel:global(.rib-jourvis-chat) :global(.rib-jourvis-log) {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 0;
+  padding: 16px;
+  gap: 12px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-gutter: stable;
+}
+/* A message row spans the log; only its bubble is content-sized and capped.
+   Capping an intrinsic-width row AND its paragraph squeezed even "Services". */
+.panel:global(.rib-jourvis-chat) :global(.rib-chat-message) {
+  display: flex;
+  flex: 0 0 auto;
+  align-self: stretch;
+  align-items: flex-start;
+  justify-content: flex-start;
+  width: 100%;
+  max-width: none;
+  min-width: 0;
+  gap: 8px;
+  margin: 0;
+}
+.panel:global(.rib-jourvis-chat) :global(.rib-chat-message.customer) { justify-content: flex-end; }
+.panel:global(.rib-jourvis-chat) :global(.rib-chat-message) > p {
+  flex: 0 1 auto;
+  width: fit-content;
+  max-width: 88%;
+  min-width: 0;
+  margin: 0;
+  padding: 11px 12px;
+  font-size: 14px;
+  line-height: 1.5;
+  text-align: left;
+  white-space: pre-wrap;
+  word-break: normal;
+  overflow-wrap: anywhere;
+}
+.panel:global(.rib-jourvis-chat) :global(.rib-chat-message.jourvis) > p { max-width: min(88%, calc(100% - 36px)); }
+.panel:global(.rib-jourvis-chat) :global(.rib-chat-avatar) { flex: 0 0 28px; width: 28px; height: 28px; }
+.panel:global(.rib-jourvis-chat) :global(.rib-chat-typing) { flex-shrink: 0; }
+.panel:global(.rib-jourvis-chat) :global(.rib-jourvis-mini) {
+  display: grid;
+  place-items: center;
+  flex: 0 0 48px;
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  margin: 0;
+  border-radius: 14px;
+  background: #f7f4ee;
+  line-height: 0;
+}
+.panel:global(.rib-jourvis-chat) :global(.rib-jourvis-mini) > span { grid-area: 1 / 1; place-self: center; margin: 0; }
+.panel:global(.rib-jourvis-chat) :global(.rib-jourvis-chat-head) > button { flex: 0 0 34px; }
+.panel:global(.rib-jourvis-chat) :global(.rib-chat-composer) { min-width: 0; }
+.panel:global(.rib-jourvis-chat) textarea { font-size: 16px; resize: none; }
+.panel:global(.rib-jourvis-chat) :global(.rib-chat-error) { max-height: 80px; overflow-y: auto; }
+@media (max-width: 600px) {
+  .panel:global(.rib-jourvis-chat) {
+    --rib-chat-gap: max(12px, env(safe-area-inset-top, 0px), env(safe-area-inset-bottom, 0px), env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px));
+  }
+}
+@media (max-height: 540px) {
+  .panel:global(.rib-jourvis-chat) :global(.rib-jourvis-chat-head) { padding: 8px 12px; }
+  .panel:global(.rib-jourvis-chat) :global(.rib-jourvis-mini) { width: 40px; height: 40px; flex-basis: 40px; }
+  .panel:global(.rib-jourvis-chat) :global(.rib-jourvis-chat-intro) { display: none; }
+  .panel:global(.rib-jourvis-chat) :global(.rib-chat-choices) { flex-wrap: nowrap; overflow-x: auto; padding: 4px 12px; }
+  .panel:global(.rib-jourvis-chat) :global(.rib-chat-choices) button { flex: 0 0 auto; white-space: nowrap; }
+  .panel:global(.rib-jourvis-chat) :global(.rib-chat-composer) { padding: 6px 12px; }
+  .panel:global(.rib-jourvis-chat) :global(.rib-chat-disclaimer) { padding-bottom: 5px; font-size: 9px; }
+  .panel:global(.rib-jourvis-chat) :global(.rib-chat-error) { max-height: 48px; padding: 5px 8px; }
+  .panel:global(.rib-jourvis-chat) :global(.rib-chat-retry) { margin: 4px auto; padding: 4px 12px; }
+}

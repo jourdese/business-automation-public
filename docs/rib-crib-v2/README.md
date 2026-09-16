@@ -16,7 +16,7 @@ Use the address printed by the dev server and append `/restaurant/the-rib-crib`.
 
 ## Implementation
 
-`components/jourvis/RibCribPage.tsx` delegates to `components/rib-crib-v2/RibCribV2Page.tsx`. The existing database route and `InitialBusiness` props remain intact. A single `RibCribJourvisChat` serves navigation, menu, meal-plan and reservation entry points. `lib/rib-crib-v2` separates content, asset mapping and testable plan/date helpers. Original source assets remain in `src/assets/rib-crib` unchanged.
+`components/jourvis/RibCribPage.tsx` delegates to `components/business-sites/restaurant/the-rib-crib/RibCribPage.tsx`. The existing database route and `InitialBusiness` props remain intact. A single `RibCribJourvisChat` serves navigation, menu, meal-plan and reservation entry points. `lib/rib-crib-v2` separates content, asset mapping and testable plan/date helpers. Original source assets remain in `src/assets/rib-crib` unchanged.
 
 The page includes a new editorial hero, searchable/category-filtered featured menu, additional text-menu groups, dish details, five selectable platters, an optional meal shortlist, a validated enquiry form, atmosphere/pickup sections, an illustrative conversation introduction and the existing compact canonical Jourvis launcher.
 

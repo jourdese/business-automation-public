@@ -1,4 +1,4 @@
-/* The V2 route has its own visual system. Legacy .rib-crib-page selectors never match it. */
+/* Restaurant-owned visual system; shared chat styling lives beside RestaurantJourvisChat. */
 :global(html):has(.root) { color-scheme: light; scroll-padding-top: 100px; }
 :global(body):has(.root) { background: #f7f2e9; }
 :global(body):has(.root) > :global(.site-header),
@@ -42,7 +42,7 @@
 .root ::selection { background: #e4c1b8; color: #491321; }
 /* One targeted exception to the inherited global !important focus rule. */
 .root :focus-visible { outline: 2px solid var(--brand) !important; outline-offset: 5px !important; }
-.root :where(.header,.platterSection,.assistantSection,.footer,.chatPanel) :focus-visible { outline-color: #f3d799 !important; }
+.root :where(.header,.platterSection,.assistantSection,.footer) :focus-visible { outline-color: #f3d799 !important; }
 .srOnly { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
 .photoFallback { display: grid; place-items: center; padding: 24px; background: #e7dfd3; color: #62564e; font-size: 13px; text-align: center; }
 .eyebrow { display: flex; align-items: center; gap: 10px; color: var(--brand); font-size: 11px; font-weight: 650; letter-spacing: .16em; text-transform: uppercase; line-height: 1.5; }
@@ -289,38 +289,9 @@
 .planCount { background: var(--brand); color: var(--paper); width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; font-size: 13px; }
 .planLauncher small { display: block; font-size: 10px; color: #83695c; }
 
-/* V2 chat uses the same component/protocol, but not the legacy restaurant CSS cascade. */
-.chatPanel { --brand: #a7e3c5; --mint: #a7e3c5; position: fixed; z-index: 140; right: max(20px,env(safe-area-inset-right,0px)); bottom: max(20px,env(safe-area-inset-bottom,0px)); width: min(410px,calc(100vw - 28px)); height: min(650px,calc(100dvh - 110px)); display: flex; flex-direction: column; color: #23332e; background: #fffcf7; border: 1px solid #d7ded6; border-radius: 15px; overflow: hidden; box-shadow: 0 20px 80px #09182045; font-family: 'Segoe UI',Arial,sans-serif; }
-.chatPanel :global(.rib-jourvis-chat-head) { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 16px; background: #08141f; color: #f7f4ee; }
-.chatPanel :global(.rib-jourvis-chat-identity) { display: flex; align-items: center; gap: 10px; min-width: 0; }
-.chatPanel :global(.rib-jourvis-chat-identity) strong { font-family: inherit; display: block; font-size: 13px; font-weight: 600; }
-.chatPanel :global(.rib-jourvis-chat-identity) span:not(:global(.rib-jourvis-mini)) { font-size: 10px; color: #baccc8; }
-.chatPanel :global(.rib-jourvis-chat-head) button { border: 1px solid #48605f; border-radius: 50%; display: grid; place-items: center; width: 34px; height: 34px; background: transparent; color: #f7f4ee; padding: 0; }
-.chatPanel :global(.rib-jourvis-chat-intro) { padding: 12px 16px; border-bottom: 1px solid #e1e5dc; display: flex; align-items: flex-start; gap: 10px; color: #65746d; font-size: 11px; }
-.chatPanel :global(.rib-jourvis-log) { flex: 1; min-height: 80px; overflow-y: auto; overscroll-behavior: contain; padding: 20px 15px; }
-.chatPanel :global(.rib-chat-message) { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 14px; }
-.chatPanel :global(.rib-chat-message) p { padding: 11px 12px; border-radius: 8px; background: #edf1e9; color: #274337; font-size: 12px; white-space: pre-wrap; overflow-wrap: anywhere; }
-.chatPanel :global(.rib-chat-message.customer) { justify-content: flex-end; }
-.chatPanel :global(.rib-chat-message.customer) p { background: #e5eaf0; color: #263846; max-width: 88%; }
-.chatPanel :global(.rib-chat-avatar) { flex-shrink: 0; }
-.chatPanel :global(.rib-chat-typing) { display: flex; align-items: center; gap: 4px; height: 28px; }
-.chatPanel :global(.rib-chat-typing) span { width: 5px; height: 5px; background: #6b9580; border-radius: 50%; animation: typing 1.2s ease infinite; }
-.chatPanel :global(.rib-chat-typing) span:nth-child(2) { animation-delay: .15s; }
-.chatPanel :global(.rib-chat-typing) span:nth-child(3) { animation-delay: .3s; }
-.chatPanel :global(.rib-chat-choices) { display: flex; flex-wrap: wrap; gap: 6px; padding: 10px 14px; }
-.chatPanel :global(.rib-chat-choices) button { background: transparent; border: 1px solid #c4d4c7; color: #305743; padding: 8px 10px; border-radius: 16px; font-size: 10px; min-height: 34px; }
-.chatPanel :global(.rib-chat-composer) { display: flex; align-items: flex-end; gap: 8px; padding: 12px 14px; border-top: 1px solid #dce2d7; }
-.chatPanel textarea { flex: 1; min-width: 0; min-height: 43px; max-height: 90px; resize: vertical; border: 1px solid #c2cec1; border-radius: 6px; padding: 10px; background: white; color: #233c30; font-size: 12px; }
-.chatPanel :global(.rib-chat-composer) button { width: 41px; height: 41px; border: 0; border-radius: 6px; display: grid; place-items: center; background: #2e6b57; color: #fff; padding: 0; }
-.chatPanel :global(.rib-chat-disclaimer) { font-size: 9px; color: #727c72; padding: 0 14px 12px; margin: 0; text-align: center; }
-.chatPanel :global(.rib-chat-error) { margin: 0 14px; padding: 9px 11px; font-size: 11px; background: #faebe5; color: #973f32; border-radius: 5px; }
-.chatPanel :global(.rib-chat-empty) { color: #62766c; font-size: 12px; text-align: center; margin: 22px 10px; }
-.chatPanel :global(.rib-chat-retry) { display: block; margin: 9px auto; background: #ebf1e9; color: #315e45; border: 1px solid #b7cdbb; border-radius: 5px; padding: 8px 14px; font-size: 12px; }
-
 .root [data-entered='true'] { animation: enter 600ms ease-out both; }
 @keyframes enter { from { opacity: .7; transform: translateY(9px); } to { opacity: 1; transform: none; } }
 @keyframes photoSettle { from { opacity: .72; } to { opacity: 1; } }
-@keyframes typing { 50% { opacity: .4; transform: translateY(-2px); } }
 
 @media (min-width: 1600px) { .hero { padding-top: 80px; padding-bottom: 90px; } }
 @media (max-width: 1100px) {
@@ -573,8 +544,6 @@
   .planLauncher { left: 12px; bottom: max(17px,env(safe-area-inset-bottom,0px)); gap: 10px; min-height: 53px; padding: 7px 13px 7px 7px; max-width: calc(100vw - 114px); }
   .planLauncher small { font-size: 9px; }
   .planCount { width: 34px; height: 34px; font-size: 12px; }
-  .chatPanel { right: 12px; bottom: max(12px,env(safe-area-inset-bottom,0px)); width: calc(100vw - 24px); height: min(650px,calc(100dvh - 92px)); max-height: calc(100dvh - 92px); }
-  .chatPanel textarea { font-size: 16px; }
 }
 @media (max-width: 359px) {
   .hero h1 { font-size: 62px; }

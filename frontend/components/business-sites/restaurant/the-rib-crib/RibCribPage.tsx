@@ -1,18 +1,19 @@
 'use client';
 import { useEffect, useId, useRef, useState, type CSSProperties, type ImgHTMLAttributes } from 'react';
-import type { InitialBusiness } from '../jourvis/JourvisExperience';
-import JourvisCompanion from '../jourvis/JourvisCompanion';
-import RibCribJourvisChat from '../jourvis/RibCribJourvisChat';
-import { assets } from '@/lib/rib-crib-v2/assets';
-import { dishes, platters, moreMenu, dishById, peso, quickPrompts, restaurantContent as copy, type Dish } from '@/lib/rib-crib-v2/content';
-import { adjustPlan, sanitizePlan, summarizePlan, mealPlanPrompt, priceSummary, manilaToday, reservationPrompt, type MealPlan } from '@/lib/rib-crib-v2/meal-plan';
+import type { InitialBusiness } from '@/lib/businesses/types';
+import JourvisCompanion from '@/components/jourvis/JourvisCompanion';
+import RestaurantJourvisChat from '../shared/RestaurantJourvisChat';
+import { ribCribSiteConfig } from '@/lib/businesses/restaurant/the-rib-crib/config';
+import { assets } from '@/lib/businesses/restaurant/the-rib-crib/assets';
+import { dishes, platters, moreMenu, dishById, peso, quickPrompts, restaurantContent as copy, type Dish } from '@/lib/businesses/restaurant/the-rib-crib/content';
+import { adjustPlan, sanitizePlan, summarizePlan, mealPlanPrompt, priceSummary, manilaToday, reservationPrompt, type MealPlan } from '@/lib/businesses/restaurant/the-rib-crib/meal-plan';
 import Icon from './Icon';
 import Modal from './Modal';
-import styles from './RibCribV2.module.css';
+import styles from './RibCribPage.module.css';
 
 function openJourvis(prompt?: string) {
   // Keep the existing event contract, scoped session and real restaurant-preset engine.
-  window.dispatchEvent(new CustomEvent('ribcrib:jourvis', { detail: { prompt } }));
+  window.dispatchEvent(new CustomEvent(ribCribSiteConfig.chat.openEvent, { detail: { prompt } }));
 }
 
 function Photo({ src, alt, className = '', ...props }: ImgHTMLAttributes<HTMLImageElement>) {
@@ -39,7 +40,7 @@ function DishCard({ dish, quantity, add, details }: { dish: Dish; quantity: numb
   </article>;
 }
 
-export default function RibCribV2Page({ business }: { business: InitialBusiness }) {
+export default function RibCribPage({ business }: { business: InitialBusiness }) {
   const [category, setCategory] = useState('All favourites');
   const [search, setSearch] = useState('');
   const [selectedPlatter, setSelectedPlatter] = useState(0);
@@ -59,7 +60,7 @@ export default function RibCribV2Page({ business }: { business: InitialBusiness 
   const rootRef = useRef<HTMLDivElement>(null);
   const navRef = useRef<HTMLButtonElement>(null);
   const instance = useId();
-  const planKey = `ribcrib.meal-plan.v2:${business.publicPath}`;
+  const planKey = `${ribCribSiteConfig.mealPlanStoragePrefix}:${business.publicPath}`;
   const summary = summarizePlan(plan);
   const platter = platters[selectedPlatter];
   const visibleDishes = dishes.filter((dish) => (category === 'All favourites' || dish.category === category) && `${dish.name} ${dish.portion || ''}`.toLowerCase().includes(search.trim().toLowerCase()));
@@ -84,8 +85,8 @@ export default function RibCribV2Page({ business }: { business: InitialBusiness 
   }, []);
   useEffect(() => {
     const onChat = (event: Event) => setDemoOpen((event as CustomEvent<{ open: boolean }>).detail.open);
-    window.addEventListener('ribcrib:chat-state', onChat);
-    return () => window.removeEventListener('ribcrib:chat-state', onChat);
+    window.addEventListener(ribCribSiteConfig.chat.stateEvent, onChat);
+    return () => window.removeEventListener(ribCribSiteConfig.chat.stateEvent, onChat);
   }, []);
 
   function addDish(dish: Dish) {
@@ -181,7 +182,7 @@ export default function RibCribV2Page({ business }: { business: InitialBusiness 
 
     <footer className={styles.footer}><div className={styles.footerTop}><a href="#rib-top" aria-label="The Rib Crib, back to top"><Photo className={styles.footerBrand} src={assets.footer} alt="The Rib Crib — Eat Meat Repeat" width={2172} height={724} loading="lazy" /></a><div><p className={styles.footerLabel}>Let’s meat here</p><h2>Good food.<br />Even better company.</h2></div><a className={styles.creamButton} href={copy.facebook} target="_blank" rel="noopener noreferrer">Message the restaurant<Icon name="diagonal" size={18} /></a></div><div className={styles.footerDetails}><div><strong>Planning your visit?</strong><p>Check the restaurant’s Facebook page for current hours, directions and contact details.</p></div><div><strong>A note before you order</strong><p>{copy.priceDisclaimer}</p></div><div><strong>Made with a little help</strong><p>A restaurant experience powered by Jourvis.</p><a href="/">Discover Jourvis<Icon name="diagonal" size={15} /></a></div></div><div className={styles.footerBottom}><span>© {new Date().getFullYear()} The Rib Crib</span><span>{copy.imageDisclaimer}</span><a href="/privacy">Privacy</a></div></footer>
 
-    <RibCribJourvisChat business={business} className={styles.chatPanel} />
+    <RestaurantJourvisChat business={business} presentation={ribCribSiteConfig.chat} />
     {summary.count > 0 && !planOpen && !detail && !demoOpen ? <button type="button" className={styles.planLauncher} onClick={() => setPlanOpen(true)} aria-label={`Open meal plan, ${summary.count} selections`}><span className={styles.planCount}>{summary.count}</span><span>My meal plan<small>{summary.unpriced ? 'Some prices to confirm' : peso(summary.subtotal)}</small></span><Icon name="arrow" size={18} /></button> : null}
     <span className={styles.srOnly} role="status" aria-live="polite">{announcement}</span>
 

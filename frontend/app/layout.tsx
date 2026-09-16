@@ -6,12 +6,6 @@ import './globals.css';
 import './refinements.css';
 import './live-demo.css';
 import './business-demo.css';
-import './rib-crib.css';
-import './rib-crib-polish.css';
-import './rib-crib-reference.css';
-import './rib-crib-hires.css';
-import './rib-crib-jourvis-fixed.css';
-import './rib-crib-final-cleanup.css';
 export const metadata: Metadata = {
   icons: { icon: '/favicon.svg' },
   metadataBase: new URL('https://jourvis.ai'),
@@ -45,7 +39,7 @@ export default function RootLayout({
     Object.entries(palette).map(([name, value]) => ['--' + name, value]),
   ) as CSSProperties;
   return (
-    <html lang="en" style={theme} data-build="rib-crib-route-scoped">
+    <html lang="en" style={theme} data-build="business-sites-scoped">
       <body>
         <a className="skip" href="#main">
           Skip to content
