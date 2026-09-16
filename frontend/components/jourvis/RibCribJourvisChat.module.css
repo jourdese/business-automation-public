@@ -1,24 +1,73 @@
-/* Extra class specificity overrides both legacy and V2 bottom-docked positioning. */
+/* The panel is portalled to body. Keep layout independent of restaurant/global CSS. */
 .panel:global(.rib-jourvis-chat) {
-  --rib-chat-gap: max(12px, env(safe-area-inset-top, 0px), env(safe-area-inset-bottom, 0px), env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px));
+  --rib-chat-gap: max(20px, env(safe-area-inset-top, 0px), env(safe-area-inset-bottom, 0px), env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px));
   position: fixed;
-  top: 50%;
-  left: 50%;
-  right: auto;
-  bottom: auto;
-  /* The global ribChatIn animation ends at transform:none with fill-mode:both.
-     Disable it here: animation values otherwise override the centering transform. */
+  top: auto;
+  left: auto;
+  right: var(--rib-chat-gap);
+  bottom: var(--rib-chat-gap);
+  /* Do not inherit the legacy transform animation or the former centering offset. */
   animation: none;
-  transform: translate(-50%, -50%);
+  transform: none;
   width: min(410px, calc(100vw - var(--rib-chat-gap) - var(--rib-chat-gap)));
   height: min(650px, calc(100dvh - var(--rib-chat-gap) - var(--rib-chat-gap)));
   max-height: calc(100dvh - var(--rib-chat-gap) - var(--rib-chat-gap));
+  min-width: 0;
   min-height: 0;
   margin: 0;
+  display: flex;
+  flex-direction: column;
   box-sizing: border-box;
 }
+.panel:global(.rib-jourvis-chat) *,
+.panel:global(.rib-jourvis-chat) *::before,
+.panel:global(.rib-jourvis-chat) *::after { box-sizing: border-box; }
 .panel:global(.rib-jourvis-chat) > :not(:global(.rib-jourvis-log)) { flex-shrink: 0; }
-.panel:global(.rib-jourvis-chat) :global(.rib-jourvis-log) { min-height: 0; }
+.panel:global(.rib-jourvis-chat) :global(.rib-jourvis-log) {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 0;
+  padding: 16px;
+  gap: 12px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-gutter: stable;
+}
+/* A message row spans the log; only its bubble is content-sized and capped.
+   Capping an intrinsic-width row AND its paragraph squeezed even "Services". */
+.panel:global(.rib-jourvis-chat) :global(.rib-chat-message) {
+  display: flex;
+  flex: 0 0 auto;
+  align-self: stretch;
+  align-items: flex-start;
+  justify-content: flex-start;
+  width: 100%;
+  max-width: none;
+  min-width: 0;
+  gap: 8px;
+  margin: 0;
+}
+.panel:global(.rib-jourvis-chat) :global(.rib-chat-message.customer) { justify-content: flex-end; }
+.panel:global(.rib-jourvis-chat) :global(.rib-chat-message) > p {
+  flex: 0 1 auto;
+  width: fit-content;
+  max-width: 88%;
+  min-width: 0;
+  margin: 0;
+  padding: 11px 12px;
+  font-size: 14px;
+  line-height: 1.5;
+  text-align: left;
+  white-space: pre-wrap;
+  word-break: normal;
+  overflow-wrap: anywhere;
+}
+.panel:global(.rib-jourvis-chat) :global(.rib-chat-message.jourvis) > p { max-width: min(88%, calc(100% - 36px)); }
+.panel:global(.rib-jourvis-chat) :global(.rib-chat-avatar) { flex: 0 0 28px; width: 28px; height: 28px; }
+.panel:global(.rib-jourvis-chat) :global(.rib-chat-typing) { flex-shrink: 0; }
 .panel:global(.rib-jourvis-chat) :global(.rib-jourvis-mini) {
   display: grid;
   place-items: center;
@@ -36,6 +85,11 @@
 .panel:global(.rib-jourvis-chat) :global(.rib-chat-composer) { min-width: 0; }
 .panel:global(.rib-jourvis-chat) textarea { font-size: 16px; resize: none; }
 .panel:global(.rib-jourvis-chat) :global(.rib-chat-error) { max-height: 80px; overflow-y: auto; }
+@media (max-width: 600px) {
+  .panel:global(.rib-jourvis-chat) {
+    --rib-chat-gap: max(12px, env(safe-area-inset-top, 0px), env(safe-area-inset-bottom, 0px), env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px));
+  }
+}
 @media (max-height: 540px) {
   .panel:global(.rib-jourvis-chat) :global(.rib-jourvis-chat-head) { padding: 8px 12px; }
   .panel:global(.rib-jourvis-chat) :global(.rib-jourvis-mini) { width: 40px; height: 40px; flex-basis: 40px; }
