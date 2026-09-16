@@ -25,8 +25,9 @@ export async function generateMetadata({ params }: RoutePageProps): Promise<Meta
   if (!route) return { title: 'Business not found', robots: { index: false, follow: false } };
 
   const ribCrib = route.public_path === '/restaurant/the-rib-crib';
-  // The supplied square artwork is fitted inside a social-card canvas so preview apps do not crop the logo.
-  const thumbnail = 'https://jourvis.ai/rib-crib/rib-crib-social-fit.jpg';
+  // Keep the fitted social card, but version its URL so preview services re-fetch
+  // instead of reusing the earlier cached/cropped Rib Crib preview.
+  const thumbnail = 'https://jourvis.ai/rib-crib/rib-crib-social-fit.jpg?v=20260916-2';
   const title = `${route.display_name} | Jourvis`;
   const description = `Try the Jourvis business assistant with ${route.display_name}.`;
 
