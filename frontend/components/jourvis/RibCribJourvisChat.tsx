@@ -1,9 +1,9 @@
 'use client';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Send, Sparkles, X } from 'lucide-react';
 import { connectDemo, demoRequest, loadDemo, type DemoReply } from '@/lib/jourvis/live-demo';
 import { createBusinessDemoBootstrap, isExpectedBusiness } from '@/lib/jourvis/business-demo-bootstrap';
-import { bindChatViewport } from '@/lib/jourvis/chat-viewport';
 import type { InitialBusiness } from './JourvisExperience';
 import JourvisCompanion from './JourvisCompanion';
 import JourvisLauncher from './JourvisLauncher';
@@ -27,7 +27,6 @@ export default function RibCribJourvisChat({ business, className = '' }: { busin
   const readyRef = useRef(false);
   const busyRef = useRef(false);
   const initRef = useRef<Promise<boolean> | null>(null);
-  const panelRef = useRef<HTMLElement>(null);
   const logRef = useRef<HTMLDivElement>(null);
   const launcherRef = useRef<HTMLButtonElement>(null);
   const composerRef = useRef<HTMLTextAreaElement>(null);
@@ -134,9 +133,6 @@ export default function RibCribJourvisChat({ business, className = '' }: { busin
     return () => window.removeEventListener('ribcrib:jourvis', openChat);
   }, []);
   useEffect(() => {
-    if (open && panelRef.current) return bindChatViewport(panelRef.current);
-  }, [open]);
-  useEffect(() => {
     window.dispatchEvent(new CustomEvent('ribcrib:chat-state', { detail: { open } }));
     if (!open) return;
     void ensureRestaurant();
@@ -151,24 +147,26 @@ export default function RibCribJourvisChat({ business, className = '' }: { busin
     logRef.current.scrollTo({ top: logRef.current.scrollHeight, behavior: reducedMotion ? 'auto' : 'smooth' });
   }, [messages, busy]);
 
+  const panel = open ? <aside id="rib-jourvis-panel" className={`rib-jourvis-chat ${styles.panel}${className ? ` ${className}` : ''}`} role="dialog" aria-label="Chat with Jourvis" aria-describedby="rib-chat-disclaimer"
+    onKeyDown={(event) => { if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); closeChat(); } }}>
+    <header className="rib-jourvis-chat-head"><div className="rib-jourvis-chat-identity"><span className="rib-jourvis-mini"><JourvisCompanion size={34} molecules={false} /></span><div><strong>Jourvis × The Rib Crib</strong><span>{ready ? 'The Rib Crib restaurant preset loaded' : busy ? 'Connecting to the restaurant demo…' : 'Restaurant demo not connected'}</span></div></div><button type="button" onClick={closeChat} aria-label="Close chat"><X size={18} aria-hidden /></button></header>
+    <div className="rib-jourvis-chat-intro"><Sparkles size={15} aria-hidden /><span>Explore menu questions, meal plans and reservation enquiries. Confirm current prices with the restaurant.</span></div>
+    <div className="rib-jourvis-log" ref={logRef} role="log" aria-live="polite" aria-relevant="additions text">
+      {!messages.length && !busy ? <p className="rib-chat-empty">Your conversation will appear here once Jourvis connects.</p> : null}
+      {messages.map((message) => <div key={`${message.role}:${message.id}`} className={`rib-chat-message ${message.role}`}>{message.role === 'jourvis' ? <span className="rib-chat-avatar" aria-hidden><JourvisCompanion size={28} molecules={false} /></span> : null}<p>{message.text}</p></div>)}
+      {busy ? <div className="rib-chat-typing" aria-label={ready ? 'Jourvis is replying' : 'Connecting to Jourvis'}><span /><span /><span /></div> : null}
+    </div>
+    {ready ? <div className="rib-chat-choices">{reply?.choices?.length ? reply.choices.slice(0,4).map((choice) => <button key={choice.id} type="button" disabled={busy || !!pending} onClick={() => void sendMessage(choice.title, choice.id)}>{choice.title}</button>) : QUICK_PROMPTS.map((prompt) => <button key={prompt} type="button" disabled={busy || !!pending} onClick={() => void sendMessage(prompt)}>{prompt}</button>)}</div> : null}
+    {error ? <p className="rib-chat-error" role="alert">{error}</p> : null}
+    {error && !busy ? <button className="rib-chat-retry" type="button" onClick={() => { if (pending) void sendMessage(pending.text, pending.choiceId, pending); else void ensureRestaurant(); }}>{pending ? 'Retry the same message' : 'Retry connection'}</button> : null}
+    <form className="rib-chat-composer" onSubmit={(event) => { event.preventDefault(); if (!pending) void sendMessage(draft); }}>
+      <label className="sr-only" htmlFor="rib-jourvis-message">Message Jourvis</label><textarea id="rib-jourvis-message" ref={composerRef} rows={1} maxLength={4000} value={draft} placeholder="Ask about ribs, platters, reservations…" onChange={(event) => setDraft(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); if (!pending) void sendMessage(draft); } }} />
+      <button type="submit" disabled={busy || !ready || !draft.trim() || !!pending} aria-label="Send message"><Send size={18} aria-hidden /></button>
+    </form><p id="rib-chat-disclaimer" className="rib-chat-disclaimer">Jourvis demo · no real kitchen order or table reservation is sent.</p>
+  </aside> : null;
+
   return <>
     <JourvisLauncher open={open} onOpen={() => { openerRef.current = launcherRef.current; setOpen(true); }} buttonRef={launcherRef} controls="rib-jourvis-panel" label="Chat with Jourvis for The Rib Crib" hint="Menu, platters & reservations" />
-    {open ? <aside ref={panelRef} id="rib-jourvis-panel" className={`rib-jourvis-chat ${styles.panel}${className ? ` ${className}` : ''}`} role="dialog" aria-label="Chat with Jourvis" aria-describedby="rib-chat-disclaimer"
-      onKeyDown={(event) => { if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); closeChat(); } }}>
-      <header className="rib-jourvis-chat-head"><div className="rib-jourvis-chat-identity"><span className="rib-jourvis-mini"><JourvisCompanion size={34} molecules={false} /></span><div><strong>Jourvis × The Rib Crib</strong><span>{ready ? 'The Rib Crib restaurant preset loaded' : busy ? 'Connecting to the restaurant demo…' : 'Restaurant demo not connected'}</span></div></div><button type="button" onClick={closeChat} aria-label="Close chat"><X size={18} aria-hidden /></button></header>
-      <div className="rib-jourvis-chat-intro"><Sparkles size={15} aria-hidden /><span>Explore menu questions, meal plans and reservation enquiries. Confirm current prices with the restaurant.</span></div>
-      <div className="rib-jourvis-log" ref={logRef} role="log" aria-live="polite" aria-relevant="additions text">
-        {!messages.length && !busy ? <p className="rib-chat-empty">Your conversation will appear here once Jourvis connects.</p> : null}
-        {messages.map((message) => <div key={`${message.role}:${message.id}`} className={`rib-chat-message ${message.role}`}>{message.role === 'jourvis' ? <span className="rib-chat-avatar" aria-hidden><JourvisCompanion size={28} molecules={false} /></span> : null}<p>{message.text}</p></div>)}
-        {busy ? <div className="rib-chat-typing" aria-label={ready ? 'Jourvis is replying' : 'Connecting to Jourvis'}><span /><span /><span /></div> : null}
-      </div>
-      {ready ? <div className="rib-chat-choices">{reply?.choices?.length ? reply.choices.slice(0,4).map((choice) => <button key={choice.id} type="button" disabled={busy || !!pending} onClick={() => void sendMessage(choice.title, choice.id)}>{choice.title}</button>) : QUICK_PROMPTS.map((prompt) => <button key={prompt} type="button" disabled={busy || !!pending} onClick={() => void sendMessage(prompt)}>{prompt}</button>)}</div> : null}
-      {error ? <p className="rib-chat-error" role="alert">{error}</p> : null}
-      {error && !busy ? <button className="rib-chat-retry" type="button" onClick={() => { if (pending) void sendMessage(pending.text, pending.choiceId, pending); else void ensureRestaurant(); }}>{pending ? 'Retry the same message' : 'Retry connection'}</button> : null}
-      <form className="rib-chat-composer" onSubmit={(event) => { event.preventDefault(); if (!pending) void sendMessage(draft); }}>
-        <label className="sr-only" htmlFor="rib-jourvis-message">Message Jourvis</label><textarea id="rib-jourvis-message" ref={composerRef} rows={1} maxLength={4000} value={draft} placeholder="Ask about ribs, platters, reservations…" onChange={(event) => setDraft(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); if (!pending) void sendMessage(draft); } }} />
-        <button type="submit" disabled={busy || !ready || !draft.trim() || !!pending} aria-label="Send message"><Send size={18} aria-hidden /></button>
-      </form><p id="rib-chat-disclaimer" className="rib-chat-disclaimer">Jourvis demo · no real kitchen order or table reservation is sent.</p>
-    </aside> : null}
+    {panel ? createPortal(panel, document.body) : null}
   </>;
 }
