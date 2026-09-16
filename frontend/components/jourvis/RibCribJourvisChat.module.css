@@ -1,0 +1,44 @@
+/* Extra class specificity overrides both legacy and V2 bottom-docked positioning. */
+.panel:global(.rib-jourvis-chat) {
+  --rib-chat-gap: max(12px, env(safe-area-inset-top, 0px), env(safe-area-inset-bottom, 0px), env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px));
+  position: fixed;
+  top: var(--rib-chat-center-y, 50%);
+  left: var(--rib-chat-center-x, 50%);
+  right: auto;
+  bottom: auto;
+  transform: translate(-50%, -50%);
+  width: min(410px, calc(var(--rib-chat-viewport-width, 100vw) - var(--rib-chat-gap) - var(--rib-chat-gap)));
+  height: min(650px, calc(var(--rib-chat-viewport-height, 100dvh) - var(--rib-chat-gap) - var(--rib-chat-gap)));
+  max-height: calc(var(--rib-chat-viewport-height, 100dvh) - var(--rib-chat-gap) - var(--rib-chat-gap));
+  min-height: 0;
+  margin: 0;
+  box-sizing: border-box;
+}
+.panel:global(.rib-jourvis-chat) > :not(:global(.rib-jourvis-log)) { flex-shrink: 0; }
+.panel:global(.rib-jourvis-chat) :global(.rib-jourvis-log) { min-height: 0; }
+.panel:global(.rib-jourvis-chat) :global(.rib-jourvis-mini) {
+  display: grid;
+  place-items: center;
+  flex: 0 0 48px;
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  margin: 0;
+  border-radius: 14px;
+  background: #f7f4ee;
+  line-height: 0;
+}
+.panel:global(.rib-jourvis-chat) :global(.rib-jourvis-mini) > span { grid-area: 1 / 1; place-self: center; margin: 0; }
+.panel:global(.rib-jourvis-chat) :global(.rib-jourvis-chat-head) > button { flex: 0 0 34px; }
+.panel:global(.rib-jourvis-chat) :global(.rib-chat-composer) { min-width: 0; }
+.panel:global(.rib-jourvis-chat) textarea { font-size: 16px; resize: none; }
+.panel:global(.rib-jourvis-chat) :global(.rib-chat-error) { max-height: 80px; overflow-y: auto; }
+.panel:global(.rib-jourvis-chat)[data-compact='true'] :global(.rib-jourvis-chat-head) { padding: 8px 12px; }
+.panel:global(.rib-jourvis-chat)[data-compact='true'] :global(.rib-jourvis-mini) { width: 40px; height: 40px; flex-basis: 40px; }
+.panel:global(.rib-jourvis-chat)[data-compact='true'] :global(.rib-jourvis-chat-intro) { display: none; }
+.panel:global(.rib-jourvis-chat)[data-compact='true'] :global(.rib-chat-choices) { flex-wrap: nowrap; overflow-x: auto; padding: 4px 12px; }
+.panel:global(.rib-jourvis-chat)[data-compact='true'] :global(.rib-chat-choices) button { flex: 0 0 auto; white-space: nowrap; }
+.panel:global(.rib-jourvis-chat)[data-compact='true'] :global(.rib-chat-composer) { padding: 6px 12px; }
+.panel:global(.rib-jourvis-chat)[data-compact='true'] :global(.rib-chat-disclaimer) { padding-bottom: 5px; font-size: 9px; }
+.panel:global(.rib-jourvis-chat)[data-compact='true'] :global(.rib-chat-error) { max-height: 48px; padding: 5px 8px; }
+.panel:global(.rib-jourvis-chat)[data-compact='true'] :global(.rib-chat-retry) { margin: 4px auto; padding: 4px 12px; }

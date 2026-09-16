@@ -24,15 +24,33 @@ export async function generateMetadata({ params }: RoutePageProps): Promise<Meta
   const route = await resolvePublicBusinessRoute(vertical, business);
   if (!route) return { title: 'Business not found', robots: { index: false, follow: false } };
 
+  const ribCrib = route.public_path === '/restaurant/the-rib-crib';
+  // Original supplied square artwork, not the very wide navigation wordmark.
+  const thumbnail = 'https://jourvis.ai/rib-crib/337696127_892397995373233_2982850852035596824_n.jpg';
+  const title = `${route.display_name} | Jourvis`;
+  const description = `Try the Jourvis business assistant with ${route.display_name}.`;
+
   return {
     title: route.display_name,
     description: `Talk with Jourvis as a customer of ${route.display_name}. This demo uses the ${route.adapter_key.replaceAll('_', ' ')} business adapter and database-backed sample business details.`,
     alternates: { canonical: route.public_path },
     openGraph: {
-      title: `${route.display_name} | Jourvis`,
-      description: `Try the Jourvis business assistant with ${route.display_name}.`,
+      title,
+      description,
       url: route.public_path,
+      ...(ribCrib ? {
+        type: 'website' as const,
+        images: [{ url: thumbnail, width: 2048, height: 2048, type: 'image/jpeg', alt: 'The Rib Crib — Let’s Meat Here. Eat Meat Repeat.' }],
+      } : {}),
     },
+    ...(ribCrib ? {
+      twitter: {
+        card: 'summary' as const,
+        title,
+        description,
+        images: [{ url: thumbnail, alt: 'The Rib Crib — Eat Meat Repeat' }],
+      },
+    } : {}),
   };
 }
 
