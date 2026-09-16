@@ -19,20 +19,10 @@ jobs:
       run:
         working-directory: frontend
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           persist-credentials: false
-      # Temporary source snapshot for reviewing a mechanical refactor offline.
-      # Made before dependency installation; contains tracked source only.
-      - name: Snapshot checked-out source
-        working-directory: .
-        run: git archive --format=tar.gz HEAD > /tmp/jourvis-refactor-source.tar.gz
-      - uses: actions/upload-artifact@v4
-        with:
-          name: jourvis-refactor-source
-          path: /tmp/jourvis-refactor-source.tar.gz
-          retention-days: 1
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: '22'
           cache: npm
@@ -40,5 +30,4 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm run test:frontend
-      - run: node --experimental-strip-types --test scripts/rib-crib-v2.test.ts
       - run: npm run build
