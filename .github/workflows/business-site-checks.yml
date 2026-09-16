@@ -1,0 +1,44 @@
+name: Business site checks
+
+on:
+  push:
+    branches: [restaurant/the-rib-crib-v2]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: business-site-checks-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  frontend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      # Temporary source snapshot for reviewing a mechanical refactor offline.
+      # Made before dependency installation; contains tracked source only.
+      - name: Snapshot checked-out source
+        working-directory: .
+        run: git archive --format=tar.gz HEAD > /tmp/jourvis-refactor-source.tar.gz
+      - uses: actions/upload-artifact@v4
+        with:
+          name: jourvis-refactor-source
+          path: /tmp/jourvis-refactor-source.tar.gz
+          retention-days: 1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run test:frontend
+      - run: node --experimental-strip-types --test scripts/rib-crib-v2.test.ts
+      - run: npm run build
