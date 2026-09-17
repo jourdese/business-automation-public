@@ -1,0 +1,26 @@
+name: Marinara asset review
+
+on:
+  push:
+    branches: [restaurant/marinara-ristorante-v1]
+    paths: ['.github/workflows/marinara-asset-review.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Collect unsorted Marinara uploads
+        run: |
+          mkdir -p /tmp/marinara-unsorted
+          find frontend/src/assets/businesses/restaurant/marinara-ristorante -maxdepth 1 -type f \( -iname '*.png' -o -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.webp' \) -exec cp '{}' /tmp/marinara-unsorted/ \;
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: marinara-unsorted-assets
+          path: /tmp/marinara-unsorted/
+          retention-days: 1
