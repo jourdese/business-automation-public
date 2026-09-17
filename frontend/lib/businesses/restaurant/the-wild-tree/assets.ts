@@ -1,6 +1,7 @@
 /// <reference types="vite/client" />
-// Same build-time URL pattern as Rib Crib; no raw /src browser paths.
-import logoLight from '@/src/assets/businesses/restaurant/the-wild-tree/branding/wild-tree-logo-reference-matched.svg?url';
+// Build-time URLs, not raw /src paths. Preserve the supplied PNG and SVG artwork.
+import logoLight from '@/src/assets/businesses/restaurant/the-wild-tree/branding/wild-tree-logo-reference-matched.png?url';
+import logoLightFallback from '@/src/assets/businesses/restaurant/the-wild-tree/branding/wild-tree-logo-reference-matched.svg?url';
 import logoDark from '@/src/assets/businesses/restaurant/the-wild-tree/branding/wild-tree-logo-espresso.png?url';
 import emblem from '@/src/assets/businesses/restaurant/the-wild-tree/branding/wild-tree-tree-emblem-espresso.svg?url';
 import tradition from '@/src/assets/businesses/restaurant/the-wild-tree/branding/wild-tree-taste-tradition.png?url';
@@ -33,8 +34,8 @@ function assetUrl(value: unknown): string {
   throw new Error('Invalid Wild Tree asset import.');
 }
 export const assets = Object.freeze(Object.fromEntries(Object.entries({
-  logoLight, logoDark, emblem, tradition, hero, detail, table, cocktails, hours,
-}).map(([key, value]) => [key, assetUrl(value)]))) as Readonly<Record<'logoLight' | 'logoDark' | 'emblem' | 'tradition' | 'hero' | 'detail' | 'table' | 'cocktails' | 'hours', string>>;
+  logoLight, logoLightFallback, logoDark, emblem, tradition, hero, detail, table, cocktails, hours,
+}).map(([key, value]) => [key, assetUrl(value)]))) as Readonly<Record<'logoLight' | 'logoLightFallback' | 'logoDark' | 'emblem' | 'tradition' | 'hero' | 'detail' | 'table' | 'cocktails' | 'hours', string>>;
 
 // Only the 17 photo-backed entries have images. Never borrow one for a mock dish.
 export const menuImages: Readonly<Record<string, string | undefined>> = Object.freeze(

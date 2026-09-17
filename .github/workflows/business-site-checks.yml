@@ -36,6 +36,9 @@ jobs:
         run: |
           npm install --prefix "$RUNNER_TEMP/wild-tree-browser" --no-package-lock --no-save playwright@1.58.2
           node "$RUNNER_TEMP/wild-tree-browser/node_modules/playwright/cli.js" install --with-deps chromium
+      - name: Wild Tree exported production image checks
+        if: github.ref == 'refs/heads/restaurant/the-wild-tree-v1'
+        run: PLAYWRIGHT_MODULE="$RUNNER_TEMP/wild-tree-browser/node_modules/playwright/index.mjs" node scripts/wild-tree-image-qa.mjs
       - name: Wild Tree browser checks
         if: github.ref == 'refs/heads/restaurant/the-wild-tree-v1'
         run: |
