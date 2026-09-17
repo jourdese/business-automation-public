@@ -441,53 +441,159 @@ export default function MarinaraAutoinventoryPreviewPage() {
         <main className={styles.workspace}>
           {activeTab === "overview" ? (
             <section id="autoinventory-panel-overview" role="tabpanel" aria-labelledby="autoinventory-tab-overview" className={styles.panel}>
-              <div className={styles.overviewGrid}>
-                <div className={styles.attentionCard}>
-                  <div className={styles.panelTitle}>
-                    <div><span>WHAT NEEDS ATTENTION</span><h2>Today&apos;s stock pulse</h2></div>
-                    {urgent.length > 1 ? <button type="button" className={styles.primaryButton} onClick={() => openContact(urgent, "Group restock")}>Group restock</button> : null}
-                  </div>
-                  <div className={styles.urgentList}>
-                    {urgent.length ? urgent.map((item) => (
-                      <button key={item.id} type="button" onClick={() => { setSelectedId(item.id); setActiveTab("stock"); }}>
-                        <span className={`${styles.statusDot} ${toneClassName(tone(item), styles)}`} />
-                        <span><strong>{item.name}</strong><small>{item.current} / {item.fullLevel} {item.unit} · reorder at {item.reorderAt} {item.unit}</small></span>
-                        <span className={styles.miniBattery}><i className={toneClassName(tone(item), styles)} style={{ width: `${percent(item)}%` }} /></span>
-                        <b>{percent(item)}%</b>
-                        <ChevronRight size={16} aria-hidden />
+              <div className={styles.summaryToolbar}>
+                <div>
+                  <span className={styles.summaryEyebrow}>SUPPLY BOARD</span>
+                  <h2>Marinara inventory at a glance.</h2>
+                  <p>Tile color shows stock condition. Pick any supply to inspect it on the right.</p>
+                </div>
+
+                <div className={styles.summaryControls}>
+                  <div className={styles.summaryFilters} aria-label="Filter summary by storage area">
+                    {stockFilters.map((filter) => (
+                      <button
+                        key={filter}
+                        type="button"
+                        className={filter === stockFilter ? styles.summaryFilterActive : ""}
+                        onClick={() => chooseFilter(filter)}
+                      >
+                        {filter === "Cold storage" ? "Cold" : filter === "Seafood freezer" ? "Seafood" : filter}
                       </button>
-                    )) : <div className={styles.emptyState}><Check size={18} aria-hidden /> No supplier action is needed right now.</div>}
+                    ))}
+                  </div>
+
+                  <button
+                    type="button"
+                    className={styles.labelSwitch}
+                    role="switch"
+                    aria-checked={showSummaryLabels}
+                    onClick={() => {
+                      setShowSummaryLabels((current) => {
+                        const next = !current;
+                        window.localStorage.setItem("jourvis-autoinventory-summary-labels", String(next));
+                        return next;
+                      });
+                    }}
+                  >
+                    <span>Labels</span>
+                    <i data-on={showSummaryLabels}><b /></i>
+                    <strong>{showSummaryLabels ? "ON" : "OFF"}</strong>
+                  </button>
+                </div>
+              </div>
+
+              <div className={styles.summaryGameLayout}>
+                <div className={styles.summaryInventoryPanel}>
+                  <div className={styles.summaryGrid}>
+                    {ingredients
+                      .filter((item) => stockFilter === "All" || item.zone === stockFilter)
+                      .map((item) => {
+                        const itemTone = tone(item);
+                        const itemPercent = percent(item);
+                        const active = selected.id === item.id;
+
+                        return (
+                          <button
+                            key={item.id}
+                            type="button"
+                            className={`${styles.summaryTile} ${summaryToneClass(itemTone, styles)} ${active ? styles.summaryTileSelected : ""}`}
+                            onClick={() => setSelectedId(item.id)}
+                            aria-pressed={active}
+                            aria-label={`${item.name}, ${toneLabel(itemTone)}, ${itemPercent}% stock`}
+                            title={item.name}
+                          >
+                            <span className={styles.summaryTileTop}>
+                              <small>{toneLabel(itemTone)}</small>
+                              <strong>{itemPercent}%</strong>
+                            </span>
+
+                            <StockIcon stockId={item.id} className={styles.summaryStockIcon} size={50} />
+
+                            {item.incoming > 0 ? (
+                              <span className={styles.summaryIncoming}>+{item.incoming} {item.unit}</span>
+                            ) : null}
+
+                            {showSummaryLabels ? (
+                              <span className={styles.summaryTileLabel}>{item.name}</span>
+                            ) : null}
+                          </button>
+                        );
+                      })}
+                  </div>
+
+                  <div className={styles.summaryBoardFooter}>
+                    <span>{ingredients.filter((item) => stockFilter === "All" || item.zone === stockFilter).length} supplies shown</span>
+                    {urgent.length > 1 ? (
+                      <button type="button" className={styles.primaryButton} onClick={() => openContact(urgent, "Group restock")}>
+                        Group restock · {urgent.length}
+                      </button>
+                    ) : null}
                   </div>
                 </div>
 
-                <aside className={styles.jourvisCard}>
-                  <CompanionMark className={styles.cardCompanion} />
-                  <div>
-                    <span>JOURVIS SUGGESTS</span>
-                    {urgent[0] ? (
-                      <>
-                        <h3>Contact {getContact(urgent[0]).name} about {urgent[0].name}.</h3>
-                        <p>I estimate {suggestedOrder(urgent[0])} {urgent[0].unit} would cover the configured full level after expected usage before delivery. You can change both the contact and quantity before sending.</p>
-                        <button type="button" className={styles.primaryButton} onClick={() => openContact([urgent[0]], `Contact ${getSupplier(urgent[0]).name}`)}>Contact supplier</button>
-                      </>
-                    ) : <p>No restock recommendation is waiting.</p>}
+                <aside className={styles.summaryLegend}>
+                  <div className={styles.summarySelectedHead}>
+                    <StockIcon stockId={selected.id} className={styles.summaryLegendIcon} size={34} />
+                    <div>
+                      <span>SELECTED SUPPLY</span>
+                      <h3>{selected.name}</h3>
+                      <small>{selected.zone}</small>
+                    </div>
+                    <b className={`${styles.summaryStatePill} ${summaryToneClass(selectedTone, styles)}`}>
+                      {toneLabel(selectedTone)}
+                    </b>
+                  </div>
+
+                  <div className={styles.summaryStats}>
+                    <div><span>On hand</span><strong>{selected.current} {selected.unit}</strong></div>
+                    <div><span>Full level</span><strong>{selected.fullLevel} {selected.unit}</strong></div>
+                    <div><span>Reorder at</span><strong>{selected.reorderAt} {selected.unit}</strong></div>
+                    <div><span>Days cover</span><strong>{round(daysRemaining)} days</strong></div>
+                    <div><span>Incoming</span><strong>{selected.incoming} {selected.unit}</strong></div>
+                    <div><span>Stock level</span><strong>{percent(selected)}%</strong></div>
+                  </div>
+
+                  <div className={styles.summarySupplier}>
+                    <span>SUPPLIER</span>
+                    <strong>{selectedSupplier.name}</strong>
+                    <small>{selectedContact.name} · {selectedContact.role}</small>
+                    <small>{selectedContact.channel} · {selectedContact.email}</small>
+                  </div>
+
+                  <div className={styles.summaryAdvice}>
+                    <CompanionMark className={styles.summaryCompanion} />
+                    <div>
+                      <span>JOURVIS</span>
+                      <p>
+                        {orderAmount > 0
+                          ? `Suggested request: ${orderAmount} ${selected.unit}. You can change the quantity and contact before sending.`
+                          : "Current and incoming stock cover the configured target."}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className={styles.summaryActions}>
+                    <button
+                      type="button"
+                      className={styles.primaryButton}
+                      disabled={orderAmount <= 0}
+                      onClick={() => openContact([selected], `Contact ${selectedSupplier.name}`)}
+                    >
+                      <Mail size={15} aria-hidden /> Contact supplier
+                    </button>
+                    <a className={styles.secondaryButton} href={`/restaurant/marinara-ristorante/Autoinventory-preview/configure?stock=${selected.id}`}>
+                      <Settings2 size={15} aria-hidden /> Configure
+                    </a>
+                  </div>
+
+                  <div className={styles.statusLegend} aria-label="Stock status legend">
+                    <span>LEVEL COLORS</span>
+                    <div><i className={styles.legendReady} /><b>Ready</b><small>Above watch level</small></div>
+                    <div><i className={styles.legendWatch} /><b>Watch</b><small>60% or lower</small></div>
+                    <div><i className={styles.legendLow} /><b>Low</b><small>At reorder point</small></div>
+                    <div><i className={styles.legendCritical} /><b>Critical</b><small>Well below reorder point</small></div>
                   </div>
                 </aside>
-              </div>
-
-              <div className={styles.zoneTiles}>
-                {zoneOrder.map((zone) => {
-                  const items = ingredients.filter((item) => item.zone === zone);
-                  const level = Math.round(items.reduce((sum, item) => sum + percent(item), 0) / items.length);
-                  return (
-                    <button key={zone} type="button" onClick={() => { chooseFilter(zone); setActiveTab("stock"); }}>
-                      <div className={styles.zonePixelGrid} aria-hidden="true">
-                        {Array.from({ length: 20 }).map((_, index) => <span key={index} className={index < Math.round(level / 5) ? styles.zonePixelOn : ""} />)}
-                      </div>
-                      <span>{zone}</span><strong>{level}%</strong><small>{items.length} supplies</small>
-                    </button>
-                  );
-                })}
               </div>
             </section>
           ) : null}
@@ -699,4 +805,11 @@ function toneClassName(value: Tone, css: typeof styles) {
   if (value === "low") return css.low;
   if (value === "watch") return css.watch;
   return css.good;
+}
+
+function summaryToneClass(value: Tone, css: typeof styles) {
+  if (value === "critical") return css.summaryTileCritical;
+  if (value === "low") return css.summaryTileLow;
+  if (value === "watch") return css.summaryTileWatch;
+  return css.summaryTileReady;
 }
