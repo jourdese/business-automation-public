@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { dishes, platters, moreMenu, allDishes, peso } from '../lib/rib-crib-v2/content.ts';
-import { sanitizePlan, adjustPlan, summarizePlan, mealPlanPrompt, manilaToday, reservationPrompt } from '../lib/rib-crib-v2/meal-plan.ts';
+import { dishes, platters, moreMenu, allDishes, peso } from '../lib/businesses/restaurant/the-rib-crib/content.ts';
+import { sanitizePlan, adjustPlan, summarizePlan, mealPlanPrompt, manilaToday, reservationPrompt } from '../lib/businesses/restaurant/the-rib-crib/meal-plan.ts';
 
 test('one price source per dish, and conflicting Sisig Tacos is deliberately unpriced', () => {
   assert.equal(new Set(allDishes.map(item => item.id)).size, allDishes.length);

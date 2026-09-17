@@ -5,7 +5,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { ArrowRight, ArrowUpRight, Check, ChevronDown, Copy, FileImage, MessageSquare, RotateCcw, Send, Sparkles } from 'lucide-react';
 import { type CompanionEvent, siteConfig } from '@/lib/jourvis/config';
 import { connectDemo, demoRequest, loadDemo, type DemoReply, type Outgoing } from '@/lib/jourvis/live-demo';
-import type { InitialBusiness } from './JourvisExperience';
+import type { InitialBusiness } from '@/lib/businesses/types';
 import CompanionMark from './CompanionMark';
 
 type Message = { id: string; role: 'jourvis' | 'customer'; text: string };

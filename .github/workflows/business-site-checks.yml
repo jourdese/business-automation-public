@@ -1,0 +1,62 @@
+name: Business site checks
+
+on:
+  push:
+    branches: [restaurant/the-rib-crib-v2, restaurant/the-wild-tree-v1]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: business-site-checks-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  frontend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run test:frontend
+      - run: npm run build
+      - name: Install isolated browser test tools
+        if: github.ref == 'refs/heads/restaurant/the-wild-tree-v1'
+        run: |
+          npm install --prefix "$RUNNER_TEMP/wild-tree-browser" --no-package-lock --no-save playwright@1.58.2
+          node "$RUNNER_TEMP/wild-tree-browser/node_modules/playwright/cli.js" install --with-deps chromium
+      - name: Wild Tree exported production image checks
+        if: github.ref == 'refs/heads/restaurant/the-wild-tree-v1'
+        run: PLAYWRIGHT_MODULE="$RUNNER_TEMP/wild-tree-browser/node_modules/playwright/index.mjs" node scripts/wild-tree-image-qa.mjs
+      - name: Wild Tree browser checks
+        if: github.ref == 'refs/heads/restaurant/the-wild-tree-v1'
+        run: |
+          mkdir -p outputs/wild-tree
+          npm run dev -- --hostname 127.0.0.1 --port 4173 > outputs/wild-tree/dev-server.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill "$SERVER_PID" 2>/dev/null || true' EXIT
+          for i in $(seq 1 60); do
+            if ! kill -0 "$SERVER_PID" 2>/dev/null; then cat outputs/wild-tree/dev-server.log; exit 1; fi
+            if curl --silent --fail --max-time 10 http://127.0.0.1:4173/preview/the-wild-tree > /dev/null; then break; fi
+            sleep 2
+          done
+          curl --silent --fail --max-time 10 http://127.0.0.1:4173/preview/the-wild-tree > /dev/null || { cat outputs/wild-tree/dev-server.log; exit 1; }
+          PLAYWRIGHT_MODULE="$RUNNER_TEMP/wild-tree-browser/node_modules/playwright/index.mjs" FRONTEND_URL=http://127.0.0.1:4173 node scripts/wild-tree-browser-qa.mjs
+      - name: Browser review artifacts
+        if: always() && github.ref == 'refs/heads/restaurant/the-wild-tree-v1'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: wild-tree-browser-review
+          path: frontend/outputs/wild-tree/
+          retention-days: 3

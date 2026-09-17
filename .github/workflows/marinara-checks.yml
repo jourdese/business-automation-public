@@ -1,0 +1,56 @@
+name: Marinara site checks
+on:
+  push:
+    branches: [restaurant/marinara-ristorante-v1]
+permissions:
+  contents: read
+concurrency:
+  group: marinara-checks-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  frontend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run test:frontend
+      - run: npm run build
+      - name: Export deterministic review fixture
+        run: |
+          mkdir -p outputs/marinara
+          node --experimental-strip-types scripts/export-marinara-menu.ts --json > outputs/marinara/marinara-demo-preset.json
+          node --experimental-strip-types scripts/export-marinara-menu.ts --sql > outputs/marinara/marinara-menu-seed.sql
+      - name: Install isolated browser test tools
+        run: |
+          npm install --prefix "$RUNNER_TEMP/marinara-browser" --no-package-lock --no-save playwright@1.58.2
+          node "$RUNNER_TEMP/marinara-browser/node_modules/playwright/cli.js" install --with-deps chromium
+      - name: Marinara browser checks
+        run: |
+          npm run dev -- --hostname 127.0.0.1 --port 4173 > outputs/marinara/dev-server.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill "$SERVER_PID" 2>/dev/null || true' EXIT
+          for i in $(seq 1 60); do
+            if ! kill -0 "$SERVER_PID" 2>/dev/null; then cat outputs/marinara/dev-server.log; exit 1; fi
+            if curl --silent --fail --max-time 10 http://127.0.0.1:4173/preview/marinara-ristorante > /dev/null; then break; fi
+            sleep 2
+          done
+          curl --silent --fail --max-time 10 http://127.0.0.1:4173/preview/marinara-ristorante > /dev/null || { cat outputs/marinara/dev-server.log; exit 1; }
+          PLAYWRIGHT_MODULE="$RUNNER_TEMP/marinara-browser/node_modules/playwright/index.mjs" FRONTEND_URL=http://127.0.0.1:4173 node scripts/marinara-browser-qa.mjs
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: marinara-site-review
+          path: frontend/outputs/marinara/
+          retention-days: 3

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { readFileSync } from 'node:fs';
 
-const css = readFileSync(new URL('../components/jourvis/RibCribJourvisChat.module.css', import.meta.url), 'utf8')
+const css = readFileSync(new URL('../components/business-sites/restaurant/shared/RestaurantJourvisChat.module.css', import.meta.url), 'utf8')
   .replace(/\/\*[\s\S]*?\*\//g, '');
 const panel = css.match(/\.panel:global\(\.rib-jourvis-chat\)\s*\{([\s\S]*?)\n\}/)?.[1];
 const row = css.match(/\.panel:global\(\.rib-jourvis-chat\) :global\(\.rib-chat-message\)\s*\{([\s\S]*?)\n\}/)?.[1];
@@ -48,8 +48,8 @@ test('bubbles fit short text and wrap long content within a definite row', () =>
 });
 
 test('chat keeps a centered mascot and independent scrollable message area', () => {
-  const mascot = css.match(/:global\(\.rib-jourvis-mini\)\s*\{([\s\S]*?)\n\}/)?.[1];
-  const log = css.match(/:global\(\.rib-jourvis-log\)\s*\{([\s\S]*?)\n\}/)?.[1];
+  const mascot = css.match(/\.panel:global\(\.rib-jourvis-chat\) :global\(\.rib-jourvis-mini\)\s*\{([\s\S]*?)\n\}/)?.[1];
+  const log = css.match(/\.panel:global\(\.rib-jourvis-chat\) :global\(\.rib-jourvis-log\)\s*\{([\s\S]*?)\n\}/)?.[1];
   assert.ok(mascot);
   assert.match(mascot, /place-items\s*:\s*center\s*;/);
   assert.ok(log);

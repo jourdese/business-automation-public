@@ -36,4 +36,4 @@ Directory: `frontend/src/assets/rib-crib/`. Inspected 2026-09-16. All 27 origina
 
 The separate user-supplied `TheRibCrib-brand.zip` contains original menu and promotional/reference material. The two menu files are identified in `research.md`. Other source photos, duplicates and buffet/event references are evidence-only, not presented as current dishes, premises or customer endorsements. The full machine-readable audit and contact sheet are included in the accompanying review bundle.
 
-No original file is resized or overwritten. V2 introduces no remote image hotlinks, sprite crops, base64 image modules or guessed asset URLs. `frontend/lib/rib-crib-v2/assets.ts` is the explicit build-time map.
+No original file is resized or overwritten. V2 introduces no remote image hotlinks, sprite crops, base64 image modules or guessed asset URLs. `frontend/lib/businesses/restaurant/the-rib-crib/assets.ts` is the explicit build-time map.

@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import BusinessDemoPage from '@/components/jourvis/BusinessDemoPage';
+import BusinessSiteRenderer from '@/components/business-sites/BusinessSiteRenderer';
 import {
   listPublicBusinessRoutes,
   resolvePublicBusinessRoute,
@@ -61,7 +61,7 @@ export default async function BusinessRoutePage({ params }: RoutePageProps) {
   if (!route) notFound();
 
   return (
-    <BusinessDemoPage
+    <BusinessSiteRenderer
       business={{
         displayName: route.display_name,
         publicPath: route.public_path,
