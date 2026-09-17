@@ -1,58 +1,8 @@
-name: Sort Marinara assets
-
-on:
-  push:
-    branches: [restaurant/marinara-ristorante-v1]
-    paths: ['.github/workflows/marinara-sort-assets.yml']
-
-permissions:
-  contents: write
-
-jobs:
-  sort:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
-        with:
-          persist-credentials: true
-          fetch-depth: 1
-      - name: Guard target branch
-        run: |
-          test "$GITHUB_REF" = refs/heads/restaurant/marinara-ristorante-v1
-          test -z "$(git status --porcelain)"
-      - name: Sort reviewed assets without changing bytes
-        shell: bash
-        run: |
-          set -euo pipefail
-          ROOT='frontend/src/assets/businesses/restaurant/marinara-ristorante'
-          mkdir -p "$ROOT/branding" "$ROOT/atmosphere" "$ROOT/food" "$ROOT/source" frontend/public/marinara-ristorante
-
-          # Branding / identity artwork.
-          mv "$ROOT/marinara-buon-cibo-logo-full.png" "$ROOT/branding/"
-          mv "$ROOT/marinara-buon-cibo-logo.png" "$ROOT/branding/"
-          mv "$ROOT/marinara-buon-cibo.png" "$ROOT/branding/"
-          mv "$ROOT/marinara-coverphoto.jpg" "$ROOT/branding/"
-          mv "$ROOT/marinara-logo-clear.png" "$ROOT/branding/"
-          mv "$ROOT/marinara-logo-meta-thumbnail.png" "$ROOT/branding/"
-          mv "$ROOT/marinara-logo.jpg" "$ROOT/branding/"
-
-          # Dining-room ambience.
-          mv "$ROOT/marinara-interior.jpg" "$ROOT/atmosphere/"
-
-          # Every marinara-menu-* upload was visually reviewed as a food, drink,
-          # dessert, pizza, plated dish, coffee, or shared-table image.
-          mv "$ROOT"/marinara-menu-* "$ROOT/food/"
-
-          # Stable public copy for future Open Graph / Meta preview metadata.
-          cp "$ROOT/branding/marinara-logo-meta-thumbnail.png" frontend/public/marinara-ristorante/marinara-thumbnail.png
-
-          cat > "$ROOT/ASSET_MANIFEST.md" <<'EOF'
 # Marinara Ristorante supplied asset classification
 
 Reviewed from user upload commit `9b6f1b81bcf7a915b7a24dc82f2ed02505913703`.
-Files were moved only; original bytes and filenames are preserved. The social thumbnail
-is additionally copied to `frontend/public/marinara-ristorante/marinara-thumbnail.png`
-so a future public page can use a stable crawler-friendly URL.
+
+Files were moved only; original bytes and filenames are preserved. The social thumbnail is additionally copied to `frontend/public/marinara-ristorante/marinara-thumbnail.png` so a future public page can use a stable crawler-friendly URL.
 
 ## Branding — 7
 
@@ -107,25 +57,10 @@ so a future public page can use a stable crawler-friendly URL.
 
 ## Source — 0 new uploads
 
-No newly uploaded image was classified as source-only archival material. The existing
-`source/` folder remains reserved for raw menu pages, screenshots, research captures,
-or other evidence/reference files that should not be used directly as polished site assets.
+No newly uploaded image was classified as source-only archival material. The existing `source/` folder remains reserved for raw menu pages, screenshots, research captures, or other evidence/reference files that should not be used directly as polished site assets.
 
 ## Notes
 
 - Similar-looking pizza and dessert images were retained individually; none of the 36 uploads is a byte-for-byte duplicate.
 - Alcoholic-drink imagery remains under `food/` because this directory represents restaurant menu media, not only solid food.
 - Classification does not imply that every photographed item is currently available or that its price is verified.
-EOF
-
-          # Review-only workflows should not remain in the product branch.
-          rm -f .github/workflows/marinara-asset-review.yml .github/workflows/marinara-sort-assets.yml
-
-          git diff --check
-      - name: Commit organized assets
-        run: |
-          git add -A -- frontend/src/assets/businesses/restaurant/marinara-ristorante frontend/public/marinara-ristorante .github/workflows/marinara-asset-review.yml .github/workflows/marinara-sort-assets.yml
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git commit -m "assets: organize Marinara restaurant imagery by purpose"
-          git push origin HEAD:refs/heads/restaurant/marinara-ristorante-v1
