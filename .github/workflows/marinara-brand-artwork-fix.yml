@@ -56,17 +56,24 @@ jobs:
       - name: Install isolated browser QA tools
         working-directory: frontend
         run: |
-          mkdir -p /tmp/marinara-browser
-          cd /tmp/marinara-browser
-          npm init -y >/dev/null 2>&1
-          npm install playwright@1.55.0 >/dev/null 2>&1
-          npx playwright install --with-deps chromium >/dev/null 2>&1
+          npm install --prefix "$RUNNER_TEMP/marinara-browser" --no-package-lock --no-save playwright@1.58.2
+          node "$RUNNER_TEMP/marinara-browser/node_modules/playwright/cli.js" install --with-deps chromium
       - name: Verify Marinara responsive browser layout
         working-directory: frontend
-        env:
-          NODE_PATH: /tmp/marinara-browser/node_modules
-        run: node scripts/marinara-browser-qa.mjs
+        run: |
+          mkdir -p outputs/marinara
+          npm run dev -- --hostname 127.0.0.1 --port 4173 > outputs/marinara/dev-server.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill "$SERVER_PID" 2>/dev/null || true' EXIT
+          for i in $(seq 1 60); do
+            if ! kill -0 "$SERVER_PID" 2>/dev/null; then cat outputs/marinara/dev-server.log; exit 1; fi
+            if curl --silent --fail --max-time 10 http://127.0.0.1:4173/preview/marinara-ristorante > /dev/null; then break; fi
+            sleep 2
+          done
+          curl --silent --fail --max-time 10 http://127.0.0.1:4173/preview/marinara-ristorante > /dev/null || { cat outputs/marinara/dev-server.log; exit 1; }
+          PLAYWRIGHT_MODULE="$RUNNER_TEMP/marinara-browser/node_modules/playwright/index.mjs" FRONTEND_URL=http://127.0.0.1:4173 node scripts/marinara-browser-qa.mjs
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
         with:
           name: marinara-brand-artwork-fix-review
           path: frontend/outputs/marinara/
