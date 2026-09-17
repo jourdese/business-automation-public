@@ -8,7 +8,7 @@ import { marinaraSources } from '../lib/businesses/restaurant/marinara-ristorant
 import { sanitizePlan, summarizePlan, mealPlanPrompt } from '../lib/businesses/restaurant/marinara-ristorante/meal-plan.ts';
 import { marinaraSiteConfig } from '../lib/businesses/restaurant/marinara-ristorante/config.ts';
 import { marinaraDemoPreset, marinaraSeedSql } from '../lib/businesses/restaurant/marinara-ristorante/demo-preset.ts';
-import { assets, menuImages } from '../lib/businesses/restaurant/marinara-ristorante/assets.ts';
+import { assets, foodGallery, namedDishImages } from '../lib/businesses/restaurant/marinara-ristorante/assets.ts';
 import { resolveBusinessSite } from '../lib/businesses/registry.ts';
 const source = (name: string) => readFileSync(new URL(name, import.meta.url), 'utf8');
 
@@ -56,22 +56,25 @@ test('meal-plan handoff preserves variant names and demo provenance', () => {
   assert.match(prompt, /Cheese Wheel, Solo/); assert.match(prompt, /archived menu/);
   assert.match(prompt, /demo concept/); assert.match(prompt, /Do not submit an order or reservation/);
 });
-test('the draft cannot publish a route or enable runtime operations', () => {
+test('site presentation is ready while runtime operations remain disabled', () => {
   const fixture=marinaraDemoPreset.metadata.demo.fixture;
   assert.equal(marinaraDemoPreset.status, 'draft'); assert.equal(marinaraDemoPreset.metadata.demo.ready, false);
   assert.equal(marinaraDemoPreset.metadata.demo.visible, false); assert.equal(fixture.booking.enabled, false);
   assert.equal(fixture.booking.sendCalendarInvites, false); assert.deepEqual(fixture.hours, []);
-  assert.equal(marinaraSiteConfig.runtimeEnabled, false); assert.equal(marinaraSiteConfig.siteReady, false);
-  assert.equal(resolveBusinessSite(marinaraSiteConfig.publicPath, 'restaurant'), null);
+  assert.equal(marinaraSiteConfig.runtimeEnabled, false); assert.equal(marinaraSiteConfig.siteReady, true);
+  assert.equal(resolveBusinessSite(marinaraSiteConfig.publicPath, 'restaurant'), 'marinara-ristorante');
   assert.equal(fixture.presetKey, MARINARA_PRESET_KEY); assert.equal(fixture.restaurant.menu, marinaraMenu);
 });
 test('chat and meal-plan namespaces are unique to Marinara', () => {
   assert.match(marinaraSiteConfig.chat.openEvent, /marinara-ristorante/);
   assert.equal(marinaraSiteConfig.mealPlanStoragePrefix, 'marinara.meal-plan.v1');
 });
-test('no website images are falsely attributed or hotlinked', () => {
-  assert.ok(Object.values(assets).every(value => value === null)); assert.deepEqual(menuImages, {});
-  assert.ok(existsSync(new URL('../src/assets/businesses/restaurant/marinara-ristorante/branding/README.md', import.meta.url)));
+test('supplied website imagery is local, classified and never hotlinked', () => {
+  assert.ok(Object.values(assets).every(value => typeof value === 'string' && value.length > 0));
+  assert.equal(foodGallery.length, 28); assert.equal(new Set(foodGallery.map(item => item.src)).size, 28);
+  assert.ok(Object.keys(namedDishImages).length >= 15);
+  assert.ok(existsSync(new URL('../src/assets/businesses/restaurant/marinara-ristorante/ASSET_MANIFEST.md', import.meta.url)));
+  assert.ok(existsSync(new URL('../public/marinara-ristorante/marinara-thumbnail.png', import.meta.url)));
 });
 test('SQL export inserts only the hidden restaurant preset and aborts conflicting seeds', () => {
   const sql=marinaraSeedSql();
