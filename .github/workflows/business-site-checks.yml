@@ -2,7 +2,7 @@ name: Business site checks
 
 on:
   push:
-    branches: [restaurant/the-rib-crib-v2]
+    branches: [restaurant/the-rib-crib-v2, restaurant/the-wild-tree-v1]
 
 permissions:
   contents: read
@@ -22,6 +22,14 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           persist-credentials: false
+      - name: Review source snapshot
+        working-directory: .
+        run: git archive --format=tar.gz HEAD > /tmp/wild-tree-review-source.tar.gz
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: wild-tree-review-source
+          path: /tmp/wild-tree-review-source.tar.gz
+          retention-days: 1
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: '22'
