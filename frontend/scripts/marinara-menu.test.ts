@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync, existsSync, readdirSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { marinaraMenu, marinaraOriginalMenu, marinaraMockMenuExpansion, marinaraMenuCounts, marinaraMenuPolicy, MARINARA_PRESET_KEY } from '../lib/businesses/restaurant/marinara-ristorante/menu.ts';
 import { allDishes, dishById } from '../lib/businesses/restaurant/marinara-ristorante/content.ts';
@@ -8,9 +8,9 @@ import { marinaraSources } from '../lib/businesses/restaurant/marinara-ristorant
 import { sanitizePlan, summarizePlan, mealPlanPrompt } from '../lib/businesses/restaurant/marinara-ristorante/meal-plan.ts';
 import { marinaraSiteConfig } from '../lib/businesses/restaurant/marinara-ristorante/config.ts';
 import { marinaraDemoPreset, marinaraSeedSql } from '../lib/businesses/restaurant/marinara-ristorante/demo-preset.ts';
-import { assets, foodGallery, namedDishImages } from '../lib/businesses/restaurant/marinara-ristorante/assets.ts';
 import { resolveBusinessSite } from '../lib/businesses/registry.ts';
 const source = (name: string) => readFileSync(new URL(name, import.meta.url), 'utf8');
+const imageFiles = (relative: string) => readdirSync(new URL(relative, import.meta.url)).filter((name) => /\.(?:png|jpe?g|webp|svg)$/i.test(name));
 
 test('Marinara contains 90 archived entries/variants and 10 distinct concepts', () => {
   assert.deepEqual(marinaraMenuCounts, { original: 90, expansion: 10, total: 100 });
@@ -70,9 +70,13 @@ test('chat and meal-plan namespaces are unique to Marinara', () => {
   assert.equal(marinaraSiteConfig.mealPlanStoragePrefix, 'marinara.meal-plan.v1');
 });
 test('supplied website imagery is local, classified and never hotlinked', () => {
-  assert.ok(Object.values(assets).every(value => typeof value === 'string' && value.length > 0));
-  assert.equal(foodGallery.length, 28); assert.equal(new Set(foodGallery.map(item => item.src)).size, 28);
-  assert.ok(Object.keys(namedDishImages).length >= 15);
+  assert.equal(imageFiles('../src/assets/businesses/restaurant/marinara-ristorante/branding/').length, 7);
+  assert.equal(imageFiles('../src/assets/businesses/restaurant/marinara-ristorante/atmosphere/').length, 1);
+  assert.equal(imageFiles('../src/assets/businesses/restaurant/marinara-ristorante/food/').length, 28);
+  const assetModule = source('../lib/businesses/restaurant/marinara-ristorante/assets.ts');
+  assert.doesNotMatch(assetModule, /https?:\/\//);
+  assert.match(assetModule, /export const foodGallery/);
+  assert.match(assetModule, /export const namedDishImages/);
   assert.ok(existsSync(new URL('../src/assets/businesses/restaurant/marinara-ristorante/ASSET_MANIFEST.md', import.meta.url)));
   assert.ok(existsSync(new URL('../public/marinara-ristorante/marinara-thumbnail.png', import.meta.url)));
 });
