@@ -82,7 +82,7 @@ const recipes: Recipe[] = [
 ];
 
 const primaryTabs: ReadonlyArray<{ id: PrimaryTab; label: string }> = [
-  { id: "overview", label: "Overview" },
+  { id: "overview", label: "Summary" },
   { id: "stock", label: "Stock" },
   { id: "recipes", label: "Recipes" },
   { id: "orders", label: "Orders" },
@@ -153,6 +153,7 @@ export default function MarinaraAutoinventoryPreviewPage() {
   const [activeTab, setActiveTab] = useState<PrimaryTab>("overview");
   const [stockFilter, setStockFilter] = useState<StockFilter>("All");
   const [searchTerm, setSearchTerm] = useState("");
+  const [showSummaryLabels, setShowSummaryLabels] = useState(true);
   const [contactDraft, setContactDraft] = useState<ContactDraft | null>(null);
   const [activity, setActivity] = useState([
     "Jourvis finished the morning inventory scan.",
@@ -167,6 +168,9 @@ export default function MarinaraAutoinventoryPreviewPage() {
         return live ? { ...config, current: live.current, incoming: live.incoming } : config;
       });
     });
+
+    const savedLabels = window.localStorage.getItem("jourvis-autoinventory-summary-labels");
+    if (savedLabels !== null) setShowSummaryLabels(savedLabels === "true");
 
     refreshConfiguration();
     window.addEventListener("focus", refreshConfiguration);
