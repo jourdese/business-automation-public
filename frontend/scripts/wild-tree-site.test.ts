@@ -76,7 +76,7 @@ test('the new restaurant uses its own CSS module and never imports Rib Crib file
 
 test('image lookup covers only original dish keys; mock concepts never borrow a photograph', () => {
   const assetCode = read(data + 'assets.ts');
-  const imagePart = assetCode.slice(assetCode.index('export const menuImages'));
+  const imagePart = assetCode.slice(assetCode.indexOf('export const menuImages'));
   for (const item of wildTreeMenu) {
     const mapped = new RegExp(`\\b${item.key}:`).test(imagePart);
     assert.equal(mapped, !item.isMock, item.key);
