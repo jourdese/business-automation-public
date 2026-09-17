@@ -2,6 +2,7 @@
 
 import {
   type KeyboardEvent,
+  useEffect,
   useMemo,
   useState,
 } from "react";
@@ -23,38 +24,20 @@ import {
   X,
 } from "lucide-react";
 import CompanionMark from "@/components/jourvis/CompanionMark";
+import {
+  type Ingredient,
+  type Zone,
+  getContact,
+  getSupplier,
+  initialIngredients,
+  loadConfiguredIngredients,
+  suppliers,
+} from "./inventory-config";
 import styles from "./autoinventory-preview.module.css";
 
-type Zone = "Pantry" | "Cold storage" | "Seafood freezer" | "Produce";
 type Tone = "good" | "watch" | "low" | "critical";
 type PrimaryTab = "overview" | "stock" | "recipes" | "orders" | "activity";
 type StockFilter = "All" | Zone;
-
-type SupplierContact = {
-  name: string;
-  role: string;
-  email: string;
-  phone: string;
-  channel: "Email" | "SMS";
-};
-
-type Ingredient = {
-  id: string;
-  name: string;
-  unit: string;
-  current: number;
-  fullLevel: number;
-  reorderAt: number;
-  dailyUse: number;
-  incoming: number;
-  supplier: string;
-  supplierContact: SupplierContact;
-  packSize: number;
-  packPrice: number;
-  purchaseUnit: string;
-  leadDays: number;
-  zone: Zone;
-};
 
 type Recipe = {
   id: string;
@@ -66,68 +49,9 @@ type Recipe = {
 type ContactDraft = {
   itemIds: string[];
   quantities: Record<string, number>;
+  contactBySupplier: Record<string, string>;
   title: string;
 };
-
-const contacts = {
-  seafood: {
-    name: "Maria Santos",
-    role: "Sales contact",
-    email: "maria@davaofresh.example",
-    phone: "+63 917 555 0142",
-    channel: "Email" as const,
-  },
-  pantry: {
-    name: "Paolo Reyes",
-    role: "Wholesale account",
-    email: "paolo@davaoprovisions.example",
-    phone: "+63 917 555 0198",
-    channel: "Email" as const,
-  },
-  rosso: {
-    name: "Lia Cruz",
-    role: "Orders desk",
-    email: "lia@casarosso.example",
-    phone: "+63 917 555 0181",
-    channel: "Email" as const,
-  },
-  italian: {
-    name: "Marco Dela Torre",
-    role: "Account manager",
-    email: "marco@italianpantry.example",
-    phone: "+63 917 555 0130",
-    channel: "Email" as const,
-  },
-  dairy: {
-    name: "Anne Lim",
-    role: "Sales contact",
-    email: "anne@davaodairy.example",
-    phone: "+63 917 555 0116",
-    channel: "SMS" as const,
-  },
-  produce: {
-    name: "Mika Villanueva",
-    role: "Produce orders",
-    email: "mika@greenbasket.example",
-    phone: "+63 917 555 0164",
-    channel: "SMS" as const,
-  },
-};
-
-const initialIngredients: Ingredient[] = [
-  { id: "pasta", name: "Pasta", unit: "kg", current: 10.2, fullLevel: 12, reorderAt: 4, dailyUse: 1.7, incoming: 0, supplier: "Davao Pasta & Provisions", supplierContact: contacts.pantry, packSize: 5, packPrice: 860, purchaseUnit: "5 kg case", leadDays: 1, zone: "Pantry" },
-  { id: "tomato", name: "Tomato sauce", unit: "L", current: 7.4, fullLevel: 10, reorderAt: 3, dailyUse: 1.45, incoming: 0, supplier: "Casa Rosso Foods", supplierContact: contacts.rosso, packSize: 4, packPrice: 980, purchaseUnit: "4 L case", leadDays: 1, zone: "Pantry" },
-  { id: "olive-oil", name: "Olive oil", unit: "L", current: 4.5, fullLevel: 5, reorderAt: 1.5, dailyUse: 0.38, incoming: 0, supplier: "Casa Rosso Foods", supplierContact: contacts.rosso, packSize: 2, packPrice: 1220, purchaseUnit: "2 L case", leadDays: 2, zone: "Pantry" },
-  { id: "flour", name: "Pizza flour", unit: "kg", current: 13, fullLevel: 15, reorderAt: 5, dailyUse: 2.1, incoming: 0, supplier: "Davao Pasta & Provisions", supplierContact: contacts.pantry, packSize: 10, packPrice: 760, purchaseUnit: "10 kg sack", leadDays: 1, zone: "Pantry" },
-  { id: "parmesan", name: "Parmigiano", unit: "kg", current: 1.45, fullLevel: 5, reorderAt: 2, dailyUse: 0.62, incoming: 0, supplier: "Italian Pantry Davao", supplierContact: contacts.italian, packSize: 2, packPrice: 2380, purchaseUnit: "2 kg wheel", leadDays: 2, zone: "Cold storage" },
-  { id: "mozzarella", name: "Mozzarella", unit: "kg", current: 6.1, fullLevel: 8, reorderAt: 3, dailyUse: 1.15, incoming: 0, supplier: "Italian Pantry Davao", supplierContact: contacts.italian, packSize: 3, packPrice: 1650, purchaseUnit: "3 kg case", leadDays: 1, zone: "Cold storage" },
-  { id: "cream", name: "Cooking cream", unit: "L", current: 2.25, fullLevel: 5, reorderAt: 2, dailyUse: 0.72, incoming: 0, supplier: "Davao Dairy Supply", supplierContact: contacts.dairy, packSize: 2, packPrice: 720, purchaseUnit: "2 L case", leadDays: 1, zone: "Cold storage" },
-  { id: "shrimp", name: "Shrimp", unit: "kg", current: 2.2, fullLevel: 10, reorderAt: 3, dailyUse: 1.95, incoming: 0, supplier: "Davao Fresh Seafood", supplierContact: contacts.seafood, packSize: 5, packPrice: 2800, purchaseUnit: "5 kg pack", leadDays: 1, zone: "Seafood freezer" },
-  { id: "salmon", name: "Salmon", unit: "kg", current: 4.9, fullLevel: 8, reorderAt: 3, dailyUse: 1.05, incoming: 0, supplier: "Davao Fresh Seafood", supplierContact: contacts.seafood, packSize: 4, packPrice: 3440, purchaseUnit: "4 kg case", leadDays: 1, zone: "Seafood freezer" },
-  { id: "squid", name: "Squid", unit: "kg", current: 1.7, fullLevel: 6, reorderAt: 2.2, dailyUse: 1, incoming: 0, supplier: "Davao Fresh Seafood", supplierContact: contacts.seafood, packSize: 3, packPrice: 1380, purchaseUnit: "3 kg pack", leadDays: 1, zone: "Seafood freezer" },
-  { id: "basil", name: "Fresh basil", unit: "kg", current: 0.48, fullLevel: 2, reorderAt: 0.7, dailyUse: 0.31, incoming: 0, supplier: "Green Basket Produce", supplierContact: contacts.produce, packSize: 1, packPrice: 410, purchaseUnit: "1 kg bundle", leadDays: 0.5, zone: "Produce" },
-  { id: "mushroom", name: "Mushrooms", unit: "kg", current: 2.8, fullLevel: 5, reorderAt: 1.8, dailyUse: 0.74, incoming: 0, supplier: "Green Basket Produce", supplierContact: contacts.produce, packSize: 2, packPrice: 540, purchaseUnit: "2 kg crate", leadDays: 0.5, zone: "Produce" },
-];
 
 const recipes: Recipe[] = [
   {
@@ -212,15 +136,14 @@ function formatMoney(value: number) {
   }).format(value);
 }
 
-function toneClass(value: Tone) {
-  if (value === "critical") return styles.critical;
-  if (value === "low") return styles.low;
-  if (value === "watch") return styles.watch;
-  return styles.good;
-}
-
-function contactKey(item: Ingredient) {
-  return `${item.supplier}::${item.supplierContact.email}`;
+function supplierGroupsForItems(items: Ingredient[]) {
+  const grouped = new Map<string, Ingredient[]>();
+  items.forEach((item) => {
+    const list = grouped.get(item.supplierId) ?? [];
+    list.push(item);
+    grouped.set(item.supplierId, list);
+  });
+  return [...grouped.values()];
 }
 
 export default function MarinaraAutoinventoryPreviewPage() {
@@ -229,15 +152,30 @@ export default function MarinaraAutoinventoryPreviewPage() {
   const [activeTab, setActiveTab] = useState<PrimaryTab>("overview");
   const [stockFilter, setStockFilter] = useState<StockFilter>("All");
   const [searchTerm, setSearchTerm] = useState("");
-  const [settingsOpen, setSettingsOpen] = useState(false);
   const [contactDraft, setContactDraft] = useState<ContactDraft | null>(null);
   const [activity, setActivity] = useState([
     "Jourvis finished the morning inventory scan.",
     "42 guests are forecast for tonight's dinner service.",
   ]);
 
+  useEffect(() => {
+    const refreshConfiguration = () => setIngredients((current) => {
+      const configured = loadConfiguredIngredients();
+      return configured.map((config) => {
+        const live = current.find((item) => item.id === config.id);
+        return live ? { ...config, current: live.current, incoming: live.incoming } : config;
+      });
+    });
+
+    refreshConfiguration();
+    window.addEventListener("focus", refreshConfiguration);
+    return () => window.removeEventListener("focus", refreshConfiguration);
+  }, []);
+
   const selected = ingredients.find((item) => item.id === selectedId) ?? ingredients[0];
   const selectedTone = tone(selected);
+  const selectedSupplier = getSupplier(selected);
+  const selectedContact = getContact(selected);
 
   const metrics = useMemo(() => {
     const critical = ingredients.filter((item) => tone(item) === "critical").length;
@@ -263,8 +201,10 @@ export default function MarinaraAutoinventoryPreviewPage() {
   const filteredIngredients = useMemo(() => {
     const query = searchTerm.trim().toLowerCase();
     return ingredients.filter((item) => {
+      const supplier = getSupplier(item);
+      const contact = getContact(item);
       const matchesZone = stockFilter === "All" || item.zone === stockFilter;
-      const matchesSearch = !query || `${item.name} ${item.supplier} ${item.supplierContact.name}`.toLowerCase().includes(query);
+      const matchesSearch = !query || `${item.name} ${supplier.name} ${contact.name}`.toLowerCase().includes(query);
       return matchesZone && matchesSearch;
     });
   }, [ingredients, searchTerm, stockFilter]);
@@ -272,18 +212,7 @@ export default function MarinaraAutoinventoryPreviewPage() {
   const affectedRecipes = recipes.filter((recipe) => selected.id in recipe.ingredients);
   const daysRemaining = selected.dailyUse > 0 ? selected.current / selected.dailyUse : 99;
   const orderAmount = suggestedOrder(selected);
-  const orderCost = Math.ceil(orderAmount / selected.packSize) * selected.packPrice;
-
-  const supplierGroups = useMemo(() => {
-    const grouped = new Map<string, Ingredient[]>();
-    suggested.forEach((item) => {
-      const key = contactKey(item);
-      const list = grouped.get(key) ?? [];
-      list.push(item);
-      grouped.set(key, list);
-    });
-    return [...grouped.values()];
-  }, [suggested]);
+  const supplierGroups = useMemo(() => supplierGroupsForItems(suggested), [suggested]);
 
   function log(message: string) {
     setActivity((current) => [message, ...current].slice(0, 12));
@@ -335,12 +264,11 @@ export default function MarinaraAutoinventoryPreviewPage() {
   }
 
   function resetDemo() {
-    setIngredients(initialIngredients);
+    setIngredients(loadConfiguredIngredients());
     setSelectedId("shrimp");
     setActiveTab("overview");
     setStockFilter("All");
     setSearchTerm("");
-    setSettingsOpen(false);
     setContactDraft(null);
     setActivity([
       "Jourvis finished the morning inventory scan.",
@@ -379,7 +307,10 @@ export default function MarinaraAutoinventoryPreviewPage() {
 
   function openContact(items: Ingredient[], title: string) {
     const quantities = Object.fromEntries(items.map((item) => [item.id, suggestedOrder(item)]));
-    setContactDraft({ itemIds: items.map((item) => item.id), quantities, title });
+    const contactBySupplier = Object.fromEntries(
+      supplierGroupsForItems(items).map((group) => [group[0].supplierId, group[0].contactId]),
+    );
+    setContactDraft({ itemIds: items.map((item) => item.id), quantities, contactBySupplier, title });
   }
 
   function changeDraftQuantity(item: Ingredient, next: number) {
@@ -391,20 +322,20 @@ export default function MarinaraAutoinventoryPreviewPage() {
     });
   }
 
+  function changeDraftContact(supplierId: string, contactId: string) {
+    if (!contactDraft) return;
+    setContactDraft({
+      ...contactDraft,
+      contactBySupplier: { ...contactDraft.contactBySupplier, [supplierId]: contactId },
+    });
+  }
+
   function sendContactRequests() {
     if (!contactDraft) return;
     const draftItems = ingredients.filter((item) => contactDraft.itemIds.includes(item.id));
-    const grouped = new Map<string, Ingredient[]>();
-    draftItems.forEach((item) => {
-      const qty = contactDraft.quantities[item.id] ?? 0;
-      if (qty <= 0) return;
-      const key = contactKey(item);
-      const list = grouped.get(key) ?? [];
-      list.push(item);
-      grouped.set(key, list);
-    });
+    const groups = supplierGroupsForItems(draftItems.filter((item) => (contactDraft.quantities[item.id] ?? 0) > 0));
 
-    if (!grouped.size) {
+    if (!groups.length) {
       log("No supplier request was sent because every requested quantity is zero.");
       setContactDraft(null);
       return;
@@ -417,12 +348,14 @@ export default function MarinaraAutoinventoryPreviewPage() {
       }),
     );
 
-    grouped.forEach((items) => {
-      const first = items[0];
+    groups.forEach((items) => {
+      const supplier = getSupplier(items[0]);
+      const contactId = contactDraft.contactBySupplier[supplier.id] ?? items[0].contactId;
+      const contact = supplier.contacts.find((candidate) => candidate.id === contactId) ?? supplier.contacts[0];
       const summary = items
         .map((item) => `${item.name} ${contactDraft.quantities[item.id]} ${item.unit}`)
         .join(", ");
-      log(`Demo supplier request sent to ${first.supplierContact.name} at ${first.supplier}: ${summary}.`);
+      log(`Demo supplier request sent to ${contact.name} at ${supplier.name}: ${summary}.`);
     });
     setContactDraft(null);
     setActiveTab("orders");
@@ -450,7 +383,7 @@ export default function MarinaraAutoinventoryPreviewPage() {
               <span className={styles.previewPill}>SIMULATION</span>
             </div>
             <p className={styles.intro}>
-              Stock, recipes and supplier communication in one compact workspace. Full levels, reorder points and actual request quantities can be changed per product.
+              Stock, recipes and supplier communication in one compact workspace. Supplier and contact choices can be configured per stock item.
             </p>
           </div>
           <div className={styles.ownerPulse}>
@@ -469,6 +402,7 @@ export default function MarinaraAutoinventoryPreviewPage() {
           <div><span>Low</span><strong>{metrics.low}</strong></div>
           <div><span>Incoming</span><strong>{metrics.incoming}</strong></div>
           <div className={styles.headerActions}>
+            <a href="/restaurant/marinara-ristorante/Autoinventory-preview/configure"><Settings2 size={14} aria-hidden /> Configure stock</a>
             <a href="/restaurant/marinara-ristorante"><ArrowLeft size={14} aria-hidden /> Marinara</a>
             <button type="button" onClick={resetDemo}><RefreshCw size={14} aria-hidden /> Reset</button>
           </div>
@@ -506,22 +440,18 @@ export default function MarinaraAutoinventoryPreviewPage() {
                 <div className={styles.attentionCard}>
                   <div className={styles.panelTitle}>
                     <div><span>WHAT NEEDS ATTENTION</span><h2>Today&apos;s stock pulse</h2></div>
-                    {urgent.length > 1 ? (
-                      <button type="button" className={styles.primaryButton} onClick={() => openContact(urgent, "Group restock")}>Group restock</button>
-                    ) : null}
+                    {urgent.length > 1 ? <button type="button" className={styles.primaryButton} onClick={() => openContact(urgent, "Group restock")}>Group restock</button> : null}
                   </div>
                   <div className={styles.urgentList}>
                     {urgent.length ? urgent.map((item) => (
                       <button key={item.id} type="button" onClick={() => { setSelectedId(item.id); setActiveTab("stock"); }}>
-                        <span className={`${styles.statusDot} ${toneClass(tone(item))}`} />
+                        <span className={`${styles.statusDot} ${toneClassName(tone(item), styles)}`} />
                         <span><strong>{item.name}</strong><small>{item.current} / {item.fullLevel} {item.unit} · reorder at {item.reorderAt} {item.unit}</small></span>
-                        <span className={styles.miniBattery}><i className={toneClass(tone(item))} style={{ width: `${percent(item)}%` }} /></span>
+                        <span className={styles.miniBattery}><i className={toneClassName(tone(item), styles)} style={{ width: `${percent(item)}%` }} /></span>
                         <b>{percent(item)}%</b>
                         <ChevronRight size={16} aria-hidden />
                       </button>
-                    )) : (
-                      <div className={styles.emptyState}><Check size={18} aria-hidden /> No supplier action is needed right now.</div>
-                    )}
+                    )) : <div className={styles.emptyState}><Check size={18} aria-hidden /> No supplier action is needed right now.</div>}
                   </div>
                 </div>
 
@@ -531,9 +461,9 @@ export default function MarinaraAutoinventoryPreviewPage() {
                     <span>JOURVIS SUGGESTS</span>
                     {urgent[0] ? (
                       <>
-                        <h3>Contact {urgent[0].supplierContact.name} about {urgent[0].name}.</h3>
-                        <p>I estimate {suggestedOrder(urgent[0])} {urgent[0].unit} would cover the configured full level after expected usage before delivery. You can change the quantity before anything is sent.</p>
-                        <button type="button" className={styles.primaryButton} onClick={() => openContact([urgent[0]], `Contact ${urgent[0].supplier}`)}>Contact supplier</button>
+                        <h3>Contact {getContact(urgent[0]).name} about {urgent[0].name}.</h3>
+                        <p>I estimate {suggestedOrder(urgent[0])} {urgent[0].unit} would cover the configured full level after expected usage before delivery. You can change both the contact and quantity before sending.</p>
+                        <button type="button" className={styles.primaryButton} onClick={() => openContact([urgent[0]], `Contact ${getSupplier(urgent[0]).name}`)}>Contact supplier</button>
                       </>
                     ) : <p>No restock recommendation is waiting.</p>}
                   </div>
@@ -561,35 +491,36 @@ export default function MarinaraAutoinventoryPreviewPage() {
             <section id="autoinventory-panel-stock" role="tabpanel" aria-labelledby="autoinventory-tab-stock" className={styles.panel}>
               <div className={styles.stockToolbar}>
                 <div className={styles.filterRow} aria-label="Filter inventory by storage area">
-                  {stockFilters.map((filter) => (
-                    <button key={filter} type="button" className={filter === stockFilter ? styles.filterActive : ""} onClick={() => chooseFilter(filter)}>{filter}</button>
-                  ))}
+                  {stockFilters.map((filter) => <button key={filter} type="button" className={filter === stockFilter ? styles.filterActive : ""} onClick={() => chooseFilter(filter)}>{filter}</button>)}
                 </div>
-                <label className={styles.searchBox}><Search size={15} aria-hidden /><input value={searchTerm} onChange={(event) => setSearchTerm(event.target.value)} placeholder="Search stock or supplier" /></label>
+                <label className={styles.searchBox}><Search size={15} aria-hidden /><input value={searchTerm} onChange={(event) => setSearchTerm(event.target.value)} placeholder="Search stock, supplier or contact" /></label>
               </div>
 
               <div className={styles.stockLayout}>
                 <div className={styles.stockList}>
                   <div className={styles.stockHeader}><span>Supply</span><span>Level</span><span>On hand</span><span>Coverage</span><span>Status</span><span /></div>
-                  {filteredIngredients.map((item) => (
-                    <button key={item.id} type="button" className={selected.id === item.id ? styles.stockRowSelected : ""} onClick={() => setSelectedId(item.id)}>
-                      <span className={styles.inventoryName}><strong>{item.name}</strong><small>{item.zone} · {item.supplierContact.name}</small></span>
-                      <span className={styles.rowBattery}><i className={toneClass(tone(item))} style={{ width: `${percent(item)}%` }} /></span>
-                      <span>{item.current} / {item.fullLevel} {item.unit}</span>
-                      <span>{round(item.current / item.dailyUse)} days</span>
-                      <span className={`${styles.statusBadge} ${toneClass(tone(item))}`}>{toneLabel(tone(item))}</span>
-                      <ChevronRight size={15} aria-hidden />
-                    </button>
-                  ))}
+                  {filteredIngredients.map((item) => {
+                    const contact = getContact(item);
+                    return (
+                      <button key={item.id} type="button" className={selected.id === item.id ? styles.stockRowSelected : ""} onClick={() => setSelectedId(item.id)}>
+                        <span className={styles.inventoryName}><strong>{item.name}</strong><small>{item.zone} · {contact.name}</small></span>
+                        <span className={styles.rowBattery}><i className={toneClassName(tone(item), styles)} style={{ width: `${percent(item)}%` }} /></span>
+                        <span>{item.current} / {item.fullLevel} {item.unit}</span>
+                        <span>{round(item.current / item.dailyUse)} days</span>
+                        <span className={`${styles.statusBadge} ${toneClassName(tone(item), styles)}`}>{toneLabel(tone(item))}</span>
+                        <ChevronRight size={15} aria-hidden />
+                      </button>
+                    );
+                  })}
                 </div>
 
                 <aside className={styles.detailPanel}>
                   <div className={styles.detailHeading}>
                     <div><span>SELECTED SUPPLY</span><h2>{selected.name}</h2></div>
-                    <span className={`${styles.statusBadge} ${toneClass(selectedTone)}`}>{toneLabel(selectedTone)}</span>
+                    <span className={`${styles.statusBadge} ${toneClassName(selectedTone, styles)}`}>{toneLabel(selectedTone)}</span>
                   </div>
 
-                  <div className={styles.detailBattery}><i className={toneClass(selectedTone)} style={{ width: `${percent(selected)}%` }} /></div>
+                  <div className={styles.detailBattery}><i className={toneClassName(selectedTone, styles)} style={{ width: `${percent(selected)}%` }} /></div>
                   <div className={styles.detailBatteryLabels}><span>{selected.current} {selected.unit} current</span><strong>{percent(selected)}%</strong><span>{selected.fullLevel} {selected.unit} = 100%</span></div>
                   <div className={styles.thresholdLine}><span style={{ left: `${Math.min(100, Math.round((selected.reorderAt / selected.fullLevel) * 100))}%` }} /><small>Reorder at {selected.reorderAt} {selected.unit}</small></div>
 
@@ -603,8 +534,8 @@ export default function MarinaraAutoinventoryPreviewPage() {
                   </div>
 
                   <div className={styles.contactCard}>
-                    <div><span>SUPPLIER CONTACT</span><strong>{selected.supplierContact.name}</strong><small>{selected.supplierContact.role}</small></div>
-                    <div><span>{selected.supplier}</span><small>{selected.supplierContact.channel} · {selected.supplierContact.email}</small><small>{selected.supplierContact.phone}</small></div>
+                    <div><span>SUPPLIER CONTACT</span><strong>{selectedContact.name}</strong><small>{selectedContact.role}</small></div>
+                    <div><span>{selectedSupplier.name}</span><small>{selectedContact.channel} · {selectedContact.email}</small><small>{selectedContact.phone}</small></div>
                   </div>
 
                   <div className={styles.recommendation}>
@@ -613,20 +544,11 @@ export default function MarinaraAutoinventoryPreviewPage() {
                   </div>
 
                   <div className={styles.detailActions}>
-                    <button type="button" className={styles.primaryButton} disabled={orderAmount <= 0} onClick={() => openContact([selected], `Contact ${selected.supplier}`)}><Mail size={16} aria-hidden /> Contact supplier</button>
+                    <button type="button" className={styles.primaryButton} disabled={orderAmount <= 0} onClick={() => openContact([selected], `Contact ${selectedSupplier.name}`)}><Mail size={16} aria-hidden /> Contact supplier</button>
                     <button type="button" className={styles.secondaryButton} disabled={selected.incoming <= 0} onClick={() => receive(selected)}><PackageCheck size={16} aria-hidden /> Receive delivery</button>
-                    <button type="button" className={styles.textAction} onClick={() => setSettingsOpen((value) => !value)}><Settings2 size={15} aria-hidden /> Stock settings</button>
+                    <a className={styles.textAction} href={`/restaurant/marinara-ristorante/Autoinventory-preview/configure?stock=${selected.id}`}><Settings2 size={15} aria-hidden /> Configure stock</a>
                     <button type="button" className={styles.textAction} onClick={() => recordWaste(selected)}><TriangleAlert size={15} aria-hidden /> Record demo waste</button>
                   </div>
-
-                  {settingsOpen ? (
-                    <div className={styles.settingsPanel}>
-                      <div className={styles.settingsTitle}><div><span>STOCK SETTINGS</span><strong>{selected.name}</strong></div><button type="button" onClick={() => setSettingsOpen(false)} aria-label="Close stock settings"><X size={16} aria-hidden /></button></div>
-                      <label><span>Full level / 100%</span><div><input type="number" min="0.01" step="0.1" value={selected.fullLevel} onChange={(event) => { const value = Math.max(0.01, Number(event.target.value) || 0.01); updateIngredient(selected.id, (item) => ({ ...item, fullLevel: value, reorderAt: Math.min(item.reorderAt, value) })); }} /><b>{selected.unit}</b></div><small>This quantity fills the battery to 100%.</small></label>
-                      <label><span>Reorder at</span><div><input type="number" min="0" max={selected.fullLevel} step="0.1" value={selected.reorderAt} onChange={(event) => { const value = Math.max(0, Math.min(selected.fullLevel, Number(event.target.value) || 0)); updateIngredient(selected.id, (item) => ({ ...item, reorderAt: value })); }} /><b>{selected.unit}</b></div><small>Jourvis starts recommending supplier action at this level.</small></label>
-                      <div className={styles.settingReadout}><span>Purchase unit</span><strong>{selected.purchaseUnit}</strong><small>{formatMoney(selected.packPrice)} · {selected.leadDays} day lead time</small></div>
-                    </div>
-                  ) : null}
 
                   <div className={styles.usedBy}><span>USED BY</span>{affectedRecipes.map((recipe) => <div key={recipe.id}><strong>{recipe.name}</strong><small>{recipe.ingredients[selected.id]} {selected.unit} / serving</small></div>)}</div>
                 </aside>
@@ -665,12 +587,14 @@ export default function MarinaraAutoinventoryPreviewPage() {
                   <div className={styles.orderColumnTitle}><span>NEEDS ACTION</span><strong>{suggested.length}</strong></div>
                   {supplierGroups.length ? supplierGroups.map((items) => {
                     const first = items[0];
+                    const supplier = getSupplier(first);
+                    const contact = getContact(first);
                     const total = items.reduce((sum, item) => sum + Math.ceil(suggestedOrder(item) / item.packSize) * item.packPrice, 0);
                     return (
-                      <article className={styles.supplierGroup} key={contactKey(first)}>
-                        <div className={styles.supplierGroupHead}><div><span>{first.supplier}</span><strong>{first.supplierContact.name}</strong><small>{first.supplierContact.role} · {first.supplierContact.channel}</small></div><b>{formatMoney(total)}</b></div>
+                      <article className={styles.supplierGroup} key={supplier.id}>
+                        <div className={styles.supplierGroupHead}><div><span>{supplier.name}</span><strong>{contact.name}</strong><small>{contact.role} · {contact.channel}</small></div><b>{formatMoney(total)}</b></div>
                         {items.map((item) => <div className={styles.orderItem} key={item.id}><span><strong>{item.name}</strong><small>{item.current}/{item.fullLevel} {item.unit} · reorder at {item.reorderAt}</small></span><b>{suggestedOrder(item)} {item.unit}</b></div>)}
-                        <button type="button" className={styles.secondaryButton} onClick={() => openContact(items, `Contact ${first.supplier}`)}><Mail size={15} aria-hidden /> Contact supplier</button>
+                        <button type="button" className={styles.secondaryButton} onClick={() => openContact(items, `Contact ${supplier.name}`)}><Mail size={15} aria-hidden /> Contact supplier</button>
                       </article>
                     );
                   }) : <div className={styles.emptyState}><Check size={18} aria-hidden /> No supplier contact is needed.</div>}
@@ -678,13 +602,17 @@ export default function MarinaraAutoinventoryPreviewPage() {
 
                 <div>
                   <div className={styles.orderColumnTitle}><span>INCOMING</span><strong>{incoming.length}</strong></div>
-                  {incoming.length ? incoming.map((item) => (
-                    <article className={styles.incomingCard} key={item.id}>
-                      <div><span>{item.supplier}</span><h3>{item.name}</h3><p>{item.incoming} {item.unit} incoming · contact {item.supplierContact.name}</p></div>
-                      <div className={styles.projectedRow}><span>Current {percent(item)}%</span><ChevronRight size={14} aria-hidden /><strong>After delivery {Math.min(100, Math.round(((item.current + item.incoming) / item.fullLevel) * 100))}%</strong></div>
-                      <button type="button" className={styles.primaryButton} onClick={() => receive(item)}><PackageCheck size={15} aria-hidden /> Receive delivery</button>
-                    </article>
-                  )) : <div className={styles.emptyState}><Truck size={18} aria-hidden /> No deliveries are waiting.</div>}
+                  {incoming.length ? incoming.map((item) => {
+                    const supplier = getSupplier(item);
+                    const contact = getContact(item);
+                    return (
+                      <article className={styles.incomingCard} key={item.id}>
+                        <div><span>{supplier.name}</span><h3>{item.name}</h3><p>{item.incoming} {item.unit} incoming · contact {contact.name}</p></div>
+                        <div className={styles.projectedRow}><span>Current {percent(item)}%</span><ChevronRight size={14} aria-hidden /><strong>After delivery {Math.min(100, Math.round(((item.current + item.incoming) / item.fullLevel) * 100))}%</strong></div>
+                        <button type="button" className={styles.primaryButton} onClick={() => receive(item)}><PackageCheck size={15} aria-hidden /> Receive delivery</button>
+                      </article>
+                    );
+                  }) : <div className={styles.emptyState}><Truck size={18} aria-hidden /> No deliveries are waiting.</div>}
                 </div>
               </div>
             </section>
@@ -705,18 +633,32 @@ export default function MarinaraAutoinventoryPreviewPage() {
         <div className={styles.modalBackdrop} role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setContactDraft(null); }}>
           <section className={styles.contactModal} role="dialog" aria-modal="true" aria-labelledby="contact-modal-title">
             <div className={styles.modalHeader}>
-              <div><span>SUPPLIER REQUEST</span><h2 id="contact-modal-title">{contactDraft.title}</h2><p>Jourvis suggested the starting quantities. Change any amount before sending.</p></div>
+              <div><span>SUPPLIER REQUEST</span><h2 id="contact-modal-title">{contactDraft.title}</h2><p>Change the contact person and requested quantity before sending.</p></div>
               <button type="button" onClick={() => setContactDraft(null)} aria-label="Close supplier request"><X size={19} aria-hidden /></button>
             </div>
 
             <div className={styles.modalBody}>
-              {supplierGroupsForDraft(ingredients, contactDraft).map((items) => {
+              {supplierGroupsForItems(ingredients.filter((item) => contactDraft.itemIds.includes(item.id))).map((items) => {
                 const first = items[0];
+                const supplier = getSupplier(first);
+                const selectedContactId = contactDraft.contactBySupplier[supplier.id] ?? first.contactId;
+                const contact = supplier.contacts.find((candidate) => candidate.id === selectedContactId) ?? supplier.contacts[0];
                 return (
-                  <div className={styles.modalSupplier} key={contactKey(first)}>
+                  <div className={styles.modalSupplier} key={supplier.id}>
                     <div className={styles.modalSupplierHead}>
-                      <div><span>{first.supplier}</span><strong>{first.supplierContact.name}</strong><small>{first.supplierContact.role}</small></div>
-                      <div><span>{first.supplierContact.channel}</span><small>{first.supplierContact.email}</small><small>{first.supplierContact.phone}</small></div>
+                      <div><span>{supplier.name}</span><strong>{contact.name}</strong><small>{contact.role}</small></div>
+                      <div>
+                        <span>CONTACT PERSON</span>
+                        <select
+                          value={selectedContactId}
+                          onChange={(event) => changeDraftContact(supplier.id, event.target.value)}
+                          aria-label={`Contact person for ${supplier.name}`}
+                          style={{ marginTop: 6, minWidth: 210, minHeight: 38, padding: "6px 30px 6px 9px", background: "#08141f", color: "#f7f4ee", border: "1px solid #2a3a44" }}
+                        >
+                          {supplier.contacts.map((candidate) => <option key={candidate.id} value={candidate.id}>{candidate.name} · {candidate.role}</option>)}
+                        </select>
+                        <small>{contact.channel} · {contact.email}</small><small>{contact.phone}</small>
+                      </div>
                     </div>
                     {items.map((item) => {
                       const quantity = contactDraft.quantities[item.id] ?? 0;
@@ -739,7 +681,7 @@ export default function MarinaraAutoinventoryPreviewPage() {
               })}
             </div>
 
-            <div className={styles.modalFooter}><button type="button" className={styles.secondaryButton} onClick={() => setContactDraft(null)}>Cancel</button><button type="button" className={styles.primaryButton} onClick={sendContactRequests}><Mail size={16} aria-hidden /> Send demo request{supplierGroupsForDraft(ingredients, contactDraft).length > 1 ? "s" : ""}</button></div>
+            <div className={styles.modalFooter}><button type="button" className={styles.secondaryButton} onClick={() => setContactDraft(null)}>Cancel</button><button type="button" className={styles.primaryButton} onClick={sendContactRequests}><Mail size={16} aria-hidden /> Send demo request{supplierGroupsForItems(ingredients.filter((item) => contactDraft.itemIds.includes(item.id))).length > 1 ? "s" : ""}</button></div>
           </section>
         </div>
       ) : null}
@@ -747,13 +689,9 @@ export default function MarinaraAutoinventoryPreviewPage() {
   );
 }
 
-function supplierGroupsForDraft(ingredients: Ingredient[], draft: ContactDraft) {
-  const grouped = new Map<string, Ingredient[]>();
-  ingredients.filter((item) => draft.itemIds.includes(item.id)).forEach((item) => {
-    const key = contactKey(item);
-    const list = grouped.get(key) ?? [];
-    list.push(item);
-    grouped.set(key, list);
-  });
-  return [...grouped.values()];
+function toneClassName(value: Tone, css: typeof styles) {
+  if (value === "critical") return css.critical;
+  if (value === "low") return css.low;
+  if (value === "watch") return css.watch;
+  return css.good;
 }
