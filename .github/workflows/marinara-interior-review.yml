@@ -1,0 +1,19 @@
+name: Marinara interior review
+on:
+  push:
+    branches: [restaurant/marinara-ristorante-v1]
+    paths: [.github/workflows/marinara-interior-review.yml]
+permissions:
+  contents: read
+jobs:
+  reference:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Fetch published interior reference for review only
+        run: curl --fail --location --max-time 30 --max-filesize 8388608 'https://eatsmejax.com/wp-content/uploads/2025/04/20250323_125640.jpg?crop=1&h=768&w=1920' --output /tmp/marinara-interior.jpg
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: marinara-interior-review
+          path: /tmp/marinara-interior.jpg
+          retention-days: 1
