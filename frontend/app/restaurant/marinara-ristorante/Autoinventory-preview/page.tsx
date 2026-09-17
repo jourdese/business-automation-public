@@ -1,15 +1,20 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import {
+  useMemo,
+  useState,
+  type KeyboardEvent,
+} from "react";
 import {
   ArrowLeft,
-  ArrowRight,
   Check,
   ChefHat,
+  ChevronRight,
   Clock3,
   Mail,
   PackageCheck,
   RefreshCw,
+  Search,
   ShoppingCart,
   Sparkles,
   TriangleAlert,
@@ -20,6 +25,8 @@ import styles from "./autoinventory-preview.module.css";
 
 type Zone = "Pantry" | "Cold storage" | "Seafood freezer" | "Produce";
 type Tone = "good" | "watch" | "low" | "critical";
+type PrimaryTab = "overview" | "stock" | "recipes" | "orders" | "activity";
+type StockFilter = "All" | Zone;
 
 type Ingredient = {
   id: string;
@@ -85,7 +92,16 @@ const recipes: Recipe[] = [
   },
 ];
 
+const primaryTabs: ReadonlyArray<{ id: PrimaryTab; label: string }> = [
+  { id: "overview", label: "Overview" },
+  { id: "stock", label: "Stock" },
+  { id: "recipes", label: "Recipes" },
+  { id: "orders", label: "Orders" },
+  { id: "activity", label: "Activity" },
+];
+
 const zoneOrder: Zone[] = ["Pantry", "Cold storage", "Seafood freezer", "Produce"];
+const stockFilters: StockFilter[] = ["All", ...zoneOrder];
 
 function round(value: number) {
   return Math.round(value * 100) / 100;
@@ -95,12 +111,29 @@ function percent(item: Ingredient) {
   return Math.max(0, Math.min(100, Math.round((item.current / item.par) * 100)));
 }
 
-function tone(item: Ingredient): Tone {
-  const value = percent(item);
+function toneFromPercent(value: number): Tone {
   if (value <= 20) return "critical";
   if (value <= 35) return "low";
   if (value <= 60) return "watch";
   return "good";
+}
+
+function tone(item: Ingredient): Tone {
+  return toneFromPercent(percent(item));
+}
+
+function toneLabel(value: Tone) {
+  if (value === "critical") return "Critical";
+  if (value === "low") return "Low";
+  if (value === "watch") return "Watch";
+  return "Ready";
+}
+
+function toneClass(value: Tone) {
+  if (value === "critical") return styles.critical;
+  if (value === "low") return styles.low;
+  if (value === "watch") return styles.watch;
+  return styles.good;
 }
 
 function suggestedOrder(item: Ingredient) {
@@ -117,16 +150,42 @@ function formatMoney(value: number) {
   }).format(value);
 }
 
-function toneClass(value: Tone) {
-  if (value === "critical") return styles.critical;
-  if (value === "low") return styles.low;
-  if (value === "watch") return styles.watch;
-  return styles.good;
+function Battery({ item, compact = false }: { item: Ingredient; compact?: boolean }) {
+  const level = percent(item);
+  const filled = Math.round(level / 10);
+  const itemTone = tone(item);
+  return (
+    <div
+      className={`${styles.battery} ${compact ? styles.batteryCompact : ""}`}
+      aria-label={`${item.name}: ${level}% of PAR, ${toneLabel(itemTone)}`}
+    >
+      {Array.from({ length: 10 }).map((_, index) => (
+        <span
+          key={index}
+          className={`${styles.batteryCell} ${index < filled ? toneClass(itemTone) : ""}`}
+        />
+      ))}
+    </div>
+  );
+}
+
+function PixelGlyph({ active }: { active: boolean }) {
+  return (
+    <span className={styles.pixelGlyph} data-active={active} aria-hidden="true">
+      {Array.from({ length: 12 }).map((_, index) => (
+        <span key={index} />
+      ))}
+    </span>
+  );
 }
 
 export default function MarinaraAutoinventoryPreviewPage() {
   const [ingredients, setIngredients] = useState(initialIngredients);
   const [selectedId, setSelectedId] = useState("shrimp");
+  const [selectedRecipeId, setSelectedRecipeId] = useState("seafood-marinara");
+  const [activeTab, setActiveTab] = useState<PrimaryTab>("overview");
+  const [stockFilter, setStockFilter] = useState<StockFilter>("All");
+  const [searchTerm, setSearchTerm] = useState("");
   const [autoPilot, setAutoPilot] = useState(false);
   const [activity, setActivity] = useState([
     "Jourvis finished the morning inventory scan.",
@@ -134,30 +193,67 @@ export default function MarinaraAutoinventoryPreviewPage() {
   ]);
 
   const selected = ingredients.find((item) => item.id === selectedId) ?? ingredients[0];
-  const selectedTone = tone(selected);
+  const selectedRecipe = recipes.find((recipe) => recipe.id === selectedRecipeId) ?? recipes[0];
 
   const metrics = useMemo(() => {
     const critical = ingredients.filter((item) => percent(item) <= 20).length;
     const low = ingredients.filter((item) => percent(item) > 20 && percent(item) <= 35).length;
     const incoming = ingredients.filter((item) => item.incoming > 0).length;
     const readiness = Math.round(
-      ingredients.reduce((sum, item) => sum + Math.min(100, percent(item)), 0) /
-        ingredients.length,
+      ingredients.reduce((sum, item) => sum + percent(item), 0) / ingredients.length,
     );
     return { critical, low, incoming, readiness };
   }, [ingredients]);
+
+  const urgent = useMemo(
+    () =>
+      ingredients
+        .filter((item) => percent(item) <= 35)
+        .sort((a, b) => percent(a) - percent(b)),
+    [ingredients],
+  );
+
+  const suggested = useMemo(
+    () =>
+      ingredients
+        .filter((item) => suggestedOrder(item) > 0)
+        .sort((a, b) => percent(a) - percent(b)),
+    [ingredients],
+  );
+
+  const incoming = useMemo(
+    () => ingredients.filter((item) => item.incoming > 0),
+    [ingredients],
+  );
+
+  const filteredIngredients = useMemo(() => {
+    const query = searchTerm.trim().toLowerCase();
+    return ingredients.filter((item) => {
+      const zoneMatch = stockFilter === "All" || item.zone === stockFilter;
+      const queryMatch = !query || `${item.name} ${item.zone} ${item.supplier}`.toLowerCase().includes(query);
+      return zoneMatch && queryMatch;
+    });
+  }, [ingredients, searchTerm, stockFilter]);
 
   const affectedRecipes = recipes.filter((recipe) => selected.id in recipe.ingredients);
   const daysRemaining = selected.dailyUse > 0 ? selected.current / selected.dailyUse : 99;
   const orderAmount = suggestedOrder(selected);
   const orderPacks = orderAmount > 0 ? Math.ceil(orderAmount / selected.packSize) : 0;
   const orderCost = orderPacks * selected.packPrice;
-  const urgent = ingredients
-    .filter((item) => percent(item) <= 35)
-    .sort((a, b) => percent(a) - percent(b));
+  const recipeCapacity = Math.max(
+    0,
+    Math.floor(
+      Math.min(
+        ...Object.entries(selectedRecipe.ingredients).map(([id, amount]) => {
+          const item = ingredients.find((ingredient) => ingredient.id === id);
+          return item ? item.current / amount : 0;
+        }),
+      ),
+    ),
+  );
 
   function log(message: string) {
-    setActivity((current) => [message, ...current].slice(0, 6));
+    setActivity((current) => [message, ...current].slice(0, 12));
   }
 
   function updateIngredient(id: string, updater: (item: Ingredient) => Ingredient) {
@@ -170,8 +266,13 @@ export default function MarinaraAutoinventoryPreviewPage() {
       log(`${item.name} is already covered by on-hand and incoming stock.`);
       return;
     }
-    updateIngredient(item.id, (current) => ({ ...current, incoming: round(current.incoming + amount) }));
-    log(`Restock request prepared for ${item.supplier}: ${amount} ${item.unit} of ${item.name} (${formatMoney(Math.ceil(amount / item.packSize) * item.packPrice)} demo total).`);
+    updateIngredient(item.id, (current) => ({
+      ...current,
+      incoming: round(current.incoming + amount),
+    }));
+    log(
+      `Restock request prepared for ${item.supplier}: ${amount} ${item.unit} of ${item.name} (${formatMoney(Math.ceil(amount / item.packSize) * item.packPrice)} demo total).`,
+    );
   }
 
   function receive(item: Ingredient) {
@@ -180,13 +281,20 @@ export default function MarinaraAutoinventoryPreviewPage() {
       return;
     }
     const amount = item.incoming;
-    updateIngredient(item.id, (current) => ({ ...current, current: round(current.current + current.incoming), incoming: 0 }));
+    updateIngredient(item.id, (current) => ({
+      ...current,
+      current: round(current.current + current.incoming),
+      incoming: 0,
+    }));
     log(`Delivery received: ${amount} ${item.unit} of ${item.name}. Inventory recharged.`);
   }
 
   function recordWaste(item: Ingredient) {
     const amount = Math.min(item.current, Math.max(0.05, item.par * 0.05));
-    updateIngredient(item.id, (current) => ({ ...current, current: round(Math.max(0, current.current - amount)) }));
+    updateIngredient(item.id, (current) => ({
+      ...current,
+      current: round(Math.max(0, current.current - amount)),
+    }));
     log(`Recorded ${round(amount)} ${item.unit} of ${item.name} as demo waste/spoilage.`);
   }
 
@@ -202,7 +310,9 @@ export default function MarinaraAutoinventoryPreviewPage() {
     setIngredients((current) =>
       current.map((item) => {
         const amount = recipe.ingredients[item.id] ?? 0;
-        return amount ? { ...item, current: round(Math.max(0, item.current - amount)) } : item;
+        return amount
+          ? { ...item, current: round(Math.max(0, item.current - amount)) }
+          : item;
       }),
     );
     log(`Demo sale: 1 × ${recipe.name}. Recipe ingredients were deducted automatically.`);
@@ -211,6 +321,9 @@ export default function MarinaraAutoinventoryPreviewPage() {
   function resetDemo() {
     setIngredients(initialIngredients);
     setSelectedId("shrimp");
+    setSelectedRecipeId("seafood-marinara");
+    setStockFilter("All");
+    setSearchTerm("");
     setAutoPilot(false);
     setActivity([
       "Jourvis finished the morning inventory scan.",
@@ -218,308 +331,528 @@ export default function MarinaraAutoinventoryPreviewPage() {
     ]);
   }
 
+  function chooseFilter(filter: StockFilter) {
+    setStockFilter(filter);
+    if (filter === "All" || selected.zone === filter) return;
+    const first = ingredients.find((item) => item.zone === filter);
+    if (first) setSelectedId(first.id);
+  }
+
+  function switchTab(tab: PrimaryTab) {
+    setActiveTab(tab);
+    if (tab === "stock" && !filteredIngredients.some((item) => item.id === selectedId)) {
+      setStockFilter("All");
+      setSearchTerm("");
+    }
+  }
+
+  function handleTabKeys(event: KeyboardEvent<HTMLDivElement>) {
+    const currentIndex = primaryTabs.findIndex((tab) => tab.id === activeTab);
+    let nextIndex = currentIndex;
+    if (event.key === "ArrowRight") nextIndex = (currentIndex + 1) % primaryTabs.length;
+    if (event.key === "ArrowLeft") nextIndex = (currentIndex - 1 + primaryTabs.length) % primaryTabs.length;
+    if (event.key === "Home") nextIndex = 0;
+    if (event.key === "End") nextIndex = primaryTabs.length - 1;
+    if (nextIndex === currentIndex || !["ArrowRight", "ArrowLeft", "Home", "End"].includes(event.key)) return;
+    event.preventDefault();
+    const nextTab = primaryTabs[nextIndex].id;
+    switchTab(nextTab);
+    window.requestAnimationFrame(() => {
+      document.getElementById(`autoinventory-tab-${nextTab}`)?.focus();
+    });
+  }
+
+  const tabCounts: Record<PrimaryTab, number> = {
+    overview: metrics.critical + metrics.low,
+    stock: ingredients.length,
+    recipes: recipes.length,
+    orders: suggested.length + incoming.length,
+    activity: activity.length,
+  };
+
   return (
     <div className={styles.page}>
-      <section className={styles.hero} aria-labelledby="autoinventory-title">
-        <div className={styles.heroCopy}>
-          <p className={styles.eyebrow}>
-            <span className={styles.statusSquare} />
-            Marinara / Owner operations / Preview
-          </p>
-          <h1 id="autoinventory-title">
-            Autoinventory-<span>preview.</span>
-          </h1>
-          <p className={styles.heroDescription}>
-            A living view of Marinara&apos;s ingredients, recipes and supplier flow. Jourvis keeps the useful signals together so inventory feels less like a spreadsheet and more like a world you can understand at a glance.
-          </p>
-          <div className={styles.heroActions}>
-            <a className={styles.primaryButton} href="#autoinventory-world">
-              Explore the restaurant <ArrowRight size={18} aria-hidden />
-            </a>
-            <a className={styles.textLink} href="/restaurant/marinara-ristorante">
-              <ArrowLeft size={15} aria-hidden /> Back to Marinara
-            </a>
-          </div>
-        </div>
-
-        <div className={styles.heroPresence}>
-          <CompanionMark className={styles.heroCompanion} />
-          <span className={styles.orbitLabel}>YOUR OPERATIONS COMPANION</span>
-          <div className={styles.heroSignal}>
-            <span>Jourvis sees</span>
-            <strong>{metrics.critical + metrics.low} supplies that need attention.</strong>
-            <small>{urgent[0] ? `${urgent[0].name} is currently the highest-risk ingredient.` : "Everything is inside the safe range."}</small>
-          </div>
-        </div>
-
-        <div className={styles.heroBaseline}>
-          <span>Less stock checking. More room to run the restaurant.</span>
-          <span className={styles.routeLabel}>/restaurant/marinara-ristorante/Autoinventory-preview</span>
-        </div>
-      </section>
-
-      <section className={styles.overview} aria-label="Inventory overview">
-        <div className={styles.sectionTopline}>
-          <p>01 / What needs attention</p>
-          <span>Demo values · No database writes</span>
-        </div>
-        <div className={styles.metrics}>
-          <article>
-            <span>Inventory readiness</span>
-            <strong>{metrics.readiness}%</strong>
-            <small>Average stock against PAR</small>
-          </article>
-          <article>
-            <span>Critical</span>
-            <strong>{metrics.critical}</strong>
-            <small>At or below 20%</small>
-          </article>
-          <article>
-            <span>Low</span>
-            <strong>{metrics.low}</strong>
-            <small>21–35% remaining</small>
-          </article>
-          <article>
-            <span>Incoming</span>
-            <strong>{metrics.incoming}</strong>
-            <small>Supplier deliveries</small>
-          </article>
-        </div>
-      </section>
-
-      <section className={styles.worldSection} id="autoinventory-world" aria-labelledby="world-title">
-        <div className={styles.sectionTopline}>
-          <p>02 / Marinara as a living system</p>
-          <span>Dinner forecast · 42 guests</span>
-        </div>
-        <div className={styles.worldHeading}>
+      <div className={styles.shell}>
+        <header className={styles.consoleHeader}>
           <div>
-            <h2 id="world-title">The restaurant,<br /><span>made visible.</span></h2>
-            <p>Each room reflects the ingredients inside it. Each ingredient has a battery. The kitchen consumes stock. Receiving recharges it.</p>
+            <p className={styles.eyebrow}>
+              <span className={styles.statusSquare} />
+              Marinara / Owner operations / Preview
+            </p>
+            <div className={styles.titleRow}>
+              <h1>Autoinventory-preview</h1>
+              <span className={styles.previewPill}>SIMULATION</span>
+            </div>
+            <p className={styles.intro}>
+              A compact view of stock, recipes and supplier actions. Jourvis keeps the useful signals together so the owner can see what matters and act quickly.
+            </p>
           </div>
-          <div className={styles.worldGuide}>
-            <CompanionMark className={styles.guideCompanion} />
+          <div className={styles.ownerPulse}>
+            <CompanionMark className={styles.ownerCompanion} />
             <div>
               <span>JOURVIS</span>
-              <strong>I&apos;ll keep an eye on the levels.</strong>
-              <small>Select any ingredient to see what it affects and what I would do next.</small>
+              <strong>
+                {urgent.length ? `${urgent.length} supplies need attention.` : "Inventory is inside the safe range."}
+              </strong>
+              <small>
+                {urgent[0] ? `${urgent[0].name} is the highest-risk ingredient right now.` : "No low-stock action is waiting."}
+              </small>
             </div>
           </div>
-        </div>
+        </header>
 
-        <div className={styles.worldLayout}>
-          <div className={styles.pixelWorld}>
-            <div className={styles.pixelGrid} aria-hidden="true" />
-            {zoneOrder.map((zone) => {
-              const zoneItems = ingredients.filter((item) => item.zone === zone);
-              const average = Math.round(zoneItems.reduce((sum, item) => sum + percent(item), 0) / zoneItems.length);
-              return (
-                <div className={styles.zone} key={zone}>
-                  <div className={styles.zoneTop}>
-                    <span>{zone}</span>
-                    <strong>{average}%</strong>
-                  </div>
-                  <div className={styles.pixelShelf} aria-hidden="true">
-                    {zoneItems.slice(0, 4).map((item) => (
-                      <span key={item.id} className={toneClass(tone(item))} />
-                    ))}
-                  </div>
-                  <small>{zoneItems.length} tracked supplies</small>
-                </div>
-              );
-            })}
-            <div className={styles.kitchenNode}>
-              <ChefHat size={24} aria-hidden />
-              <span>KITCHEN</span>
-              <small>recipes consume stock</small>
-            </div>
-            <div className={styles.receivingNode}>
-              <Truck size={23} aria-hidden />
-              <span>RECEIVING</span>
-              <small>{metrics.incoming ? `${metrics.incoming} delivery${metrics.incoming > 1 ? "ies" : ""} waiting` : "dock clear"}</small>
-            </div>
-            <CompanionMark className={styles.worldCompanion} />
+        <section className={styles.statusStrip} aria-label="Inventory summary">
+          <div>
+            <span>Readiness</span>
+            <strong>{metrics.readiness}%</strong>
           </div>
+          <div>
+            <span>Critical</span>
+            <strong>{metrics.critical}</strong>
+          </div>
+          <div>
+            <span>Low</span>
+            <strong>{metrics.low}</strong>
+          </div>
+          <div>
+            <span>Incoming</span>
+            <strong>{metrics.incoming}</strong>
+          </div>
+          <div className={styles.headerActions}>
+            <a href="/restaurant/marinara-ristorante">
+              <ArrowLeft size={14} aria-hidden /> Marinara
+            </a>
+            <button type="button" onClick={resetDemo}>
+              <RefreshCw size={14} aria-hidden /> Reset
+            </button>
+          </div>
+        </section>
 
-          <aside className={styles.selectedPanel} aria-labelledby="selected-title">
-            <div className={styles.selectedHeading}>
-              <div>
-                <span className={styles.monoLabel}>SELECTED SUPPLY</span>
-                <h3 id="selected-title">{selected.name}</h3>
-              </div>
-              <strong className={`${styles.healthNumber} ${toneClass(selectedTone)}`}>{percent(selected)}%</strong>
-            </div>
-
-            <div className={styles.largeBattery} aria-label={`${selected.name} ${percent(selected)}% of PAR stock`}>
-              <div className={`${styles.largeBatteryFill} ${toneClass(selectedTone)}`} style={{ width: `${percent(selected)}%` }} />
-            </div>
-
-            <div className={styles.factGrid}>
-              <div><span>On hand</span><strong>{selected.current} {selected.unit}</strong></div>
-              <div><span>PAR target</span><strong>{selected.par} {selected.unit}</strong></div>
-              <div><span>Days cover</span><strong>{round(daysRemaining)} days</strong></div>
-              <div><span>Incoming</span><strong>{selected.incoming} {selected.unit}</strong></div>
-            </div>
-
-            <div className={styles.recommendation}>
-              <CompanionMark className={styles.adviceCompanion} />
-              <div>
-                <span>Jourvis recommendation</span>
-                {orderAmount > 0 ? (
-                  <p>Order <b>{orderAmount} {selected.unit}</b> from {selected.supplier}. Demo estimate: <b>{formatMoney(orderCost)}</b>.</p>
-                ) : (
-                  <p>On-hand and incoming stock already cover the PAR target.</p>
-                )}
-              </div>
-            </div>
-
-            <div className={styles.supplierLine}>
-              <span>Supplier</span>
-              <strong>{selected.supplier}</strong>
-              <small>{selected.packSize} {selected.unit} pack · {formatMoney(selected.packPrice)} · {selected.leadTime}</small>
-            </div>
-
-            <div className={styles.actionButtons}>
-              <button type="button" className={styles.primaryButton} onClick={() => placeOrder(selected)} disabled={orderAmount === 0}>
-                <Mail size={16} aria-hidden /> Prepare restock
-              </button>
-              <button type="button" className={styles.secondaryButton} onClick={() => receive(selected)} disabled={selected.incoming <= 0}>
-                <PackageCheck size={16} aria-hidden /> Receive delivery
-              </button>
-              <button type="button" className={styles.quietButton} onClick={() => recordWaste(selected)}>
-                <TriangleAlert size={15} aria-hidden /> Record demo waste
-              </button>
-            </div>
-          </aside>
-        </div>
-
-        <div className={styles.inventoryList}>
-          {ingredients.map((item) => {
-            const level = percent(item);
-            const itemTone = tone(item);
-            const filled = Math.round(level / 10);
+        <div className={styles.tabRail} role="tablist" aria-label="Autoinventory sections" onKeyDown={handleTabKeys}>
+          {primaryTabs.map((tab) => {
+            const active = activeTab === tab.id;
             return (
               <button
-                key={item.id}
+                key={tab.id}
+                id={`autoinventory-tab-${tab.id}`}
+                role="tab"
                 type="button"
-                className={`${styles.inventoryRow} ${selected.id === item.id ? styles.inventoryRowActive : ""}`}
-                onClick={() => setSelectedId(item.id)}
-                aria-pressed={selected.id === item.id}
+                aria-selected={active}
+                aria-controls={`autoinventory-panel-${tab.id}`}
+                tabIndex={active ? 0 : -1}
+                className={`${styles.pixelTab} ${active ? styles.pixelTabActive : ""}`}
+                onClick={() => switchTab(tab.id)}
               >
-                <span className={styles.inventoryName}>
-                  <strong>{item.name}</strong>
-                  <small>{item.zone}</small>
-                </span>
-                <span className={styles.battery} aria-hidden="true">
-                  {Array.from({ length: 10 }).map((_, index) => (
-                    <i key={index} className={index < filled ? toneClass(itemTone) : ""} />
-                  ))}
-                </span>
-                <span className={styles.inventoryValue}>
-                  <strong className={toneClass(itemTone)}>{level}%</strong>
-                  <small>{item.incoming > 0 ? `+${item.incoming} ${item.unit} incoming` : `${round(item.current / item.dailyUse)} days`}</small>
-                </span>
+                <PixelGlyph active={active} />
+                <span className={styles.tabLabel}>{tab.label}</span>
+                <small>{tabCounts[tab.id]}</small>
               </button>
             );
           })}
         </div>
-      </section>
 
-      <section className={styles.recipeSection} aria-labelledby="recipe-title">
-        <div className={styles.sectionTopline}>
-          <p>03 / Recipe-driven inventory</p>
-          <span>Every sale can become a stock movement</span>
-        </div>
-        <div className={styles.recipeIntro}>
-          <h2 id="recipe-title">Sell a dish.<br /><span>The world changes.</span></h2>
-          <p>These demo recipes connect menu items to raw materials. Simulate a sale and watch the ingredient levels update immediately.</p>
-        </div>
-        <div className={styles.recipeGrid}>
-          {recipes.map((recipe, index) => (
-            <article key={recipe.id} className={styles.recipeCard}>
-              <span className={styles.recipeNumber}>0{index + 1}</span>
-              <div>
-                <h3>{recipe.name}</h3>
-                <p>{recipe.description}</p>
-              </div>
-              <button type="button" onClick={() => sellRecipe(recipe)}>
-                <ShoppingCart size={15} aria-hidden /> Simulate 1 sale
-              </button>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      <section className={styles.operationsSection} aria-labelledby="operations-title">
-        <div className={styles.sectionTopline}>
-          <p>04 / Keep the next step together</p>
-          <span>Owner approval remains in control</span>
-        </div>
-        <div className={styles.operationsHeading}>
-          <h2 id="operations-title">Jourvis keeps<br /><span>the thread.</span></h2>
-          <label className={styles.autopilot}>
-            <input type="checkbox" checked={autoPilot} onChange={(event) => setAutoPilot(event.target.checked)} />
-            <span>
-              <strong>Autopilot preview</strong>
-              <small>{autoPilot ? "Eligible reorders may be prepared automatically. Sending remains simulated." : "Supplier orders stay behind owner approval."}</small>
-            </span>
-          </label>
-        </div>
-
-        <div className={styles.bottomGrid}>
-          <div className={styles.queuePanel}>
-            <div className={styles.panelTitle}>
-              <Sparkles size={17} aria-hidden />
-              <div><span>A LITTLE LESS TO HOLD</span><h3>Action queue</h3></div>
-            </div>
-            {urgent.length ? urgent.slice(0, 4).map((item) => (
-              <button type="button" key={item.id} onClick={() => setSelectedId(item.id)}>
-                <span className={`${styles.queueDot} ${toneClass(tone(item))}`} />
-                <span><strong>{item.name}</strong><small>{percent(item)}% · about {round(item.current / item.dailyUse)} days left</small></span>
-                <b>Review</b>
-              </button>
-            )) : (
-              <div className={styles.allGood}><Check size={17} aria-hidden /> No low-stock actions right now.</div>
-            )}
-          </div>
-
-          <div className={styles.activityPanel}>
-            <div className={styles.panelTitle}>
-              <Clock3 size={17} aria-hidden />
-              <div><span>WHAT JUST HAPPENED</span><h3>Activity</h3></div>
-            </div>
-            <div className={styles.activityList}>
-              {activity.map((entry, index) => (
-                <div key={`${entry}-${index}`}>
-                  <span>{index === 0 ? "NOW" : `0${index + 1}`}</span>
-                  <p>{entry}</p>
+        <section
+          className={styles.workspace}
+          id={`autoinventory-panel-${activeTab}`}
+          role="tabpanel"
+          aria-labelledby={`autoinventory-tab-${activeTab}`}
+        >
+          {activeTab === "overview" ? (
+            <div className={styles.overviewGrid}>
+              <section className={styles.panel}>
+                <div className={styles.panelHeader}>
+                  <div>
+                    <span className={styles.mono}>NEEDS ATTENTION</span>
+                    <h2>What matters now</h2>
+                  </div>
+                  <button className={styles.textAction} type="button" onClick={() => switchTab("stock")}>
+                    Open stock <ChevronRight size={15} aria-hidden />
+                  </button>
                 </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
+                <div className={styles.urgentList}>
+                  {urgent.length ? (
+                    urgent.slice(0, 5).map((item) => (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => {
+                          setSelectedId(item.id);
+                          setStockFilter("All");
+                          switchTab("stock");
+                        }}
+                      >
+                        <span className={`${styles.statusDot} ${toneClass(tone(item))}`} />
+                        <span className={styles.rowName}>
+                          <strong>{item.name}</strong>
+                          <small>{item.zone}</small>
+                        </span>
+                        <Battery item={item} compact />
+                        <strong className={styles.percent}>{percent(item)}%</strong>
+                        <small className={styles.days}>{round(item.current / item.dailyUse)}d</small>
+                        <span className={`${styles.toneText} ${toneClass(tone(item))}`}>{toneLabel(tone(item))}</span>
+                      </button>
+                    ))
+                  ) : (
+                    <div className={styles.emptyState}><Check size={18} aria-hidden /> No low-stock actions right now.</div>
+                  )}
+                </div>
+              </section>
 
-      <section className={styles.detailSection} aria-label="Selected ingredient impact">
-        <div>
-          <span className={styles.monoLabel}>USED BY</span>
-          <h2>{selected.name}<br /><span>touches {affectedRecipes.length} menu item{affectedRecipes.length === 1 ? "" : "s"}.</span></h2>
-        </div>
-        <div className={styles.impactList}>
-          {affectedRecipes.map((recipe) => (
-            <div key={recipe.id}>
-              <strong>{recipe.name}</strong>
-              <span>{recipe.ingredients[selected.id]} {selected.unit} / serving</span>
-            </div>
-          ))}
-        </div>
-      </section>
+              <aside className={`${styles.panel} ${styles.jourvisPanel}`}>
+                <div className={styles.jourvisHeading}>
+                  <CompanionMark className={styles.panelCompanion} />
+                  <div>
+                    <span className={styles.mono}>JOURVIS / TODAY</span>
+                    <h2>I&apos;ll keep the thread.</h2>
+                  </div>
+                </div>
+                <p>
+                  {urgent[0]
+                    ? `${urgent[0].name} has about ${round(urgent[0].current / urgent[0].dailyUse)} days of cover. I would review its supplier order first.`
+                    : "Stock is currently inside the safe range. I will surface the next meaningful action here."}
+                </p>
+                {urgent[0] ? (
+                  <button
+                    className={styles.primaryButton}
+                    type="button"
+                    onClick={() => {
+                      setSelectedId(urgent[0].id);
+                      switchTab("orders");
+                    }}
+                  >
+                    Review restock <Mail size={15} aria-hidden />
+                  </button>
+                ) : null}
+                <div className={styles.miniFacts}>
+                  <div><span>Dinner forecast</span><strong>42 guests</strong></div>
+                  <div><span>Tracked supplies</span><strong>{ingredients.length}</strong></div>
+                  <div><span>Recipes linked</span><strong>{recipes.length}</strong></div>
+                  <div><span>Database writes</span><strong>None</strong></div>
+                </div>
+              </aside>
 
-      <section className={styles.previewNotice}>
-        <TriangleAlert size={17} aria-hidden />
-        <p><strong>Autoinventory-preview is simulation-only.</strong> Supplier names, prices, recipe quantities and inventory values are demo data. No email, SMS, purchasing, database or accounting action is performed yet.</p>
-        <button type="button" onClick={resetDemo}><RefreshCw size={14} aria-hidden /> Reset preview</button>
-      </section>
+              <section className={`${styles.panel} ${styles.zonePanel}`}>
+                <div className={styles.panelHeader}>
+                  <div>
+                    <span className={styles.mono}>MARINARA WORLD</span>
+                    <h2>Four rooms, one system</h2>
+                  </div>
+                  <span className={styles.panelNote}>Pixel tiles show zone health</span>
+                </div>
+                <div className={styles.zoneMatrix}>
+                  {zoneOrder.map((zone) => {
+                    const items = ingredients.filter((item) => item.zone === zone);
+                    const average = Math.round(items.reduce((sum, item) => sum + percent(item), 0) / items.length);
+                    const filled = Math.round((average / 100) * 16);
+                    const zoneTone = toneFromPercent(average);
+                    return (
+                      <button
+                        key={zone}
+                        type="button"
+                        className={styles.zoneTile}
+                        onClick={() => {
+                          chooseFilter(zone);
+                          switchTab("stock");
+                        }}
+                      >
+                        <div className={styles.zonePixels} aria-hidden="true">
+                          {Array.from({ length: 16 }).map((_, index) => (
+                            <span key={index} className={index < filled ? toneClass(zoneTone) : ""} />
+                          ))}
+                        </div>
+                        <span>
+                          <strong>{zone}</strong>
+                          <small>{average}% · {items.length} supplies</small>
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </section>
+            </div>
+          ) : null}
+
+          {activeTab === "stock" ? (
+            <div>
+              <div className={styles.stockToolbar}>
+                <div className={styles.filterGroup} aria-label="Filter inventory by zone">
+                  {stockFilters.map((filter) => (
+                    <button
+                      key={filter}
+                      type="button"
+                      aria-pressed={stockFilter === filter}
+                      className={stockFilter === filter ? styles.filterActive : ""}
+                      onClick={() => chooseFilter(filter)}
+                    >
+                      {filter === "Cold storage" ? "Cold" : filter === "Seafood freezer" ? "Seafood" : filter}
+                    </button>
+                  ))}
+                </div>
+                <label className={styles.searchBox}>
+                  <Search size={15} aria-hidden />
+                  <span className="sr-only">Search inventory</span>
+                  <input
+                    type="search"
+                    value={searchTerm}
+                    placeholder="Search stock"
+                    onChange={(event) => setSearchTerm(event.target.value)}
+                  />
+                </label>
+              </div>
+
+              <div className={styles.stockLayout}>
+                <section className={styles.stockList} aria-label="Ingredients">
+                  <div className={styles.stockListHead}>
+                    <span>Supply</span><span>Level</span><span>On hand</span><span>Cover</span><span>Status</span><span />
+                  </div>
+                  {filteredIngredients.map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      className={`${styles.stockRow} ${selected.id === item.id ? styles.stockRowSelected : ""}`}
+                      aria-pressed={selected.id === item.id}
+                      onClick={() => setSelectedId(item.id)}
+                    >
+                      <span className={styles.rowName}>
+                        <strong>{item.name}</strong>
+                        <small>{item.zone}</small>
+                      </span>
+                      <span className={styles.levelCell}>
+                        <Battery item={item} compact />
+                        <b>{percent(item)}%</b>
+                      </span>
+                      <span>{item.current} {item.unit}</span>
+                      <span>{round(item.current / item.dailyUse)}d</span>
+                      <span className={`${styles.toneText} ${toneClass(tone(item))}`}>{toneLabel(tone(item))}</span>
+                      <ChevronRight size={16} aria-hidden />
+                    </button>
+                  ))}
+                  {!filteredIngredients.length ? <div className={styles.emptyState}>No supplies match this filter.</div> : null}
+                </section>
+
+                <aside className={styles.detailCard} aria-label={`${selected.name} details`}>
+                  <div className={styles.detailTop}>
+                    <div>
+                      <span className={styles.mono}>SELECTED SUPPLY</span>
+                      <h2>{selected.name}</h2>
+                      <small>{selected.zone}</small>
+                    </div>
+                    <span className={`${styles.healthBadge} ${toneClass(tone(selected))}`}>{toneLabel(tone(selected))}</span>
+                  </div>
+                  <div className={styles.bigBatteryRow}>
+                    <Battery item={selected} />
+                    <strong>{percent(selected)}%</strong>
+                  </div>
+                  <div className={styles.factGrid}>
+                    <div><span>On hand</span><strong>{selected.current} {selected.unit}</strong></div>
+                    <div><span>PAR target</span><strong>{selected.par} {selected.unit}</strong></div>
+                    <div><span>Daily use</span><strong>{selected.dailyUse} {selected.unit}</strong></div>
+                    <div><span>Days cover</span><strong>{round(daysRemaining)} days</strong></div>
+                    <div><span>Incoming</span><strong>{selected.incoming} {selected.unit}</strong></div>
+                    <div><span>Supplier lead</span><strong>{selected.leadTime}</strong></div>
+                  </div>
+                  <div className={styles.recommendation}>
+                    <Sparkles size={17} aria-hidden />
+                    <div>
+                      <span>JOURVIS RECOMMENDS</span>
+                      <p>
+                        {orderAmount > 0
+                          ? `Prepare ${orderAmount} ${selected.unit} from ${selected.supplier}. Demo estimate: ${formatMoney(orderCost)}.`
+                          : "Current and incoming stock cover the PAR target."}
+                      </p>
+                    </div>
+                  </div>
+                  <div className={styles.detailActions}>
+                    <button type="button" className={styles.primaryButton} disabled={!orderAmount} onClick={() => placeOrder(selected)}>
+                      <Mail size={15} aria-hidden /> Prepare restock
+                    </button>
+                    <button type="button" className={styles.secondaryButton} disabled={selected.incoming <= 0} onClick={() => receive(selected)}>
+                      <PackageCheck size={15} aria-hidden /> Receive
+                    </button>
+                    <button type="button" className={styles.quietButton} onClick={() => recordWaste(selected)}>
+                      <TriangleAlert size={14} aria-hidden /> Record demo waste
+                    </button>
+                  </div>
+                  <div className={styles.usedBy}>
+                    <span className={styles.mono}>USED BY</span>
+                    {affectedRecipes.map((recipe) => (
+                      <button
+                        key={recipe.id}
+                        type="button"
+                        onClick={() => {
+                          setSelectedRecipeId(recipe.id);
+                          switchTab("recipes");
+                        }}
+                      >
+                        <span>{recipe.name}</span>
+                        <small>{recipe.ingredients[selected.id]} {selected.unit} / serving</small>
+                      </button>
+                    ))}
+                  </div>
+                </aside>
+              </div>
+            </div>
+          ) : null}
+
+          {activeTab === "recipes" ? (
+            <div className={styles.recipeLayout}>
+              <section className={styles.recipeList} aria-label="Recipes">
+                <div className={styles.panelHeader}>
+                  <div>
+                    <span className={styles.mono}>RECIPE-DRIVEN INVENTORY</span>
+                    <h2>What each dish consumes</h2>
+                  </div>
+                </div>
+                {recipes.map((recipe) => (
+                  <button
+                    key={recipe.id}
+                    type="button"
+                    className={selectedRecipe.id === recipe.id ? styles.recipeSelected : ""}
+                    onClick={() => setSelectedRecipeId(recipe.id)}
+                  >
+                    <ChefHat size={18} aria-hidden />
+                    <span>
+                      <strong>{recipe.name}</strong>
+                      <small>{recipe.description}</small>
+                    </span>
+                    <ChevronRight size={16} aria-hidden />
+                  </button>
+                ))}
+              </section>
+
+              <aside className={styles.recipeDetail}>
+                <span className={styles.mono}>SELECTED RECIPE</span>
+                <h2>{selectedRecipe.name}</h2>
+                <p>{selectedRecipe.description}</p>
+                <div className={styles.capacity}>
+                  <span>Current possible servings</span>
+                  <strong>{recipeCapacity}</strong>
+                </div>
+                <div className={styles.recipeIngredients}>
+                  {Object.entries(selectedRecipe.ingredients).map(([id, amount]) => {
+                    const item = ingredients.find((ingredient) => ingredient.id === id);
+                    if (!item) return null;
+                    return (
+                      <button
+                        key={id}
+                        type="button"
+                        onClick={() => {
+                          setSelectedId(id);
+                          setStockFilter("All");
+                          switchTab("stock");
+                        }}
+                      >
+                        <span><strong>{item.name}</strong><small>{item.current} {item.unit} on hand</small></span>
+                        <span>{amount} {item.unit} / serving</span>
+                      </button>
+                    );
+                  })}
+                </div>
+                <button className={styles.primaryButton} type="button" onClick={() => sellRecipe(selectedRecipe)}>
+                  <ShoppingCart size={15} aria-hidden /> Simulate 1 sale
+                </button>
+              </aside>
+            </div>
+          ) : null}
+
+          {activeTab === "orders" ? (
+            <div className={styles.ordersGrid}>
+              <section className={styles.panel}>
+                <div className={styles.panelHeader}>
+                  <div>
+                    <span className={styles.mono}>SUGGESTED RESTOCKS</span>
+                    <h2>{suggested.length} to review</h2>
+                  </div>
+                  <Mail size={18} aria-hidden />
+                </div>
+                <div className={styles.orderList}>
+                  {suggested.slice(0, 8).map((item) => {
+                    const amount = suggestedOrder(item);
+                    const packs = Math.ceil(amount / item.packSize);
+                    return (
+                      <article key={item.id}>
+                        <div>
+                          <span className={`${styles.statusDot} ${toneClass(tone(item))}`} />
+                          <div><strong>{item.name}</strong><small>{item.supplier}</small></div>
+                        </div>
+                        <span><b>{amount} {item.unit}</b><small>{formatMoney(packs * item.packPrice)} · {item.leadTime}</small></span>
+                        <button type="button" onClick={() => placeOrder(item)}>Prepare</button>
+                      </article>
+                    );
+                  })}
+                  {!suggested.length ? <div className={styles.emptyState}><Check size={18} aria-hidden /> No suggested restocks.</div> : null}
+                </div>
+              </section>
+
+              <section className={styles.panel}>
+                <div className={styles.panelHeader}>
+                  <div>
+                    <span className={styles.mono}>INCOMING</span>
+                    <h2>{incoming.length} deliveries</h2>
+                  </div>
+                  <Truck size={18} aria-hidden />
+                </div>
+                <div className={styles.orderList}>
+                  {incoming.map((item) => (
+                    <article key={item.id}>
+                      <div>
+                        <Truck size={15} aria-hidden />
+                        <div><strong>{item.name}</strong><small>{item.supplier}</small></div>
+                      </div>
+                      <span><b>+{item.incoming} {item.unit}</b><small>Awaiting receiving</small></span>
+                      <button type="button" onClick={() => receive(item)}>Receive</button>
+                    </article>
+                  ))}
+                  {!incoming.length ? <div className={styles.emptyState}>No supplier deliveries are waiting.</div> : null}
+                </div>
+              </section>
+
+              <label className={styles.autopilotCard}>
+                <input type="checkbox" checked={autoPilot} onChange={(event) => setAutoPilot(event.target.checked)} />
+                <span>
+                  <strong>Autopilot preview</strong>
+                  <small>
+                    {autoPilot
+                      ? "Jourvis may prepare eligible restocks automatically. Sending remains simulated."
+                      : "Every supplier request stays behind owner approval."}
+                  </small>
+                </span>
+              </label>
+            </div>
+          ) : null}
+
+          {activeTab === "activity" ? (
+            <section className={styles.activityPanel}>
+              <div className={styles.panelHeader}>
+                <div>
+                  <span className={styles.mono}>AUDIT TRAIL</span>
+                  <h2>What changed</h2>
+                </div>
+                <button className={styles.textAction} type="button" onClick={resetDemo}>
+                  <RefreshCw size={14} aria-hidden /> Reset demo
+                </button>
+              </div>
+              <div className={styles.timeline}>
+                {activity.map((entry, index) => (
+                  <div key={`${entry}-${index}`}>
+                    <span className={styles.timelineTime}>{index === 0 ? "NOW" : `${index + 1}`}</span>
+                    <span className={styles.timelineDot} />
+                    <p>{entry}</p>
+                  </div>
+                ))}
+              </div>
+            </section>
+          ) : null}
+        </section>
+
+        <footer className={styles.previewNotice}>
+          <TriangleAlert size={16} aria-hidden />
+          <p>
+            <strong>Preview only.</strong> Supplier names, prices, recipe quantities and inventory values are demo data. No email, SMS, purchasing, database or accounting action is performed yet.
+          </p>
+          <span>/restaurant/marinara-ristorante/Autoinventory-preview</span>
+        </footer>
+      </div>
     </div>
   );
 }
