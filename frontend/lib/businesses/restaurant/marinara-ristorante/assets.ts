@@ -3,7 +3,7 @@ import logoFull from '@/src/assets/businesses/restaurant/marinara-ristorante/bra
 import brandMark from '@/src/assets/businesses/restaurant/marinara-ristorante/branding/marinara-buon-cibo-logo.png?url';
 import motto from '@/src/assets/businesses/restaurant/marinara-ristorante/branding/marinara-buon-cibo.png?url';
 import cover from '@/src/assets/businesses/restaurant/marinara-ristorante/branding/marinara-coverphoto.jpg?url';
-import logoClear from '@/src/assets/businesses/restaurant/marinara-ristorante/branding/marinara-logo-clear.png?url';
+import logoClear from '@/src/assets/businesses/restaurant/marinara-ristorante/branding/marinara-buon-cibo-logo-orange.png?url';
 import logoThumb from '@/src/assets/businesses/restaurant/marinara-ristorante/branding/marinara-logo-meta-thumbnail.png?url';
 import logoRed from '@/src/assets/businesses/restaurant/marinara-ristorante/branding/marinara-logo.jpg?url';
 import interior from '@/src/assets/businesses/restaurant/marinara-ristorante/atmosphere/marinara-interior.jpg?url';
