@@ -18,7 +18,10 @@ page.on('request', request => {
   if (url.protocol.startsWith('http') && url.origin !== new URL(base).origin) external.push(request.url());
 });
 async function subtotal(value) {
-  await page.waitForFunction(expected => document.querySelector('[data-testid="wild-tree-subtotal"]')?.textContent?.replace(/[^0-9.]/g, '') === expected, value);
+  await page.waitForFunction(expected => {
+    const text = document.querySelector('[data-testid="wild-tree-subtotal"]')?.textContent;
+    return text !== undefined && text !== null && Number(text.replace(/[^0-9.]/g, '')) === Number(expected);
+  }, value);
 }
 async function imagesReady() {
   await page.locator('[data-wild-tree] img').evaluateAll(images => {
@@ -42,19 +45,19 @@ try {
   await page.waitForFunction(() => document.querySelectorAll('[data-dish-id]').length === 1);
   assert.equal(await page.locator('[data-dish-id]').getAttribute('data-dish-id'), 'pad_thai');
   await page.getByRole('button', { name: 'Add Pad Thai to meal plan', exact: true }).click();
-  await subtotal('455');
+  await subtotal(455);
   await page.getByRole('button', { name: 'Increase Pad Thai quantity', exact: true }).click();
-  await subtotal('910');
+  await subtotal(910);
   await page.getByRole('button', { name: 'Decrease Pad Thai quantity', exact: true }).click();
-  await subtotal('455');
+  await subtotal(455);
   await page.reload({ waitUntil: 'networkidle' });
-  await subtotal('455');
+  await subtotal(455);
   await page.getByRole('button', { name: 'Remove Pad Thai', exact: true }).click();
-  await subtotal('0');
+  await subtotal(0);
   checks.push('Menu alias search, add/increase/decrease/remove and session persistence work');
 
   await page.getByRole('button', { name: 'Try a sample meal plan', exact: true }).click();
-  await subtotal('1750');
+  await subtotal(1750);
   await page.getByRole('button', { name: 'Discuss this plan with Jourvis', exact: true }).click();
   assert.match(await page.locator('#wild-tree-enquiry').inputValue(), /Pad Thai/);
   assert.match(await page.locator('#wild-tree-enquiry').inputValue(), /fictional demo values/);
@@ -96,7 +99,6 @@ try {
   await imagesReady();
   checks.push('All 51 items can be browsed; all 34 concepts remain separately labelled without false images');
 
-  // Reset pagination for realistic screenshots; leave the sample plan populated.
   await page.getByRole('group', { name: 'Menu categories' }).getByRole('button', { name: 'All', exact: true }).click();
   await page.locator('#wild-tree-enquiry').fill('Can you help us plan a mix of Thai and Filipino dishes?');
   for (const width of [1440, 1024, 768, 390, 320]) {
@@ -117,10 +119,10 @@ try {
 
   await page.evaluate(key => sessionStorage.setItem(key, '{invalid json'), storageKey);
   await page.reload({ waitUntil: 'networkidle' });
-  await subtotal('0');
+  await subtotal(0);
   await page.evaluate(key => sessionStorage.setItem(key, JSON.stringify({ pad_thai: 999, rib_crib_platter: 4, constructor: 5 })), storageKey);
   await page.reload({ waitUntil: 'networkidle' });
-  await subtotal('9100');
+  await subtotal(9100);
   assert.equal(await page.getByRole('button', { name: 'Increase Pad Thai quantity', exact: true }).isDisabled(), true);
   checks.push('Corrupted storage recovers; unsupported restaurant IDs are discarded and quantities capped at 20');
   assert.deepEqual(external, [], 'Draft preview must not call live external services');
