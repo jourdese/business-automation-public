@@ -12,6 +12,7 @@ import {
   saveConfiguredIngredients,
   suppliers,
 } from "../inventory-config";
+import StockIcon from "../StockIcon";
 import styles from "./configure.module.css";
 
 function round(value: number) {
@@ -94,7 +95,7 @@ export default function AutoinventoryConfigurePage() {
                 const itemContact = getContact(item);
                 return (
                   <button key={item.id} type="button" className={item.id === selected.id ? styles.activeItem : ""} onClick={() => { setSelectedId(item.id); setSaved(false); }}>
-                    <span><strong>{item.name}</strong><small>{item.zone}</small></span>
+                    <span className={styles.itemIdentity}><StockIcon stockId={item.id} className={styles.stockIcon} /><span><strong>{item.name}</strong><small>{item.zone}</small></span></span>
                     <span><small>{itemSupplier.name}</small><b>{itemContact.name}</b></span>
                   </button>
                 );
@@ -104,7 +105,7 @@ export default function AutoinventoryConfigurePage() {
 
           <main className={styles.editor}>
             <div className={styles.editorHeading}>
-              <div><span>STOCK CONFIGURATION</span><h2>{selected.name}</h2><p>{selected.zone} · currently {selected.current} {selected.unit}</p></div>
+              <div className={styles.editorIdentity}><StockIcon stockId={selected.id} className={styles.editorStockIcon} size={30} /><div><span>STOCK CONFIGURATION</span><h2>{selected.name}</h2><p>{selected.zone} · currently {selected.current} {selected.unit}</p></div></div>
               <CompanionMark className={styles.companion} />
             </div>
 
