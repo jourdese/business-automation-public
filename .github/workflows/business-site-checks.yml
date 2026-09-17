@@ -40,13 +40,15 @@ jobs:
         if: github.ref == 'refs/heads/restaurant/the-wild-tree-v1'
         run: |
           mkdir -p outputs/wild-tree
-          npm run dev -- --host 127.0.0.1 --port 4173 > outputs/wild-tree/dev-server.log 2>&1 &
+          npm run dev -- --hostname 127.0.0.1 --port 4173 > outputs/wild-tree/dev-server.log 2>&1 &
           SERVER_PID=$!
           trap 'kill "$SERVER_PID" 2>/dev/null || true' EXIT
-          for i in $(seq 1 90); do
-            if curl --silent --fail http://127.0.0.1:4173/preview/the-wild-tree > /dev/null; then break; fi
+          for i in $(seq 1 60); do
+            if ! kill -0 "$SERVER_PID" 2>/dev/null; then cat outputs/wild-tree/dev-server.log; exit 1; fi
+            if curl --silent --fail --max-time 10 http://127.0.0.1:4173/preview/the-wild-tree > /dev/null; then break; fi
             sleep 2
           done
+          curl --silent --fail --max-time 10 http://127.0.0.1:4173/preview/the-wild-tree > /dev/null || { cat outputs/wild-tree/dev-server.log; exit 1; }
           PLAYWRIGHT_MODULE="$RUNNER_TEMP/wild-tree-browser/node_modules/playwright/index.mjs" FRONTEND_URL=http://127.0.0.1:4173 node scripts/wild-tree-browser-qa.mjs
       - name: Browser review artifacts
         if: always() && github.ref == 'refs/heads/restaurant/the-wild-tree-v1'
