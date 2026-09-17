@@ -1,62 +1,59 @@
-# The Wild Tree demo menu
+# The Wild Tree restaurant package
 
-The approved menu is now implemented as **51 entries**: 17 photo-backed dish names
-and 34 invented additions. The expansion includes 9 proposed Wild Tree Signatures.
-The earlier approximate total of 48 was a counting error, not a reduced scope.
+The approved demo menu contains **51 entries**: 17 photo-backed dish names and 34
+invented additions, including 9 proposed Wild Tree Signatures. All prices are mock.
 
-## Source of truth
+## Data ownership
 
-- `menu.ts`: canonical keys, names, categories, integer `priceCents`, aliases,
-  descriptions and provenance. `wildTreeOriginalMenu` and
-  `wildTreeMockMenuExpansion` remain separate and combine into `wildTreeMenu`.
-- `content.ts`: derives all frontend dishes and converts cents to pesos exactly
-  once. It carries `sourceLabel` and `priceNote` into the UI-facing data.
-- `meal-plan.ts`: binds the shared planner to this catalog only; generated prompts
-  label concept dishes and fictional prices. Subtotals do not apply unknown fees.
-- `demo-preset.ts`: builds the same menu into a menu-only draft capability preset,
-  plus a conflict-safe INSERT-only SQL exporter.
+- `menu.ts`: unchanged canonical keys, names, categories, integer priceCents,
+  aliases, descriptions and provenance. Original and invented arrays stay separate.
+- `content.ts`: derives all UI dishes and converts centavos to pesos exactly once.
+- `meal-plan.ts`: shared planner bound only to this restaurant; mock-aware prompts.
+- `demo-preset.ts`: unchanged menu-only draft fixture and conflict-safe SQL export.
+- `asset-manifest.ts`: exact supplied filenames mapped to grouped asset paths.
+- `assets.ts`: build-time image URL imports; only original dishes get photographs.
+- `website-content.ts`: proposed website copy and explicitly attributed hours.
+- `config.ts`: business/preset identity, isolated events, storage prefix and disabled runtime.
+- `menu-view.ts`: alias/name/category search with source and category filters.
 
-Photo-backed means the **name** is supported by the supplied asset, not that its
-price, recipe, portion size or stock has been verified. Every item has
-`priceSource: 'mock'`, `descriptionSource: 'demo-copy'` and
-`availabilitySource: 'demo-only'`. Invented names additionally have `isMock: true`
-and `source: 'mock-concept'`. `available: true` permits demo selection only.
+Photo-backed means the name is supported by the supplied asset, not that price,
+recipe, portion size or stock is verified. Every item has `priceSource: 'mock'`,
+`descriptionSource: 'demo-copy'` and `availabilitySource: 'demo-only'`.
+Invented names also have `isMock: true` and `source: 'mock-concept'`.
 
 ## Images
 
-The 17 original entries reference the exact supplied image filenames in
-`src/assets/businesses/restaurant/the-wild-tree/`. Some are menu composites, not
-cropped food photographs. `sourceAsset` is an evidence filename, not a public URL.
-The UI-facing `image` is a semantic key; an asset-import map is still required when
-building the page. All invented dishes have `sourceAsset: null` and `image: null`.
-Do not silently attach another dish's photo to an invented concept.
+All 38 supplied files are preserved under
+`src/assets/businesses/restaurant/the-wild-tree/{branding,food,atmosphere,source}/`.
+`sourceAsset` remains the unchanged provenance filename, not a public URL.
+`sourceAssetPath` resolves it to its repository folder. `assets.ts` handles browser
+URLs through the same Vite import approach as Rib Crib. Composite artwork is shown
+intact and can be opened in the detail dialog. Invented dishes have no source image.
 
-## Database seed and visibility
+## Preview and runtime
 
-Target: `platform.capability_presets` with
-`preset_key = 'demo_restaurant_the_wild_tree.v1'`.
-Menu path: `metadata.demo.fixture.restaurant.menu`.
+The independently designed page is registered with the shared BusinessSiteRenderer.
+Local review: `npm run dev`, then `/preview/the-wild-tree`.
+The preview refuses production access and does not bypass the database resolver.
+The future public route remains `/restaurant/the-wild-tree`, but no route is inserted.
 
-The preset is **draft**, with `demo.ready = false`, `demo.visible = false`,
-booking disabled and calendar invitations disabled. No public route is created.
-The page/renderer, approved business facts and runtime capabilities still need
-separate setup. Rib Crib's preset and the 21 active public demo routes are untouched.
-A data commit is not a website deployment or a live kitchen/order integration.
+Supabase preset `demo_restaurant_the_wild_tree.v1` remains draft, hidden and not ready.
+Bookings and calendar invitations remain disabled. This commit makes no database
+changes. `runtimeEnabled` remains false; the concierge can prepare/copy enquiries,
+but no live message is sent. It does not fabricate AI answers or booking success.
 
-The source module and database are separate copies: the SQL export produces a
-snapshot of the canonical module. It is NOT an automatic sync service. Re-running
-an identical seed is a no-op; a changed existing preset causes an exception instead
-of overwriting it. Future edits require an explicit reviewed database update.
+The source module and database are separate copies via a reviewed export, not an
+automatic sync service. Identical seeds are a no-op; differing existing data causes
+an exception rather than an overwrite. Canonical menu and seed files are unchanged
+by the website implementation, so a file reorganization does not require re-seeding.
 
-Offline exports, from `frontend/`:
+Offline exports (stdout only, no credentials or network):
 
 ```sh
 node --experimental-strip-types scripts/export-wild-tree-menu.ts --json
 node --experimental-strip-types scripts/export-wild-tree-menu.ts --sql
 ```
 
-The exporter only writes stdout; it has no database credentials or network calls.
-No price, tax, service-charge, dietary or real-availability claim should be made
-from this fixture. Display the supplied notices when implementing the website.
-
 Run `npm run typecheck`, `npm run test:frontend`, and `npm run build` before merging.
+Browser QA is `node scripts/wild-tree-browser-qa.mjs` with the documented external
+Playwright module and FRONTEND_URL settings; CI installs it outside the project.

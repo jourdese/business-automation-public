@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync } from 'node:fs';
+import { sourceAssetPath } from '../lib/businesses/restaurant/the-wild-tree/asset-manifest.ts';
 import { wildTreeOriginalMenu, wildTreeMockMenuExpansion, wildTreeMenu, wildTreeMockMenuKeys, wildTreeMenuPolicy } from '../lib/businesses/restaurant/the-wild-tree/menu.ts';
 import { allDishes, dishById, menuCategories } from '../lib/businesses/restaurant/the-wild-tree/content.ts';
 import { adjustPlan, sanitizePlan, summarizePlan, priceSummary, mealPlanPrompt } from '../lib/businesses/restaurant/the-wild-tree/meal-plan.ts';
@@ -35,7 +36,9 @@ test('photo-backed names never imply verified prices, recipes or real stock', ()
     assert.equal(item.isMock, false);
     assert.equal(item.source, 'supplied-photo');
     assert.ok(item.sourceAsset);
-    assert.ok(existsSync(new URL(`../src/assets/businesses/restaurant/the-wild-tree/${item.sourceAsset}`, import.meta.url)));
+    const path = sourceAssetPath(item.sourceAsset);
+    assert.ok(path, `No asset mapping for ${item.sourceAsset}`);
+    assert.ok(existsSync(new URL(`../${path}`, import.meta.url)));
   }
 });
 

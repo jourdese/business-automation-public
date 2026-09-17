@@ -13,7 +13,9 @@ const read = (path: string) => readFileSync(join(frontend, path), 'utf8');
 test('custom presentation requires both the known database path and its adapter', () => {
   assert.equal(resolveBusinessSite('/restaurant/the-rib-crib', 'restaurant'), 'the-rib-crib');
   assert.equal(resolveBusinessSite('/restaurant/the-rib-crib', 'dental_clinic'), null);
-  assert.equal(resolveBusinessSite('/restaurant/the-wild-tree', 'restaurant'), null);
+  assert.equal(resolveBusinessSite('/restaurant/the-wild-tree', 'restaurant'), 'the-wild-tree');
+  assert.equal(resolveBusinessSite('/restaurant/the-wild-tree', 'dental_clinic'), null);
+  assert.equal(resolveBusinessSite('/restaurant/unknown', 'restaurant'), null);
   assert.equal(resolveBusinessSite('/dental/dental-clinic', 'dental_clinic'), null);
   assert.equal(resolveBusinessSite('__proto__', 'restaurant'), null);
 });

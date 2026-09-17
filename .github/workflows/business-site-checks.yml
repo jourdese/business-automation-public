@@ -39,3 +39,27 @@ jobs:
       - run: npm run typecheck
       - run: npm run test:frontend
       - run: npm run build
+      - name: Install isolated browser test tools
+        if: github.ref == 'refs/heads/restaurant/the-wild-tree-v1'
+        run: |
+          npm install --prefix "$RUNNER_TEMP/wild-tree-browser" --no-package-lock --no-save playwright@1.58.2
+          node "$RUNNER_TEMP/wild-tree-browser/node_modules/playwright/cli.js" install --with-deps chromium
+      - name: Wild Tree browser checks
+        if: github.ref == 'refs/heads/restaurant/the-wild-tree-v1'
+        run: |
+          mkdir -p outputs/wild-tree
+          npm run dev -- --host 127.0.0.1 --port 4173 > outputs/wild-tree/dev-server.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill "$SERVER_PID" 2>/dev/null || true' EXIT
+          for i in $(seq 1 90); do
+            if curl --silent --fail http://127.0.0.1:4173/preview/the-wild-tree > /dev/null; then break; fi
+            sleep 2
+          done
+          PLAYWRIGHT_MODULE="$RUNNER_TEMP/wild-tree-browser/node_modules/playwright/index.mjs" FRONTEND_URL=http://127.0.0.1:4173 node scripts/wild-tree-browser-qa.mjs
+      - name: Browser review artifacts
+        if: always() && github.ref == 'refs/heads/restaurant/the-wild-tree-v1'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: wild-tree-browser-review
+          path: frontend/outputs/wild-tree/
+          retention-days: 3
