@@ -33,6 +33,7 @@ import {
   loadConfiguredIngredients,
   suppliers,
 } from "./inventory-config";
+import StockIcon from "./StockIcon";
 import styles from "./autoinventory-preview.module.css";
 
 type Tone = "good" | "watch" | "low" | "critical";
@@ -503,7 +504,7 @@ export default function MarinaraAutoinventoryPreviewPage() {
                     const contact = getContact(item);
                     return (
                       <button key={item.id} type="button" className={selected.id === item.id ? styles.stockRowSelected : ""} onClick={() => setSelectedId(item.id)}>
-                        <span className={styles.inventoryName}><strong>{item.name}</strong><small>{item.zone} · {contact.name}</small></span>
+                        <span className={styles.inventoryName}><StockIcon stockId={item.id} className={styles.stockIcon} /><span><strong>{item.name}</strong><small>{item.zone} · {contact.name}</small></span></span>
                         <span className={styles.rowBattery}><i className={toneClassName(tone(item), styles)} style={{ width: `${percent(item)}%` }} /></span>
                         <span>{item.current} / {item.fullLevel} {item.unit}</span>
                         <span>{round(item.current / item.dailyUse)} days</span>
@@ -516,7 +517,7 @@ export default function MarinaraAutoinventoryPreviewPage() {
 
                 <aside className={styles.detailPanel}>
                   <div className={styles.detailHeading}>
-                    <div><span>SELECTED SUPPLY</span><h2>{selected.name}</h2></div>
+                    <div className={styles.detailTitleWithIcon}><StockIcon stockId={selected.id} className={styles.detailStockIcon} size={28} /><div><span>SELECTED SUPPLY</span><h2>{selected.name}</h2></div></div>
                     <span className={`${styles.statusBadge} ${toneClassName(selectedTone, styles)}`}>{toneLabel(selectedTone)}</span>
                   </div>
 
@@ -593,7 +594,7 @@ export default function MarinaraAutoinventoryPreviewPage() {
                     return (
                       <article className={styles.supplierGroup} key={supplier.id}>
                         <div className={styles.supplierGroupHead}><div><span>{supplier.name}</span><strong>{contact.name}</strong><small>{contact.role} · {contact.channel}</small></div><b>{formatMoney(total)}</b></div>
-                        {items.map((item) => <div className={styles.orderItem} key={item.id}><span><strong>{item.name}</strong><small>{item.current}/{item.fullLevel} {item.unit} · reorder at {item.reorderAt}</small></span><b>{suggestedOrder(item)} {item.unit}</b></div>)}
+                        {items.map((item) => <div className={styles.orderItem} key={item.id}><span className={styles.orderItemName}><StockIcon stockId={item.id} className={styles.stockIconSmall} size={18} /><span><strong>{item.name}</strong><small>{item.current}/{item.fullLevel} {item.unit} · reorder at {item.reorderAt}</small></span></span><b>{suggestedOrder(item)} {item.unit}</b></div>)}
                         <button type="button" className={styles.secondaryButton} onClick={() => openContact(items, `Contact ${supplier.name}`)}><Mail size={15} aria-hidden /> Contact supplier</button>
                       </article>
                     );
@@ -666,7 +667,7 @@ export default function MarinaraAutoinventoryPreviewPage() {
                       const estimatedCost = Math.ceil(packs) * item.packPrice;
                       return (
                         <div className={styles.requestItem} key={item.id}>
-                          <div className={styles.requestItemTitle}><div><strong>{item.name}</strong><small>Jourvis suggests {suggestedOrder(item)} {item.unit} · {item.purchaseUnit}</small></div><span>After delivery ~{Math.min(100, Math.round(((item.current + item.incoming + quantity) / item.fullLevel) * 100))}%</span></div>
+                          <div className={styles.requestItemTitle}><div className={styles.requestItemName}><StockIcon stockId={item.id} className={styles.stockIconSmall} size={18} /><div><strong>{item.name}</strong><small>Jourvis suggests {suggestedOrder(item)} {item.unit} · {item.purchaseUnit}</small></div></div><span>After delivery ~{Math.min(100, Math.round(((item.current + item.incoming + quantity) / item.fullLevel) * 100))}%</span></div>
                           <div className={styles.quantityEditor}>
                             <button type="button" onClick={() => changeDraftQuantity(item, quantity - item.packSize)} aria-label={`Decrease ${item.name} quantity`}>−</button>
                             <label><span>Quantity to request</span><div><input type="number" min="0" step={item.packSize} value={quantity} onChange={(event) => changeDraftQuantity(item, Number(event.target.value) || 0)} /><b>{item.unit}</b></div></label>
