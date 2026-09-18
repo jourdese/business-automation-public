@@ -311,7 +311,7 @@ export default function MarinaraAutoinventoryPreviewPage() {
   useEffect(() => {
     if (!runtimeReady) return;
     window.localStorage.setItem(PROCUREMENT_RUNTIME_KEY, JSON.stringify(procurements));
-  }, [procurements, runtimeReady]);
+  }, [procurements, runtimeReady, jourvisUpdateItemId]);
 
   useEffect(() => {
     if (!runtimeReady) return;
@@ -748,6 +748,10 @@ export default function MarinaraAutoinventoryPreviewPage() {
     if (!runtimeReady) return;
 
     const request = procurements.find((candidate) => {
+      if (
+        jourvisUpdateItemId &&
+        candidate.lines.some((line) => line.itemId === jourvisUpdateItemId)
+      ) return false;
       if (candidate.status === "requested") return true;
       if (candidate.status === "supplier_viewed" && candidate.mode === "quote") return true;
       if (
