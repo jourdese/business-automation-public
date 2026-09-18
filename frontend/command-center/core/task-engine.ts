@@ -1,5 +1,6 @@
 import {
   estimatedPurchaseTotal,
+  evaluatePurchaseAuthority,
   inventoryPercent,
   isPurchaseActive,
   suggestedPurchaseQuantity,
@@ -23,31 +24,37 @@ export function deriveJourvisTasks(
     if (!item) return;
 
     if (purchase.status === "requested" && purchase.origin === "jourvis") {
-      const overSpend = purchase.estimatedTotal > item.maxAutoOrderSpend;
-      const overPrice = item.packPrice > item.autoAcceptPackPrice;
-      if (purchase.automationMode === "auto_contact" || overSpend || overPrice) {
-        const why = purchase.automationMode === "auto_contact"
+      const authority = evaluatePurchaseAuthority(item, purchase);
+      const reasons = [
+        purchase.automationMode === "auto_contact"
           ? "Your rule lets Jourvis contact the supplier, but not approve the purchase."
-          : [
-              overSpend
-                ? `The known order total is ₱${Math.round(purchase.estimatedTotal).toLocaleString("en-PH")}, above your ₱${Math.round(item.maxAutoOrderSpend).toLocaleString("en-PH")} automatic limit.`
-                : null,
-              overPrice
-                ? `The pack price is ₱${Math.round(item.packPrice).toLocaleString("en-PH")}, above your ₱${Math.round(item.autoAcceptPackPrice).toLocaleString("en-PH")} automatic price limit.`
-                : null,
-            ].filter(Boolean).join(" ");
+          : null,
+        authority.total > item.maxAutoOrderSpend
+          ? `The known order total is ₱${Math.round(authority.total).toLocaleString("en-PH")}, above your ₱${Math.round(item.maxAutoOrderSpend).toLocaleString("en-PH")} automatic limit.`
+          : null,
+        authority.packPrice > item.autoAcceptPackPrice
+          ? `The pack price is ₱${Math.round(authority.packPrice).toLocaleString("en-PH")}, above your ₱${Math.round(item.autoAcceptPackPrice).toLocaleString("en-PH")} automatic price limit.`
+          : null,
+        authority.quantity > item.maxAutoOrderQty
+          ? `The requested quantity ${authority.quantity} ${item.unit} is above your automatic quantity limit of ${item.maxAutoOrderQty} ${item.unit}.`
+          : null,
+        authority.etaDays > item.maxLeadDays
+          ? `The expected lead time is ${authority.etaDays} days, above your ${item.maxLeadDays}-day automatic limit.`
+          : null,
+      ].filter(Boolean);
 
+      if (purchase.automationMode === "auto_contact" || !authority.withinAutoAccept) {
         tasks.push({
           id: `decision-fixed-${purchase.id}`,
           businessId: state.business.id,
           module: "purchasing",
           entityId: item.id,
           requestId: purchase.id,
-          priority: overSpend || overPrice ? "high" : "medium",
+          priority: authority.withinAutoAccept ? "medium" : "high",
           state: "needs_owner",
           title: `${item.name} purchase needs approval`,
           whatHappened: `Jourvis prepared a fixed-price purchase for ₱${Math.round(purchase.estimatedTotal).toLocaleString("en-PH")}.`,
-          why,
+          why: reasons.join(" ") || "The purchase requires owner authority before Jourvis can continue.",
           whatJourvisDid: "Jourvis prepared the supplier request but stopped before approving terms outside its authority.",
           whyOwnerIsNeeded: "The owner must approve the purchase or update Jourvis' authority.",
           actions: ["approve", "reject", "update"],
@@ -56,24 +63,43 @@ export function deriveJourvisTasks(
     }
 
     if (purchase.status === "quote_received") {
-      const quotedTotal = purchase.quotedTotal ?? purchase.estimatedTotal;
-      const quotedPackPrice = purchase.quotedPackPrice ?? item.packPrice;
-      const totalOver = quotedTotal - item.maxAutoOrderSpend;
-      const packOver = quotedPackPrice - item.autoAcceptPackPrice;
+      const authority = evaluatePurchaseAuthority(item, purchase);
       const autonomousWithinAuthority =
         purchase.origin === "jourvis" &&
         purchase.automationMode === "autobuy" &&
-        totalOver <= 0 &&
-        packOver <= 0;
+        authority.withinAutoAccept;
+      const autonomousNegotiationPending =
+        purchase.origin === "jourvis" &&
+        purchase.automationMode === "autobuy" &&
+        state.automationMasterOn &&
+        authority.canNegotiate;
 
-      if (autonomousWithinAuthority) return;
+      if (autonomousWithinAuthority || autonomousNegotiationPending) return;
 
       const reasons = [
-        totalOver > 0
-          ? `The quote is ₱${Math.round(totalOver).toLocaleString("en-PH")} above your automatic order limit.`
+        authority.total > item.maxAutoOrderSpend
+          ? `The quote total is ₱${Math.round(authority.total).toLocaleString("en-PH")}, above your ₱${Math.round(item.maxAutoOrderSpend).toLocaleString("en-PH")} automatic order limit.`
           : null,
-        packOver > 0
-          ? `The pack price is ₱${Math.round(packOver).toLocaleString("en-PH")} above your automatic price limit.`
+        authority.packPrice > item.autoAcceptPackPrice
+          ? `The pack price is ₱${Math.round(authority.packPrice).toLocaleString("en-PH")}, above your ₱${Math.round(item.autoAcceptPackPrice).toLocaleString("en-PH")} auto-accept limit.`
+          : null,
+        authority.packPrice > item.hardMaxPackPrice
+          ? `The pack price also exceeds your absolute ceiling of ₱${Math.round(item.hardMaxPackPrice).toLocaleString("en-PH")}.`
+          : null,
+        authority.quantity > item.maxAutoOrderQty
+          ? `The requested quantity ${authority.quantity} ${item.unit} exceeds your ${item.maxAutoOrderQty} ${item.unit} automatic limit.`
+          : null,
+        authority.deliveryFee > item.maxDeliveryFee
+          ? `The delivery fee is ₱${Math.round(authority.deliveryFee).toLocaleString("en-PH")}, above your ₱${Math.round(item.maxDeliveryFee).toLocaleString("en-PH")} limit.`
+          : null,
+        authority.etaDays > item.maxLeadDays
+          ? `The quoted lead time is ${authority.etaDays} days, above your ${item.maxLeadDays}-day limit.`
+          : null,
+        !item.autoNegotiate && !authority.withinAutoAccept
+          ? "Automatic negotiation is turned off."
+          : null,
+        item.autoNegotiate && authority.counteroffersUsed >= item.maxCounteroffers && !authority.withinAutoAccept
+          ? `Jourvis has already used the configured maximum of ${item.maxCounteroffers} counteroffer${item.maxCounteroffers === 1 ? "" : "s"}.`
           : null,
         purchase.origin === "owner"
           ? "You asked Jourvis to request the quote, but did not authorize Jourvis to accept the final price automatically."
@@ -89,10 +115,10 @@ export function deriveJourvisTasks(
         module: "purchasing",
         entityId: item.id,
         requestId: purchase.id,
-        priority: totalOver > 0 || packOver > 0 ? "high" : "medium",
+        priority: authority.withinAutoAccept ? "medium" : "high",
         state: "needs_owner",
         title: `${item.name} quote needs a decision`,
-        whatHappened: `The supplier returned a quote of ₱${Math.round(quotedTotal).toLocaleString("en-PH")}.`,
+        whatHappened: `The supplier returned a quote of ₱${Math.round(authority.total).toLocaleString("en-PH")}.`,
         why: reasons || "The quote requires owner authority before Jourvis can continue.",
         whatJourvisDid: "Jourvis stopped the purchase instead of accepting terms outside its current authority.",
         whyOwnerIsNeeded: "Only the owner can approve this exception or update the rule.",
