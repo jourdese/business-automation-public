@@ -7,7 +7,7 @@ import {
   taskPriorityValue,
   type CommandCenterRuntimeState,
   type JourvisRuntimeTask,
-} from "./runtime";
+} from "./runtime.ts";
 
 export function deriveJourvisTasks(
   state: CommandCenterRuntimeState,
