@@ -132,20 +132,26 @@ function nextAutonomousPurchase(
       .map((purchase) => purchase.itemId),
   );
 
-  const item = state.inventory.find((candidate) => {
-    if (
-      !candidate.automationEnabled ||
-      candidate.automationMode === "assist" ||
-      state.pausedItemIds.includes(candidate.id) ||
-      activeItemIds.has(candidate.id)
-    ) {
-      return false;
-    }
+  const item = state.inventory
+    .filter((candidate) => {
+      if (
+        !candidate.automationEnabled ||
+        candidate.automationMode === "assist" ||
+        state.pausedItemIds.includes(candidate.id) ||
+        activeItemIds.has(candidate.id)
+      ) {
+        return false;
+      }
 
-    const percent =
-      (candidate.current / Math.max(candidate.fullLevel, 0.01)) * 100;
-    return percent <= candidate.automationTriggerPercent;
-  });
+      const percent =
+        (candidate.current / Math.max(candidate.fullLevel, 0.01)) * 100;
+      return percent <= candidate.automationTriggerPercent;
+    })
+    .sort((a, b) => {
+      const aPercent = a.current / Math.max(a.fullLevel, 0.01);
+      const bPercent = b.current / Math.max(b.fullLevel, 0.01);
+      return aPercent - bPercent;
+    })[0];
 
   if (!item) return state;
 
