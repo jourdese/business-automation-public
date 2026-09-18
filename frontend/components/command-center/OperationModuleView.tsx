@@ -59,7 +59,6 @@ export default function OperationModuleView({
     recordRecipeSale,
   } = useCommandCenterRuntime();
 
-  const business = state.business;
   const operationModule = operationCatalog[moduleId] ?? {
     label: moduleId,
     description: "Business operation managed by Jourvis.",
@@ -635,7 +634,7 @@ export default function OperationModuleView({
             <span>MENU ECONOMICS</span>
             <h2>Connect what guests order to the inventory Jourvis operates.</h2>
             <p>
-              These menu items use Marinara's supplied food photos and the migrated recipe
+              These menu items use Marinara&apos;s supplied food photos and the migrated recipe
               mappings. Ingredient cost is estimated from the current configured pack prices;
               selling prices are intentionally left unverified until a real menu/POS source is connected.
             </p>
