@@ -5,6 +5,7 @@ import {
   evaluatePurchaseAuthority,
   normalizeInventoryAuthorityConfiguration,
   projectedInventoryAtDelivery,
+  purchaseProgressStage,
   projectedInventoryPercentAtDelivery,
   suggestedPurchaseQuantity,
   type CommandCenterInventoryItem,
@@ -295,4 +296,76 @@ await test('paused global autonomy exposes a fixed-price Jourvis request instead
   const tasks = deriveJourvisTasks(paused);
   assert.equal(tasks.length, 1);
   assert.match(tasks[0]?.why ?? '', /paused/i);
+});
+
+
+await test('contact-supplier mode may send a request but cannot accept fixed terms automatically', () => {
+  const shrimp = item({
+    purchasingMode: 'fixed',
+    automationMode: 'auto_contact',
+  });
+  const requested = purchase({
+    status: 'requested',
+    quotedPackPrice: undefined,
+    quotedTotal: undefined,
+    deliveryFee: undefined,
+    origin: 'jourvis',
+    automationMode: 'auto_contact',
+  });
+  const requestedState = state(shrimp, [requested], true);
+
+  assert.equal(canAdvancePurchase(requestedState, requested), true);
+
+  const viewed = purchase({
+    status: 'supplier_viewed',
+    quotedPackPrice: undefined,
+    quotedTotal: undefined,
+    deliveryFee: undefined,
+    origin: 'jourvis',
+    automationMode: 'auto_contact',
+    buyerConfirmed: false,
+  });
+  const viewedState = state(shrimp, [viewed], true);
+
+  assert.equal(canAdvancePurchase(viewedState, viewed), false);
+  const tasks = deriveJourvisTasks(viewedState);
+  assert.equal(tasks.length, 1);
+  assert.match(tasks[0]?.why ?? '', /contact the supplier/i);
+});
+
+await test('supplier may return a quote after viewing even when global autonomy is paused', () => {
+  const shrimp = item({ purchasingMode: 'quote' });
+  const viewed = purchase({
+    status: 'supplier_viewed',
+    origin: 'jourvis',
+    automationMode: 'autobuy',
+  });
+
+  assert.equal(canAdvancePurchase(state(shrimp, [viewed], false), viewed), true);
+});
+
+await test('paused quote request becomes a specific owner decision before supplier contact', () => {
+  const shrimp = item({ purchasingMode: 'quote' });
+  const requested = purchase({
+    status: 'quote_requested',
+    origin: 'jourvis',
+    automationMode: 'autobuy',
+  });
+  const paused = state(shrimp, [requested], false);
+  const tasks = deriveJourvisTasks(paused);
+
+  assert.equal(canAdvancePurchase(paused, requested), false);
+  assert.equal(tasks.length, 1);
+  assert.match(tasks[0]?.title ?? '', /paused/i);
+});
+
+await test('purchase progress separates request, supplier view, agreement, confirmation, and receipt', () => {
+  assert.equal(purchaseProgressStage('requested'), 1);
+  assert.equal(purchaseProgressStage('quote_requested'), 1);
+  assert.equal(purchaseProgressStage('supplier_viewed'), 2);
+  assert.equal(purchaseProgressStage('quote_received'), 3);
+  assert.equal(purchaseProgressStage('awaiting_confirmation'), 3);
+  assert.equal(purchaseProgressStage('confirmed'), 4);
+  assert.equal(purchaseProgressStage('in_transit'), 4);
+  assert.equal(purchaseProgressStage('received'), 5);
 });
