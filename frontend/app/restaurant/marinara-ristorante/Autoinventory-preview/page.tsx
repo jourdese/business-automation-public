@@ -347,9 +347,56 @@ export default function MarinaraAutoinventoryPreviewPage() {
   const selectedAutomationAlert = automationAlerts[selected.id];
   const selectedNeedsRestock = selected.current <= selected.reorderAt;
   const selectedAutomationTriggered = selected.automationEnabled && automationTriggered(selected);
-  const jourvisAttention = Boolean(selectedAutomationAlert) || (
-    selectedProcurement?.status === "quote_received"
+  const selectedProcurementNeedsOwner = Boolean(
+    selectedProcurement?.status === "quote_received" ||
+      (
+        selectedProcurement?.status === "supplier_viewed" &&
+        selectedProcurement.mode === "fixed" &&
+        selectedProcurement.origin === "automation" &&
+        selectedProcurement.automationMode === "auto_contact" &&
+        !selectedProcurement.buyerConfirmed
+      ),
   );
+  const selectedNeedsAutomationEnable =
+    selectedAutomationTriggered && !automationMasterOn;
+  const selectedNeedsManualRestock =
+    !selectedProcurement &&
+    selectedNeedsRestock &&
+    (!selected.automationEnabled || selected.automationMode === "assist");
+
+  const jourvisAttention =
+    Boolean(selectedAutomationAlert) ||
+    selectedProcurementNeedsOwner ||
+    selectedNeedsAutomationEnable ||
+    selectedNeedsManualRestock;
+
+  const jourvisFocusTarget = selectedAutomationAlert
+    ? activeTab === "overview"
+      ? "#jourvis-automation-card"
+      : "#jourvis-global-configure"
+    : selectedProcurementNeedsOwner && selectedProcurement
+      ? activeTab === "orders"
+        ? `#procurement-${selectedProcurement.id}`
+        : "#autoinventory-tab-orders"
+      : selectedNeedsAutomationEnable
+        ? activeTab === "overview"
+          ? "#jourvis-auto-master"
+          : "#autoinventory-tab-overview"
+        : selectedNeedsManualRestock
+          ? activeTab === "overview"
+            ? "#jourvis-supplier-action"
+            : "#autoinventory-tab-overview"
+          : undefined;
+
+  const jourvisFocusLabel = selectedAutomationAlert
+    ? "Adjust my limits"
+    : selectedProcurementNeedsOwner
+      ? "Your decision is needed"
+      : selectedNeedsAutomationEnable
+        ? "Turn me on"
+        : selectedNeedsManualRestock
+          ? "Restock from here"
+          : undefined;
 
   const jourvisMessage = selectedAutomationAlert
     ? `I paused ${selected.name}. I need your decision.`
@@ -899,7 +946,7 @@ export default function MarinaraAutoinventoryPreviewPage() {
           <div><span>Low</span><strong>{metrics.low}</strong></div>
           <div><span>Confirmed incoming</span><strong>{metrics.incoming}</strong></div>
           <div className={styles.headerActions}>
-            <a href="/restaurant/marinara-ristorante/Autoinventory-preview/configure"><Settings2 size={14} aria-hidden /> Configure stock</a>
+            <a id="jourvis-global-configure" href="/restaurant/marinara-ristorante/Autoinventory-preview/configure"><Settings2 size={14} aria-hidden /> Configure stock</a>
             <a href="/restaurant/marinara-ristorante"><ArrowLeft size={14} aria-hidden /> Marinara</a>
             <button type="button" onClick={resetDemo}><RefreshCw size={14} aria-hidden /> Reset</button>
           </div>
@@ -973,6 +1020,7 @@ export default function MarinaraAutoinventoryPreviewPage() {
                   </button>
 
                   <button
+                    id="jourvis-auto-master"
                     type="button"
                     className={`${styles.automationMasterSwitch} ${automationMasterOn ? styles.automationMasterOn : ""}`}
                     role="switch"
@@ -1091,7 +1139,7 @@ export default function MarinaraAutoinventoryPreviewPage() {
                     <small>{selectedContact.channel} · {selectedContact.email}</small>
                   </div>
 
-                  <div className={styles.summaryAutomationCard} data-enabled={selected.automationEnabled}>
+                  <div id="jourvis-automation-card" className={styles.summaryAutomationCard} data-enabled={selected.automationEnabled}>
                     <div>
                       <span>JOURVIS AUTOMATION</span>
                       <strong>{selected.automationEnabled ? selected.automationMode.replace("_", " ") : "Off for this supply"}</strong>
@@ -1129,6 +1177,7 @@ export default function MarinaraAutoinventoryPreviewPage() {
                       </button>
                     ) : (
                       <button
+                        id="jourvis-supplier-action"
                         type="button"
                         className={styles.primaryButton}
                         disabled={orderAmount <= 0}
@@ -1308,7 +1357,7 @@ export default function MarinaraAutoinventoryPreviewPage() {
                     const total = procurementTotal(request, ingredients);
 
                     return (
-                      <article className={styles.procurementCard} key={request.id} data-status={request.status}>
+                      <article id={`procurement-${request.id}`} className={styles.procurementCard} key={request.id} data-status={request.status}>
                         <div className={styles.procurementCardHead}>
                           <div>
                             <span>{request.id} · {request.mode === "quote" ? "QUOTE REQUIRED" : "FIXED PRICE PO"}</span>
@@ -1553,6 +1602,8 @@ export default function MarinaraAutoinventoryPreviewPage() {
         message={jourvisMessage}
         detail={jourvisDetail}
         attention={jourvisAttention}
+        focusTarget={jourvisFocusTarget}
+        focusLabel={jourvisFocusLabel}
         actions={
           selectedProcurement
             ? [
