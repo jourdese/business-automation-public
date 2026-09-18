@@ -57,8 +57,15 @@ export type CommandCenterInventoryItem = {
   automationEnabled: boolean;
   automationMode: "assist" | "auto_contact" | "autobuy";
   automationTriggerPercent: number;
-  maxAutoOrderSpend: number;
+  targetPackPrice: number;
   autoAcceptPackPrice: number;
+  hardMaxPackPrice: number;
+  maxAutoOrderQty: number;
+  maxAutoOrderSpend: number;
+  autoNegotiate: boolean;
+  maxCounteroffers: number;
+  maxDeliveryFee: number;
+  maxLeadDays: number;
 };
 
 export type CommandCenterPurchaseStatus =
@@ -66,6 +73,7 @@ export type CommandCenterPurchaseStatus =
   | "requested"
   | "quote_requested"
   | "quote_received"
+  | "counter_sent"
   | "approved"
   | "confirmed"
   | "in_transit"
@@ -82,6 +90,9 @@ export type CommandCenterPurchase = {
   estimatedTotal: number;
   quotedPackPrice?: number;
   quotedTotal?: number;
+  deliveryFee?: number;
+  etaDays?: number;
+  counteroffersUsed?: number;
   receivedQuantity?: number;
   createdAt: string;
   origin: "jourvis" | "owner";
@@ -179,6 +190,50 @@ export function estimatedPurchaseTotal(
 export function isPurchaseActive(status: CommandCenterPurchaseStatus) {
   return status !== "received" && status !== "rejected";
 }
+
+export function evaluatePurchaseAuthority(
+  item: CommandCenterInventoryItem,
+  purchase: CommandCenterPurchase,
+) {
+  const total = purchase.quotedTotal ?? purchase.estimatedTotal;
+  const packPrice = purchase.quotedPackPrice ?? item.packPrice;
+  const deliveryFee = purchase.deliveryFee ?? 0;
+  const etaDays = purchase.etaDays ?? item.leadDays;
+  const quantity = purchase.quantity;
+  const counteroffersUsed = purchase.counteroffersUsed ?? 0;
+
+  const withinAutoAccept =
+    total <= item.maxAutoOrderSpend &&
+    packPrice <= item.autoAcceptPackPrice &&
+    quantity <= item.maxAutoOrderQty &&
+    deliveryFee <= item.maxDeliveryFee &&
+    etaDays <= item.maxLeadDays;
+
+  const withinHardLimits =
+    packPrice <= item.hardMaxPackPrice &&
+    quantity <= item.maxAutoOrderQty &&
+    deliveryFee <= item.maxDeliveryFee &&
+    etaDays <= item.maxLeadDays;
+
+  const canNegotiate =
+    !withinAutoAccept &&
+    withinHardLimits &&
+    item.autoNegotiate &&
+    counteroffersUsed < item.maxCounteroffers;
+
+  return {
+    total,
+    packPrice,
+    deliveryFee,
+    etaDays,
+    quantity,
+    counteroffersUsed,
+    withinAutoAccept,
+    withinHardLimits,
+    canNegotiate,
+  };
+}
+
 
 export function taskPriorityValue(priority: JourvisTaskPriority) {
   if (priority === "high") return 3;
