@@ -2,8 +2,16 @@ import {
   initialIngredients,
   suppliers,
 } from "@/app/restaurant/marinara-ristorante/Autoinventory-preview/inventory-config";
+import { marinaraOriginalMenu } from "@/lib/businesses/restaurant/marinara-ristorante/menu";
 import { marinaraRistoranteBusiness } from "./marinara-ristorante";
 import type { CommandCenterRuntimeState } from "../core/runtime";
+
+const recipeIdByMenuItemId: Readonly<Record<string, string>> = {
+  seafood_marinara_solo: "seafood-marinara",
+  shrimp_mushroom_alfredo_solo: "shrimp-alfredo",
+  quattro_formaggi_pizza_12: "quattro",
+  grilled_salmon: "salmon",
+};
 
 export function createMarinaraRuntimeSeed(): CommandCenterRuntimeState {
   return {
@@ -101,6 +109,22 @@ export function createMarinaraRuntimeSeed(): CommandCenterRuntimeState {
         },
       },
     ],
+    menuItems: marinaraOriginalMenu.map((item) => ({
+      id: item.key,
+      name: item.name,
+      printedName: item.printedName,
+      dishKey: item.dishKey,
+      category: item.category,
+      variant: item.variant ?? undefined,
+      referencePrice:
+        item.referencePriceCents === null
+          ? undefined
+          : item.referencePriceCents / 100,
+      referenceSource: "archived-menu-photo" as const,
+      referencePublicationDate: item.sourcePublicationDate ?? undefined,
+      currentPriceVerified: false,
+      recipeId: recipeIdByMenuItemId[item.key],
+    })),
     pausedItemIds: [],
     activity: [],
   };
