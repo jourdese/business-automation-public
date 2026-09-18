@@ -3012,3 +3012,69 @@
   border: 1px solid #344a54;
   background: #08161e;
 }
+
+
+.inventoryToolbar,
+.purchaseToolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.7rem;
+  padding: 0.62rem 0.72rem;
+  border: 1px solid var(--cc-line);
+  background: #08161e;
+}
+
+.inventoryToolbar input {
+  width: min(280px, 100%);
+  min-height: 34px;
+  padding: 0.35rem 0.5rem;
+  border: 1px solid #3a5059;
+  background: #07131b;
+  color: var(--ivory);
+  font-size: 0.6rem;
+}
+
+.inventoryZoneFilters,
+.purchaseToolbar > div {
+  display: flex;
+  gap: 0.32rem;
+  flex-wrap: wrap;
+}
+
+.inventoryZoneFilters button,
+.purchaseToolbar button {
+  min-height: 30px;
+  padding: 0.3rem 0.48rem;
+  border: 1px solid #344a54;
+  background: #0a1820;
+  color: var(--cc-muted);
+  font-size: 0.55rem;
+}
+
+.inventoryZoneFilters button[data-active="true"],
+.purchaseToolbar button[data-active="true"] {
+  border-color: var(--mint);
+  background: rgba(46, 107, 87, 0.2);
+  color: var(--mint);
+}
+
+.inventoryToolbar > span,
+.purchaseToolbar > span {
+  flex: 0 0 auto;
+  color: var(--cc-muted);
+  font: 0.54rem var(--font-mono);
+}
+
+
+@media (max-width: 760px) {
+  .inventoryToolbar,
+  .purchaseToolbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .inventoryToolbar input {
+    width: 100%;
+  }
+}
