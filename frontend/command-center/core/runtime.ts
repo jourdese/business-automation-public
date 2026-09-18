@@ -72,9 +72,11 @@ export type CommandCenterPurchaseStatus =
   | "suggested"
   | "requested"
   | "quote_requested"
+  | "supplier_viewed"
   | "quote_received"
   | "counter_sent"
   | "approved"
+  | "awaiting_confirmation"
   | "confirmed"
   | "in_transit"
   | "partial_received"
@@ -85,6 +87,7 @@ export type CommandCenterPurchase = {
   id: string;
   itemId: string;
   supplierId: string;
+  contactId?: string;
   quantity: number;
   status: CommandCenterPurchaseStatus;
   estimatedTotal: number;
@@ -94,6 +97,8 @@ export type CommandCenterPurchase = {
   etaDays?: number;
   counteroffersUsed?: number;
   receivedQuantity?: number;
+  buyerConfirmed?: boolean;
+  supplierConfirmed?: boolean;
   createdAt: string;
   origin: "jourvis" | "owner";
   automationMode?: "assist" | "auto_contact" | "autobuy";
@@ -320,24 +325,32 @@ export function canAdvancePurchase(
   const item = state.inventory.find((entry) => entry.id === purchase.itemId);
   if (!item) return false;
 
-  if (purchase.status === "requested") {
+  if (
+    purchase.status === "requested" ||
+    purchase.status === "quote_requested"
+  ) {
     if (purchase.origin === "owner") return true;
-    if (
-      purchase.automationMode !== "autobuy" ||
-      !state.automationMasterOn
-    ) {
-      return false;
-    }
-    return evaluatePurchaseAuthority(item, purchase).withinAutoAccept;
+    return (
+      state.automationMasterOn &&
+      purchase.automationMode !== "assist"
+    );
   }
 
-  if (
-    purchase.status === "quote_requested" ||
-    purchase.status === "counter_sent" ||
-    purchase.status === "approved" ||
-    purchase.status === "confirmed"
-  ) {
-    return true;
+  if (purchase.status === "supplier_viewed") {
+    if (item.purchasingMode === "quote") {
+      return true;
+    }
+    if (purchase.buyerConfirmed) {
+      return true;
+    }
+    if (
+      purchase.origin === "jourvis" &&
+      purchase.automationMode === "autobuy" &&
+      state.automationMasterOn
+    ) {
+      return evaluatePurchaseAuthority(item, purchase).withinAutoAccept;
+    }
+    return false;
   }
 
   if (
@@ -350,7 +363,46 @@ export function canAdvancePurchase(
     return authority.withinAutoAccept || authority.canNegotiate;
   }
 
+  if (
+    purchase.status === "counter_sent" ||
+    purchase.status === "approved" ||
+    purchase.status === "awaiting_confirmation" ||
+    purchase.status === "confirmed"
+  ) {
+    return true;
+  }
+
   return false;
+}
+
+export function purchaseProgressStage(
+  status: CommandCenterPurchaseStatus,
+) {
+  if (status === "received") return 5;
+  if (
+    status === "confirmed" ||
+    status === "in_transit" ||
+    status === "partial_received"
+  ) {
+    return 4;
+  }
+  if (
+    status === "quote_received" ||
+    status === "counter_sent" ||
+    status === "approved" ||
+    status === "awaiting_confirmation"
+  ) {
+    return 3;
+  }
+  if (status === "supplier_viewed") return 2;
+  if (
+    status === "requested" ||
+    status === "quote_requested" ||
+    status === "suggested"
+  ) {
+    return 1;
+  }
+  return 0;
 }
 
 export function taskPriorityValue(priority: JourvisTaskPriority) {
