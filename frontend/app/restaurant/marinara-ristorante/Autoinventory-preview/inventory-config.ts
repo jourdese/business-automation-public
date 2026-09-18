@@ -15,6 +15,8 @@ export type Supplier = {
   contacts: SupplierContact[];
 };
 
+export type PurchasingMode = "fixed" | "quote";
+
 export type Ingredient = {
   id: string;
   name: string;
@@ -30,6 +32,7 @@ export type Ingredient = {
   packPrice: number;
   purchaseUnit: string;
   leadDays: number;
+  purchasingMode: PurchasingMode;
   zone: Zone;
 };
 
@@ -87,18 +90,18 @@ export const suppliers: Supplier[] = [
 ];
 
 export const initialIngredients: Ingredient[] = [
-  { id: "pasta", name: "Pasta", unit: "kg", current: 10.2, fullLevel: 12, reorderAt: 4, dailyUse: 1.7, incoming: 0, supplierId: "davao-provisions", contactId: "paolo", packSize: 5, packPrice: 860, purchaseUnit: "5 kg case", leadDays: 1, zone: "Pantry" },
-  { id: "tomato", name: "Tomato sauce", unit: "L", current: 7.4, fullLevel: 10, reorderAt: 3, dailyUse: 1.45, incoming: 0, supplierId: "casa-rosso", contactId: "lia", packSize: 4, packPrice: 980, purchaseUnit: "4 L case", leadDays: 1, zone: "Pantry" },
-  { id: "olive-oil", name: "Olive oil", unit: "L", current: 4.5, fullLevel: 5, reorderAt: 1.5, dailyUse: 0.38, incoming: 0, supplierId: "casa-rosso", contactId: "lia", packSize: 2, packPrice: 1220, purchaseUnit: "2 L case", leadDays: 2, zone: "Pantry" },
-  { id: "flour", name: "Pizza flour", unit: "kg", current: 13, fullLevel: 15, reorderAt: 5, dailyUse: 2.1, incoming: 0, supplierId: "davao-provisions", contactId: "paolo", packSize: 10, packPrice: 760, purchaseUnit: "10 kg sack", leadDays: 1, zone: "Pantry" },
-  { id: "parmesan", name: "Parmigiano", unit: "kg", current: 1.45, fullLevel: 5, reorderAt: 2, dailyUse: 0.62, incoming: 0, supplierId: "italian-pantry", contactId: "marco", packSize: 2, packPrice: 2380, purchaseUnit: "2 kg wheel", leadDays: 2, zone: "Cold storage" },
-  { id: "mozzarella", name: "Mozzarella", unit: "kg", current: 6.1, fullLevel: 8, reorderAt: 3, dailyUse: 1.15, incoming: 0, supplierId: "italian-pantry", contactId: "marco", packSize: 3, packPrice: 1650, purchaseUnit: "3 kg case", leadDays: 1, zone: "Cold storage" },
-  { id: "cream", name: "Cooking cream", unit: "L", current: 2.25, fullLevel: 5, reorderAt: 2, dailyUse: 0.72, incoming: 0, supplierId: "davao-dairy", contactId: "anne", packSize: 2, packPrice: 720, purchaseUnit: "2 L case", leadDays: 1, zone: "Cold storage" },
-  { id: "shrimp", name: "Shrimp", unit: "kg", current: 2.2, fullLevel: 10, reorderAt: 3, dailyUse: 1.95, incoming: 0, supplierId: "davao-seafood", contactId: "maria", packSize: 5, packPrice: 2800, purchaseUnit: "5 kg pack", leadDays: 1, zone: "Seafood freezer" },
-  { id: "salmon", name: "Salmon", unit: "kg", current: 4.9, fullLevel: 8, reorderAt: 3, dailyUse: 1.05, incoming: 0, supplierId: "davao-seafood", contactId: "maria", packSize: 4, packPrice: 3440, purchaseUnit: "4 kg case", leadDays: 1, zone: "Seafood freezer" },
-  { id: "squid", name: "Squid", unit: "kg", current: 1.7, fullLevel: 6, reorderAt: 2.2, dailyUse: 1, incoming: 0, supplierId: "davao-seafood", contactId: "maria", packSize: 3, packPrice: 1380, purchaseUnit: "3 kg pack", leadDays: 1, zone: "Seafood freezer" },
-  { id: "basil", name: "Fresh basil", unit: "kg", current: 0.48, fullLevel: 2, reorderAt: 0.7, dailyUse: 0.31, incoming: 0, supplierId: "green-basket", contactId: "mika", packSize: 1, packPrice: 410, purchaseUnit: "1 kg bundle", leadDays: 0.5, zone: "Produce" },
-  { id: "mushroom", name: "Mushrooms", unit: "kg", current: 2.8, fullLevel: 5, reorderAt: 1.8, dailyUse: 0.74, incoming: 0, supplierId: "green-basket", contactId: "mika", packSize: 2, packPrice: 540, purchaseUnit: "2 kg crate", leadDays: 0.5, zone: "Produce" },
+  { id: "pasta", name: "Pasta", unit: "kg", current: 10.2, fullLevel: 12, reorderAt: 4, dailyUse: 1.7, incoming: 0, supplierId: "davao-provisions", contactId: "paolo", packSize: 5, packPrice: 860, purchaseUnit: "5 kg case", leadDays: 1, purchasingMode: "fixed", zone: "Pantry" },
+  { id: "tomato", name: "Tomato sauce", unit: "L", current: 7.4, fullLevel: 10, reorderAt: 3, dailyUse: 1.45, incoming: 0, supplierId: "casa-rosso", contactId: "lia", packSize: 4, packPrice: 980, purchaseUnit: "4 L case", leadDays: 1, purchasingMode: "fixed", zone: "Pantry" },
+  { id: "olive-oil", name: "Olive oil", unit: "L", current: 4.5, fullLevel: 5, reorderAt: 1.5, dailyUse: 0.38, incoming: 0, supplierId: "casa-rosso", contactId: "lia", packSize: 2, packPrice: 1220, purchaseUnit: "2 L case", leadDays: 2, purchasingMode: "fixed", zone: "Pantry" },
+  { id: "flour", name: "Pizza flour", unit: "kg", current: 13, fullLevel: 15, reorderAt: 5, dailyUse: 2.1, incoming: 0, supplierId: "davao-provisions", contactId: "paolo", packSize: 10, packPrice: 760, purchaseUnit: "10 kg sack", leadDays: 1, purchasingMode: "fixed", zone: "Pantry" },
+  { id: "parmesan", name: "Parmigiano", unit: "kg", current: 1.45, fullLevel: 5, reorderAt: 2, dailyUse: 0.62, incoming: 0, supplierId: "italian-pantry", contactId: "marco", packSize: 2, packPrice: 2380, purchaseUnit: "2 kg wheel", leadDays: 2, purchasingMode: "fixed", zone: "Cold storage" },
+  { id: "mozzarella", name: "Mozzarella", unit: "kg", current: 6.1, fullLevel: 8, reorderAt: 3, dailyUse: 1.15, incoming: 0, supplierId: "italian-pantry", contactId: "marco", packSize: 3, packPrice: 1650, purchaseUnit: "3 kg case", leadDays: 1, purchasingMode: "fixed", zone: "Cold storage" },
+  { id: "cream", name: "Cooking cream", unit: "L", current: 2.25, fullLevel: 5, reorderAt: 2, dailyUse: 0.72, incoming: 0, supplierId: "davao-dairy", contactId: "anne", packSize: 2, packPrice: 720, purchaseUnit: "2 L case", leadDays: 1, purchasingMode: "fixed", zone: "Cold storage" },
+  { id: "shrimp", name: "Shrimp", unit: "kg", current: 2.2, fullLevel: 10, reorderAt: 3, dailyUse: 1.95, incoming: 0, supplierId: "davao-seafood", contactId: "maria", packSize: 5, packPrice: 2800, purchaseUnit: "5 kg pack", leadDays: 1, purchasingMode: "quote", zone: "Seafood freezer" },
+  { id: "salmon", name: "Salmon", unit: "kg", current: 4.9, fullLevel: 8, reorderAt: 3, dailyUse: 1.05, incoming: 0, supplierId: "davao-seafood", contactId: "maria", packSize: 4, packPrice: 3440, purchaseUnit: "4 kg case", leadDays: 1, purchasingMode: "quote", zone: "Seafood freezer" },
+  { id: "squid", name: "Squid", unit: "kg", current: 1.7, fullLevel: 6, reorderAt: 2.2, dailyUse: 1, incoming: 0, supplierId: "davao-seafood", contactId: "maria", packSize: 3, packPrice: 1380, purchaseUnit: "3 kg pack", leadDays: 1, purchasingMode: "quote", zone: "Seafood freezer" },
+  { id: "basil", name: "Fresh basil", unit: "kg", current: 0.48, fullLevel: 2, reorderAt: 0.7, dailyUse: 0.31, incoming: 0, supplierId: "green-basket", contactId: "mika", packSize: 1, packPrice: 410, purchaseUnit: "1 kg bundle", leadDays: 0.5, purchasingMode: "quote", zone: "Produce" },
+  { id: "mushroom", name: "Mushrooms", unit: "kg", current: 2.8, fullLevel: 5, reorderAt: 1.8, dailyUse: 0.74, incoming: 0, supplierId: "green-basket", contactId: "mika", packSize: 2, packPrice: 540, purchaseUnit: "2 kg crate", leadDays: 0.5, purchasingMode: "quote", zone: "Produce" },
 ];
 
 export function getSupplier(item: Pick<Ingredient, "supplierId">) {
@@ -124,7 +127,7 @@ export function loadConfiguredIngredients() {
 
 export function saveConfiguredIngredients(items: Ingredient[]) {
   if (typeof window === "undefined") return;
-  const configOnly = items.map(({ id, fullLevel, reorderAt, supplierId, contactId, packSize, packPrice, purchaseUnit, leadDays }) => ({
+  const configOnly = items.map(({ id, fullLevel, reorderAt, supplierId, contactId, packSize, packPrice, purchaseUnit, leadDays, purchasingMode }) => ({
     id,
     fullLevel,
     reorderAt,
@@ -134,6 +137,7 @@ export function saveConfiguredIngredients(items: Ingredient[]) {
     packPrice,
     purchaseUnit,
     leadDays,
+    purchasingMode,
   }));
   window.localStorage.setItem(INVENTORY_CONFIG_STORAGE_KEY, JSON.stringify(configOnly));
 }
