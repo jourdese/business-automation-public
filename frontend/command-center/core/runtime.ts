@@ -183,7 +183,12 @@ export function inventoryPercent(item: CommandCenterInventoryItem) {
 }
 
 export function suggestedPurchaseQuantity(item: CommandCenterInventoryItem) {
-  const shortage = Math.max(0, item.fullLevel - item.current - item.incoming);
+  const dailyUse = item.dailyUse ?? 0;
+  const projectedAtDelivery = Math.max(
+    0,
+    item.current + item.incoming - dailyUse * item.leadDays,
+  );
+  const shortage = Math.max(0, item.fullLevel - projectedAtDelivery);
   if (shortage <= 0) return 0;
   return Math.max(
     item.packSize,
