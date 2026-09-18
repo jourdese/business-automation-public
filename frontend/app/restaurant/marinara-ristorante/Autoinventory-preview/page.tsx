@@ -139,6 +139,10 @@ function percent(item: Ingredient) {
   return Math.max(0, Math.min(100, Math.round((item.current / Math.max(item.fullLevel, 0.01)) * 100)));
 }
 
+function automationTriggered(item: Ingredient) {
+  return percent(item) <= Math.max(0, Math.min(100, item.automationTriggerPercent));
+}
+
 function projectedAtDelivery(item: Ingredient) {
   return Math.max(0, item.current + item.incoming - item.dailyUse * item.leadDays);
 }
@@ -342,6 +346,7 @@ export default function MarinaraAutoinventoryPreviewPage() {
 
   const selectedAutomationAlert = automationAlerts[selected.id];
   const selectedNeedsRestock = selected.current <= selected.reorderAt;
+  const selectedAutomationTriggered = selected.automationEnabled && automationTriggered(selected);
   const jourvisAttention = Boolean(selectedAutomationAlert) || (
     selectedProcurement?.status === "quote_received"
   );
@@ -350,8 +355,8 @@ export default function MarinaraAutoinventoryPreviewPage() {
     ? `I paused ${selected.name}. I need your decision.`
     : selectedProcurement
       ? `${selected.name}: ${procurementStatusLabel(selectedProcurement.status)}.`
-      : selectedNeedsRestock && selected.automationEnabled && automationMasterOn
-        ? `I’m watching ${selected.name}. It’s below the reorder point.`
+      : selectedAutomationTriggered && automationMasterOn
+        ? `I’m watching ${selected.name}. It reached my ${selected.automationTriggerPercent}% automation trigger.`
         : selectedNeedsRestock
           ? `${selected.name} is low. I can help handle the restock.`
           : `I’m here. ${selected.name} is at ${percent(selected)}%.`;
@@ -363,7 +368,7 @@ export default function MarinaraAutoinventoryPreviewPage() {
       : selectedProcurement
         ? "I’ll keep the request separate from incoming stock until the supplier and buyer have confirmed the order."
         : selected.automationEnabled
-          ? `Automation is ${automationMasterOn ? "active" : "ready but globally paused"} for this supply in ${selected.automationMode.replace("_", " ")} mode.`
+          ? `Automation is ${automationMasterOn ? "active" : "ready but globally paused"} in ${selected.automationMode.replace("_", " ")} mode. I act at ${selected.automationTriggerPercent}% or lower.`
           : "Open Configure if you want me to watch this supply, contact the supplier, or negotiate inside your limits.";
 
   const automationEnabledCount = ingredients.filter((item) => item.automationEnabled).length;
@@ -381,7 +386,7 @@ export default function MarinaraAutoinventoryPreviewPage() {
       (item) =>
         item.automationEnabled &&
         item.automationMode !== "assist" &&
-        item.current <= item.reorderAt &&
+        automationTriggered(item) &&
         !activeItemIds.has(item.id),
     );
 
@@ -1016,7 +1021,7 @@ export default function MarinaraAutoinventoryPreviewPage() {
                               <span
                                 className={styles.summaryAutomationMark}
                                 data-active={automationMasterOn}
-                                title={`Jourvis automation: ${item.automationMode}`}
+                                title={`Jourvis automation: ${item.automationMode} · trigger at ${item.automationTriggerPercent}%`}
                               >
                                 A
                               </span>
@@ -1091,8 +1096,8 @@ export default function MarinaraAutoinventoryPreviewPage() {
                     </div>
                     <small>
                       {selected.automationEnabled
-                        ? `Target ${formatMoney(selected.targetPackPrice)} · auto-accept ≤ ${formatMoney(selected.autoAcceptPackPrice)} · hard stop ${formatMoney(selected.hardMaxPackPrice)}`
-                        : "Configure this supply if you want Jourvis to act automatically when stock is low."}
+                        ? `Trigger ≤ ${selected.automationTriggerPercent}% · target ${formatMoney(selected.targetPackPrice)} · auto-accept ≤ ${formatMoney(selected.autoAcceptPackPrice)} · hard stop ${formatMoney(selected.hardMaxPackPrice)}`
+                        : "Configure this supply if you want Jourvis to act automatically at a stock percentage you choose."}
                     </small>
                     {automationAlerts[selected.id] ? <p>{automationAlerts[selected.id]}</p> : null}
                   </div>
