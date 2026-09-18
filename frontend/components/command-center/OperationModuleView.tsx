@@ -185,6 +185,13 @@ export default function OperationModuleView({
             const low = item.current <= item.reorderAt;
             const task = tasks.find((entry) => entry.entityId === item.id);
             const supplier = supplierById.get(item.supplierId);
+            const usedByRecipes = state.recipes.filter(
+              (recipe) => item.id in recipe.ingredients,
+            );
+            const daysCover =
+              item.dailyUse && item.dailyUse > 0
+                ? Math.round((item.current / item.dailyUse) * 10) / 10
+                : null;
             const editing = adjustment?.itemId === item.id;
 
             return (
@@ -230,7 +237,28 @@ export default function OperationModuleView({
                     <strong>{item.dailyUse ?? "—"} {item.dailyUse ? item.unit : ""}</strong>
                     <small>Trigger {item.automationTriggerPercent}%</small>
                   </div>
+                  <div>
+                    <span>Days cover</span>
+                    <strong>{daysCover !== null ? `${daysCover} days` : "—"}</strong>
+                    <small>Based on configured daily use</small>
+                  </div>
                 </div>
+
+                {usedByRecipes.length ? (
+                  <div className={styles.inventoryUsedBy}>
+                    <span>USED BY</span>
+                    <div>
+                      {usedByRecipes.map((recipe) => (
+                        <span key={recipe.id}>
+                          <strong>{recipe.name}</strong>
+                          <small>
+                            {recipe.ingredients[item.id]} {item.unit} / sale
+                          </small>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
 
                 <div className={styles.inventoryActions}>
                   <button
