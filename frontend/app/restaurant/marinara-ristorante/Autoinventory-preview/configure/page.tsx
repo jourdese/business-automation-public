@@ -83,6 +83,9 @@ export default function AutoinventoryConfigurePage() {
 
   const fullPercent = Math.max(0, Math.min(100, Math.round((selected.current / Math.max(selected.fullLevel, 0.01)) * 100)));
   const reorderPercent = Math.max(0, Math.min(100, Math.round((selected.reorderAt / Math.max(selected.fullLevel, 0.01)) * 100)));
+  const automationTriggerQuantity = round(
+    selected.fullLevel * Math.max(0, Math.min(100, selected.automationTriggerPercent)) / 100,
+  );
 
   return (
     <div className={styles.page}>
@@ -202,8 +205,37 @@ export default function AutoinventoryConfigurePage() {
                   {guideStep === 0 ? (
                     <div className={styles.guideQuestion}>
                       <span>1 / WHEN SHOULD I ACT?</span>
-                      <h4>I&apos;ll watch the reorder point you already configured.</h4>
-                      <p>For {selected.name}, I&apos;ll start when stock reaches {selected.reorderAt} {selected.unit} or lower. You can change that in Stock levels above.</p>
+                      <h4>Choose the stock percentage that should wake me up.</h4>
+                      <p>
+                        {selected.name} is currently {fullPercent}%. I&apos;ll trigger automation at
+                        {" "}{selected.automationTriggerPercent}% or lower, which is about {automationTriggerQuantity} {selected.unit}.
+                      </p>
+                      <div className={styles.triggerControl}>
+                        <input
+                          type="range"
+                          min="0"
+                          max="100"
+                          step="1"
+                          value={selected.automationTriggerPercent}
+                          onChange={(event) => updateSelected({ automationTriggerPercent: Math.max(0, Math.min(100, Number(event.target.value) || 0)) })}
+                          aria-label={`Jourvis automation trigger for ${selected.name}`}
+                        />
+                        <label>
+                          <span>Jourvis trigger</span>
+                          <div>
+                            <input
+                              type="number"
+                              min="0"
+                              max="100"
+                              step="1"
+                              value={selected.automationTriggerPercent}
+                              onChange={(event) => updateSelected({ automationTriggerPercent: Math.max(0, Math.min(100, Number(event.target.value) || 0)) })}
+                            />
+                            <b>%</b>
+                          </div>
+                          <small>Equivalent to about {automationTriggerQuantity} {selected.unit} of your {selected.fullLevel} {selected.unit} full level.</small>
+                        </label>
+                      </div>
                     </div>
                   ) : null}
 
@@ -270,7 +302,7 @@ export default function AutoinventoryConfigurePage() {
                       <span>6 / READY</span>
                       <h4>Here&apos;s what I&apos;ll do for {selected.name}.</h4>
                       <div className={styles.ruleSummary}>
-                        <div><span>Trigger</span><strong>≤ {selected.reorderAt} {selected.unit}</strong></div>
+                        <div><span>Automation trigger</span><strong>≤ {selected.automationTriggerPercent}%</strong></div>
                         <div><span>Mode</span><strong>{selected.automationMode.replace("_", " ")}</strong></div>
                         <div><span>Target price</span><strong>₱{selected.targetPackPrice}</strong></div>
                         <div><span>Auto-accept</span><strong>≤ ₱{selected.autoAcceptPackPrice}</strong></div>
@@ -296,6 +328,7 @@ export default function AutoinventoryConfigurePage() {
               ) : null}
 
               <div className={styles.automationRules}>
+                <label><span>Jourvis trigger</span><div><input type="number" min="0" max="100" step="1" value={selected.automationTriggerPercent} onChange={(event) => updateSelected({ automationTriggerPercent: Math.max(0, Math.min(100, Number(event.target.value) || 0)) })} /><b>%</b></div><small>Start automation at or below this stock level · about {automationTriggerQuantity} {selected.unit}.</small></label>
                 <label><span>Automation mode</span><select value={selected.automationMode} onChange={(event) => updateSelected({ automationMode: event.target.value as Ingredient["automationMode"] })}><option value="assist">Assist only</option><option value="auto_contact">Auto-contact supplier</option><option value="autobuy">Autobuy within limits</option></select><small>Autobuy still stops when any configured limit is exceeded.</small></label>
                 <label><span>Target pack price</span><div><b>₱</b><input type="number" min="0" value={selected.targetPackPrice} onChange={(event) => updateSelected({ targetPackPrice: Math.max(0, Number(event.target.value) || 0) })} /></div><small>The price Jourvis aims for when negotiating.</small></label>
                 <label><span>Auto-accept up to</span><div><b>₱</b><input type="number" min="0" value={selected.autoAcceptPackPrice} onChange={(event) => updateSelected({ autoAcceptPackPrice: Math.max(0, Number(event.target.value) || 0) })} /></div><small>Quotes at or below this may be accepted automatically in Autobuy mode.</small></label>
@@ -341,7 +374,7 @@ export default function AutoinventoryConfigurePage() {
           guideStep !== null
             ? "You can keep working on the page while I stay here. I’ll remember where you drag me."
             : selected.automationEnabled
-              ? `Target ₱${selected.targetPackPrice} · auto-accept ≤ ₱${selected.autoAcceptPackPrice} · hard stop ₱${selected.hardMaxPackPrice}.`
+              ? `Trigger ≤ ${selected.automationTriggerPercent}% · target ₱${selected.targetPackPrice} · auto-accept ≤ ₱${selected.autoAcceptPackPrice} · hard stop ₱${selected.hardMaxPackPrice}.`
               : "I can walk you through the trigger, authority, price range, spend limits and negotiation rules."
         }
         attention={!selected.automationEnabled}
