@@ -13,6 +13,7 @@
     "format": "oxfmt",
     "typecheck": "tsc --noEmit",
     "lint:jourvis": "oxlint app components/jourvis components/business-sites lib/jourvis lib/businesses scripts",
+    "lint:command-center": "oxlint app/command-center components/command-center command-center scripts/command-center-runtime.test.ts",
     "test:frontend": "node --experimental-strip-types --test scripts/*.test.ts",
     "test:browser": "node scripts/frontend-qa.mjs",
     "sync:policies": "node scripts/sync-policies.mjs",
