@@ -12,7 +12,6 @@ import {
   ChevronRight,
   ChefHat,
   Clock3,
-  Mail,
   PackageCheck,
   RefreshCw,
   Search,
@@ -50,13 +49,6 @@ type Recipe = {
   name: string;
   description: string;
   ingredients: Record<string, number>;
-};
-
-type ContactDraft = {
-  itemIds: string[];
-  quantities: Record<string, number>;
-  contactBySupplier: Record<string, string>;
-  title: string;
 };
 
 type StockAdjustment = {
@@ -254,7 +246,6 @@ export default function MarinaraAutoinventoryPreviewPage() {
   const [jourvisOpenKey, setJourvisOpenKey] = useState(0);
   const [automationAlerts, setAutomationAlerts] = useState<Record<string, string>>({});
   const [automationRejected, setAutomationRejected] = useState<Record<string, string>>({});
-  const [contactDraft, setContactDraft] = useState<ContactDraft | null>(null);
   const [stockAdjustment, setStockAdjustment] = useState<StockAdjustment | null>(null);
   const [procurements, setProcurements] = useState<ProcurementRequest[]>([]);
   const [activity, setActivity] = useState([
@@ -918,7 +909,6 @@ export default function MarinaraAutoinventoryPreviewPage() {
     setSearchTerm("");
     setAutomationAlerts({});
     setAutomationRejected({});
-    setContactDraft(null);
     setStockAdjustment(null);
     setProcurements([]);
     setActivity([
@@ -954,84 +944,6 @@ export default function MarinaraAutoinventoryPreviewPage() {
     const nextTab = primaryTabs[nextIndex].id;
     switchTab(nextTab);
     window.requestAnimationFrame(() => document.getElementById(`autoinventory-tab-${nextTab}`)?.focus());
-  }
-
-  function openContact(items: Ingredient[], title: string) {
-    const quantities = Object.fromEntries(items.map((item) => [item.id, suggestedOrder(item)]));
-    const contactBySupplier = Object.fromEntries(
-      supplierGroupsForItems(items).map((group) => [group[0].supplierId, group[0].contactId]),
-    );
-    setContactDraft({ itemIds: items.map((item) => item.id), quantities, contactBySupplier, title });
-  }
-
-  function changeDraftQuantity(item: Ingredient, next: number) {
-    if (!contactDraft) return;
-    const normalized = Math.max(0, round(next));
-    setContactDraft({
-      ...contactDraft,
-      quantities: { ...contactDraft.quantities, [item.id]: normalized },
-    });
-  }
-
-  function changeDraftContact(supplierId: string, contactId: string) {
-    if (!contactDraft) return;
-    setContactDraft({
-      ...contactDraft,
-      contactBySupplier: { ...contactDraft.contactBySupplier, [supplierId]: contactId },
-    });
-  }
-
-  function sendContactRequests() {
-    if (!contactDraft) return;
-    const draftItems = ingredients.filter((item) => contactDraft.itemIds.includes(item.id));
-    const groups = supplierGroupsForItems(draftItems.filter((item) => (contactDraft.quantities[item.id] ?? 0) > 0));
-
-    if (!groups.length) {
-      log("No supplier request was sent because every requested quantity is zero.");
-      setContactDraft(null);
-      return;
-    }
-
-    const startIndex = procurements.length;
-    const nextRequests: ProcurementRequest[] = groups.map((items, index) => {
-      const first = items[0];
-      const supplier = getSupplier(first);
-      const contactId = contactDraft.contactBySupplier[supplier.id] ?? first.contactId;
-      return {
-        id: `REQ-${String(startIndex + index + 1).padStart(3, "0")}`,
-        supplierId: supplier.id,
-        contactId,
-        mode: first.purchasingMode,
-        status: "requested",
-        lines: items.map((item) => ({
-          itemId: item.id,
-          requestedQty: contactDraft.quantities[item.id] ?? 0,
-        })),
-        deliveryFee: 0,
-        etaDays: Math.max(...items.map((item) => item.leadDays)),
-        buyerConfirmed: first.purchasingMode === "fixed",
-        supplierConfirmed: false,
-        incomingApplied: false,
-        origin: "manual",
-        previewOnly: false,
-        counteroffersUsed: 0,
-      };
-    });
-
-    setProcurements((current) => [...nextRequests, ...current]);
-
-    nextRequests.forEach((request) => {
-      const supplier = suppliers.find((candidate) => candidate.id === request.supplierId) ?? suppliers[0];
-      const contact = supplier.contacts.find((candidate) => candidate.id === request.contactId) ?? supplier.contacts[0];
-      log(
-        request.mode === "quote"
-          ? `${request.id}: quote request sent to ${contact.name} at ${supplier.name}. Stock is not incoming yet.`
-          : `${request.id}: fixed-price purchase order sent to ${contact.name} at ${supplier.name}. Awaiting supplier acknowledgment.`,
-      );
-    });
-
-    setContactDraft(null);
-    setActiveTab("orders");
   }
 
   function updateProcurement(id: string, updater: (request: ProcurementRequest) => ProcurementRequest) {
@@ -2458,66 +2370,6 @@ export default function MarinaraAutoinventoryPreviewPage() {
           </div>
         );
       })() : null}
-
-      {contactDraft ? (
-        <div className={styles.modalBackdrop} role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setContactDraft(null); }}>
-          <section className={styles.contactModal} role="dialog" aria-modal="true" aria-labelledby="contact-modal-title">
-            <div className={styles.modalHeader}>
-              <div><span>SUPPLIER REQUEST</span><h2 id="contact-modal-title">{contactDraft.title}</h2><p>Change the contact person and quantity before sending. Quote-mode requests must be priced and mutually confirmed before they become incoming stock.</p></div>
-              <button type="button" onClick={() => setContactDraft(null)} aria-label="Close supplier request"><X size={19} aria-hidden /></button>
-            </div>
-
-            <div className={styles.modalBody}>
-              {supplierGroupsForItems(ingredients.filter((item) => contactDraft.itemIds.includes(item.id))).map((items) => {
-                const first = items[0];
-                const supplier = getSupplier(first);
-                const selectedContactId = contactDraft.contactBySupplier[supplier.id] ?? first.contactId;
-                const contact = supplier.contacts.find((candidate) => candidate.id === selectedContactId) ?? supplier.contacts[0];
-                return (
-                  <div className={styles.modalSupplier} key={`${supplier.id}-${first.purchasingMode}`}>
-                    <div className={styles.modalSupplierHead}>
-                      <div><span>{supplier.name}</span><strong>{contact.name}</strong><small>{contact.role}</small><small>{first.purchasingMode === "quote" ? "Quote required before agreement" : "Fixed-price PO · supplier acknowledgment required"}</small></div>
-                      <div>
-                        <span>CONTACT PERSON</span>
-                        <select
-                          value={selectedContactId}
-                          onChange={(event) => changeDraftContact(supplier.id, event.target.value)}
-                          aria-label={`Contact person for ${supplier.name}`}
-                          style={{ marginTop: 6, minWidth: 210, minHeight: 38, padding: "6px 30px 6px 9px", background: "#08141f", color: "#f7f4ee", border: "1px solid #2a3a44" }}
-                        >
-                          {supplier.contacts.map((candidate) => <option key={candidate.id} value={candidate.id}>{candidate.name} · {candidate.role}</option>)}
-                        </select>
-                        <small>{contact.channel} · {contact.email}</small><small>{contact.phone}</small>
-                      </div>
-                    </div>
-                    {items.map((item) => {
-                      const quantity = contactDraft.quantities[item.id] ?? 0;
-                      const packs = item.packSize > 0 ? quantity / item.packSize : 0;
-                      const estimatedCost = Math.ceil(packs) * item.packPrice;
-                      return (
-                        <div className={styles.requestItem} key={item.id}>
-                          <div className={styles.requestItemTitle}><div className={styles.requestItemName}><StockIcon stockId={item.id} className={styles.stockIconSmall} size={18} /><div><strong>{item.name}</strong><small>Jourvis suggests {suggestedOrder(item)} {item.unit} · {item.purchaseUnit}</small></div></div><span>If confirmed ~{Math.min(100, Math.round(((item.current + item.incoming + quantity) / item.fullLevel) * 100))}%</span></div>
-                          <div className={styles.quantityEditor}>
-                            <button type="button" onClick={() => changeDraftQuantity(item, quantity - item.packSize)} aria-label={`Decrease ${item.name} quantity`}>−</button>
-                            <label><span>Quantity to request</span><div><input type="number" min="0" step={item.packSize} value={quantity} onChange={(event) => changeDraftQuantity(item, Number(event.target.value) || 0)} /><b>{item.unit}</b></div></label>
-                            <button type="button" onClick={() => changeDraftQuantity(item, quantity + item.packSize)} aria-label={`Increase ${item.name} quantity`}>+</button>
-                          </div>
-                          <div className={styles.requestMeta}>
-                            <span>{quantity > 0 ? `${round(quantity / item.packSize)} purchase unit${quantity / item.packSize === 1 ? "" : "s"}` : "Not included"}</span>
-                            <strong>{quantity > 0 ? (item.purchasingMode === "quote" ? `Est. ${formatMoney(estimatedCost)}` : formatMoney(estimatedCost)) : "—"}</strong>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                );
-              })}
-            </div>
-
-            <div className={styles.modalFooter}><button type="button" className={styles.secondaryButton} onClick={() => setContactDraft(null)}>Cancel</button><button type="button" className={styles.primaryButton} onClick={sendContactRequests}><Mail size={16} aria-hidden /> Send supplier request{supplierGroupsForItems(ingredients.filter((item) => contactDraft.itemIds.includes(item.id))).length > 1 ? "s" : ""}</button></div>
-          </section>
-        </div>
-      ) : null}
 
       <JourvisPresence
         eyebrow={jourvisUpdateItem ? "JOURVIS · UPDATE" : jourvisTasks.length ? `JOURVIS · ${jourvisTasks.length} NEED${jourvisTasks.length === 1 ? "S" : ""} YOU` : "JOURVIS"}
