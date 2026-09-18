@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Check, RotateCcw, Save, Search, Settings2 } from "lucide-react";
+import { ArrowLeft, Check, ChevronLeft, ChevronRight, RotateCcw, Save, Search, Settings2, Sparkles } from "lucide-react";
 import CompanionMark from "@/components/jourvis/CompanionMark";
 import {
   type Ingredient,
@@ -24,6 +24,7 @@ export default function AutoinventoryConfigurePage() {
   const [selectedId, setSelectedId] = useState("shrimp");
   const [search, setSearch] = useState("");
   const [saved, setSaved] = useState(false);
+  const [guideStep, setGuideStep] = useState<number | null>(null);
 
   useEffect(() => {
     const configured = loadConfiguredIngredients();
@@ -142,6 +143,152 @@ export default function AutoinventoryConfigurePage() {
                 <label><span>Purchase unit label</span><input type="text" value={selected.purchaseUnit} onChange={(event) => updateSelected({ purchaseUnit: event.target.value })} /><small>Example: 5 kg pack or 12-bottle case.</small></label>
                 <label><span>Pack price</span><div><b>₱</b><input type="number" min="0" step="1" value={selected.packPrice} onChange={(event) => updateSelected({ packPrice: Math.max(0, Number(event.target.value) || 0) })} /></div><small>Demo estimated cost for one purchase unit.</small></label>
                 <label><span>Lead time</span><div><input type="number" min="0" step="0.5" value={selected.leadDays} onChange={(event) => updateSelected({ leadDays: Math.max(0, Number(event.target.value) || 0) })} /><b>days</b></div><small>Used to estimate stock remaining when supply arrives.</small></label>
+              </div>
+            </section>
+
+            <section className={styles.section}>
+              <div className={styles.sectionHeading}>
+                <div><span>04</span><h3>Jourvis Automation</h3></div>
+                <p>Give Jourvis explicit permission and limits. Anything outside these rules stops and comes back to the owner.</p>
+              </div>
+
+              <div className={styles.automationHero} data-enabled={selected.automationEnabled}>
+                <CompanionMark className={styles.automationCompanion} />
+                <div>
+                  <span>JOURVIS ASKS</span>
+                  <h4>{selected.automationEnabled ? "I know the rules for this supply." : "Want me to manage this supply when it gets low?"}</h4>
+                  <p>
+                    {selected.automationEnabled
+                      ? `Mode: ${selected.automationMode.replace("_", " ")} · target ${new Intl.NumberFormat("en-PH", { style: "currency", currency: "PHP", maximumFractionDigits: 0 }).format(selected.targetPackPrice)} · hard stop ${new Intl.NumberFormat("en-PH", { style: "currency", currency: "PHP", maximumFractionDigits: 0 }).format(selected.hardMaxPackPrice)}.`
+                      : "I can watch the reorder point, contact the supplier, negotiate inside your price range, and stop whenever a limit is exceeded."}
+                  </p>
+                </div>
+                <div className={styles.automationHeroActions}>
+                  <button
+                    type="button"
+                    className={styles.automationToggle}
+                    data-on={selected.automationEnabled}
+                    role="switch"
+                    aria-checked={selected.automationEnabled}
+                    onClick={() => updateSelected({ automationEnabled: !selected.automationEnabled })}
+                  >
+                    <i><b /></i><strong>{selected.automationEnabled ? "ON" : "OFF"}</strong>
+                  </button>
+                  <button type="button" className={styles.guideButton} onClick={() => setGuideStep(0)}>
+                    <Sparkles size={14} aria-hidden /> Let Jourvis guide me
+                  </button>
+                </div>
+              </div>
+
+              {guideStep !== null ? (
+                <div className={styles.guidePanel}>
+                  <div className={styles.guideProgress}>
+                    {Array.from({ length: 6 }).map((_, index) => <i key={index} data-active={index <= guideStep} />)}
+                  </div>
+
+                  {guideStep === 0 ? (
+                    <div className={styles.guideQuestion}>
+                      <span>1 / WHEN SHOULD I ACT?</span>
+                      <h4>I&apos;ll watch the reorder point you already configured.</h4>
+                      <p>For {selected.name}, I&apos;ll start when stock reaches {selected.reorderAt} {selected.unit} or lower. You can change that in Stock levels above.</p>
+                    </div>
+                  ) : null}
+
+                  {guideStep === 1 ? (
+                    <div className={styles.guideQuestion}>
+                      <span>2 / WHAT MAY I DO?</span>
+                      <h4>How much control do you want me to have?</h4>
+                      <div className={styles.modeChoices}>
+                        {([
+                          ["assist", "Assist", "Tell me what to do, but never contact a supplier automatically."],
+                          ["auto_contact", "Auto-contact", "Contact the supplier when stock is low, then wait for owner approval."],
+                          ["autobuy", "Autobuy", "Contact, negotiate and accept only inside the limits below."],
+                        ] as const).map(([value, label, description]) => (
+                          <button key={value} type="button" data-active={selected.automationMode === value} onClick={() => updateSelected({ automationMode: value })}>
+                            <strong>{label}</strong><small>{description}</small>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
+
+                  {guideStep === 2 ? (
+                    <div className={styles.guideQuestion}>
+                      <span>3 / WHAT PRICE IS SAFE?</span>
+                      <h4>Give me a target, an auto-accept ceiling, and a hard stop.</h4>
+                      <div className={styles.guideFields}>
+                        <label><span>Target / pack</span><div><b>₱</b><input type="number" min="0" value={selected.targetPackPrice} onChange={(event) => updateSelected({ targetPackPrice: Math.max(0, Number(event.target.value) || 0) })} /></div></label>
+                        <label><span>Auto-accept up to</span><div><b>₱</b><input type="number" min={selected.targetPackPrice} value={selected.autoAcceptPackPrice} onChange={(event) => updateSelected({ autoAcceptPackPrice: Math.max(selected.targetPackPrice, Number(event.target.value) || 0) })} /></div></label>
+                        <label><span>Never exceed</span><div><b>₱</b><input type="number" min={selected.autoAcceptPackPrice} value={selected.hardMaxPackPrice} onChange={(event) => updateSelected({ hardMaxPackPrice: Math.max(selected.autoAcceptPackPrice, Number(event.target.value) || 0) })} /></div></label>
+                      </div>
+                      <p className={styles.guideHint}>The hard maximum stays private. Jourvis does not tell the supplier your ceiling.</p>
+                    </div>
+                  ) : null}
+
+                  {guideStep === 3 ? (
+                    <div className={styles.guideQuestion}>
+                      <span>4 / HOW MUCH MAY I SPEND?</span>
+                      <h4>Set quantity and spend guardrails.</h4>
+                      <div className={styles.guideFields}>
+                        <label><span>Max automatic quantity</span><div><input type="number" min="0" step="0.1" value={selected.maxAutoOrderQty} onChange={(event) => updateSelected({ maxAutoOrderQty: Math.max(0, Number(event.target.value) || 0) })} /><b>{selected.unit}</b></div></label>
+                        <label><span>Max automatic order</span><div><b>₱</b><input type="number" min="0" value={selected.maxAutoOrderSpend} onChange={(event) => updateSelected({ maxAutoOrderSpend: Math.max(0, Number(event.target.value) || 0) })} /></div></label>
+                        <label><span>Max delivery fee</span><div><b>₱</b><input type="number" min="0" value={selected.maxDeliveryFee} onChange={(event) => updateSelected({ maxDeliveryFee: Math.max(0, Number(event.target.value) || 0) })} /></div></label>
+                        <label><span>Max lead time</span><div><input type="number" min="0" step="0.5" value={selected.maxLeadDays} onChange={(event) => updateSelected({ maxLeadDays: Math.max(0, Number(event.target.value) || 0) })} /><b>days</b></div></label>
+                      </div>
+                    </div>
+                  ) : null}
+
+                  {guideStep === 4 ? (
+                    <div className={styles.guideQuestion}>
+                      <span>5 / MAY I NEGOTIATE?</span>
+                      <h4>Tell me what to do when a quote is above the auto-accept price.</h4>
+                      <div className={styles.negotiationRow}>
+                        <button type="button" data-active={selected.autoNegotiate} onClick={() => updateSelected({ autoNegotiate: !selected.autoNegotiate })}>
+                          <strong>{selected.autoNegotiate ? "Auto-negotiate ON" : "Auto-negotiate OFF"}</strong>
+                          <small>{selected.autoNegotiate ? "I may counter up to the limit below." : "I will stop and ask you instead."}</small>
+                        </button>
+                        <label><span>Max counteroffers</span><input type="number" min="0" max="5" value={selected.maxCounteroffers} onChange={(event) => updateSelected({ maxCounteroffers: Math.max(0, Math.min(5, Number(event.target.value) || 0)) })} /></label>
+                      </div>
+                    </div>
+                  ) : null}
+
+                  {guideStep === 5 ? (
+                    <div className={styles.guideQuestion}>
+                      <span>6 / READY</span>
+                      <h4>Here&apos;s what I&apos;ll do for {selected.name}.</h4>
+                      <div className={styles.ruleSummary}>
+                        <div><span>Trigger</span><strong>≤ {selected.reorderAt} {selected.unit}</strong></div>
+                        <div><span>Mode</span><strong>{selected.automationMode.replace("_", " ")}</strong></div>
+                        <div><span>Target price</span><strong>₱{selected.targetPackPrice}</strong></div>
+                        <div><span>Auto-accept</span><strong>≤ ₱{selected.autoAcceptPackPrice}</strong></div>
+                        <div><span>Hard stop</span><strong>₱{selected.hardMaxPackPrice}</strong></div>
+                        <div><span>Max order</span><strong>₱{selected.maxAutoOrderSpend}</strong></div>
+                      </div>
+                      <label className={styles.previewRule}>
+                        <input type="checkbox" checked={selected.automationPreview} onChange={(event) => updateSelected({ automationPreview: event.target.checked })} />
+                        <span><strong>Preview mode</strong><small>Jourvis runs the workflow in the demo but marks automatic actions as a dry run.</small></span>
+                      </label>
+                    </div>
+                  ) : null}
+
+                  <div className={styles.guideNav}>
+                    <button type="button" className={styles.resetButton} onClick={() => guideStep === 0 ? setGuideStep(null) : setGuideStep((guideStep ?? 1) - 1)}><ChevronLeft size={14} aria-hidden /> {guideStep === 0 ? "Close" : "Back"}</button>
+                    {guideStep < 5 ? (
+                      <button type="button" className={styles.saveButton} onClick={() => setGuideStep((guideStep ?? 0) + 1)}>Continue <ChevronRight size={14} aria-hidden /></button>
+                    ) : (
+                      <button type="button" className={styles.saveButton} onClick={() => { updateSelected({ automationEnabled: true }); setGuideStep(null); }}><Check size={14} aria-hidden /> Enable for {selected.name}</button>
+                    )}
+                  </div>
+                </div>
+              ) : null}
+
+              <div className={styles.automationRules}>
+                <label><span>Automation mode</span><select value={selected.automationMode} onChange={(event) => updateSelected({ automationMode: event.target.value as Ingredient["automationMode"] })}><option value="assist">Assist only</option><option value="auto_contact">Auto-contact supplier</option><option value="autobuy">Autobuy within limits</option></select><small>Autobuy still stops when any configured limit is exceeded.</small></label>
+                <label><span>Target pack price</span><div><b>₱</b><input type="number" min="0" value={selected.targetPackPrice} onChange={(event) => updateSelected({ targetPackPrice: Math.max(0, Number(event.target.value) || 0) })} /></div><small>The price Jourvis aims for when negotiating.</small></label>
+                <label><span>Auto-accept up to</span><div><b>₱</b><input type="number" min="0" value={selected.autoAcceptPackPrice} onChange={(event) => updateSelected({ autoAcceptPackPrice: Math.max(0, Number(event.target.value) || 0) })} /></div><small>Quotes at or below this may be accepted automatically in Autobuy mode.</small></label>
+                <label><span>Absolute maximum</span><div><b>₱</b><input type="number" min="0" value={selected.hardMaxPackPrice} onChange={(event) => updateSelected({ hardMaxPackPrice: Math.max(0, Number(event.target.value) || 0) })} /></div><small>Jourvis never accepts or counters above this private ceiling.</small></label>
+                <label><span>Max auto quantity</span><div><input type="number" min="0" step="0.1" value={selected.maxAutoOrderQty} onChange={(event) => updateSelected({ maxAutoOrderQty: Math.max(0, Number(event.target.value) || 0) })} /><b>{selected.unit}</b></div><small>If the suggested quantity is higher, Jourvis asks you.</small></label>
+                <label><span>Max order spend</span><div><b>₱</b><input type="number" min="0" value={selected.maxAutoOrderSpend} onChange={(event) => updateSelected({ maxAutoOrderSpend: Math.max(0, Number(event.target.value) || 0) })} /></div><small>Maximum automatic spend for this stock rule.</small></label>
               </div>
             </section>
 
