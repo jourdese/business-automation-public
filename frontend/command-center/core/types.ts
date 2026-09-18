@@ -4,6 +4,7 @@ export type CommandCenterSectionId =
   | "performance"
   | "finance"
   | "operations"
+  | "activity"
   | "briefings"
   | "insights"
   | "decisions";
@@ -72,6 +73,7 @@ export const commandCenterSections: ReadonlyArray<{
   { id: "performance", label: "Performance", description: "Revenue, profit, costs, growth, and business KPIs." },
   { id: "finance", label: "Finance", description: "P&L, cash flow, expenses, payables, receivables, and reconciliation." },
   { id: "operations", label: "Operations", description: "Industry-specific operating modules managed by Jourvis." },
+  { id: "activity", label: "Activity", description: "Auditable manual and automatic actions with reasons and the configuration used at execution time." },
   { id: "briefings", label: "Briefings", description: "Daily, weekly, monthly, and custom operating summaries." },
   { id: "insights", label: "Insights", description: "Patterns and opportunities Jourvis finds proactively." },
   { id: "decisions", label: "Decisions", description: "Only the exceptions and approvals that truly need a human." },
