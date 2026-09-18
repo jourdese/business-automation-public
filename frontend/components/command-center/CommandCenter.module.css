@@ -2052,3 +2052,603 @@
     grid-column: 3;
   }
 }
+
+
+.inventoryCardGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.7rem;
+}
+
+.inventoryCard,
+.purchaseCard,
+.recipeCard,
+.wasteCard {
+  border: 1px solid var(--cc-line);
+  background: var(--cc-panel);
+}
+
+.inventoryCard[data-low="true"] {
+  border-color: #6f5b3c;
+}
+
+.inventoryCardTop {
+  display: grid;
+  grid-template-columns: 74px minmax(0, 1fr) auto;
+  gap: 0.7rem;
+  align-items: center;
+  padding: 0.8rem;
+}
+
+.operationSupplyPhoto {
+  width: 74px;
+  height: 74px;
+  border: 1px solid #3a5059;
+}
+
+.inventoryCardTop > div > span,
+.purchaseIdentity > div > span,
+.supplierCardDetailed header span,
+.recipeCard header span {
+  color: var(--mint);
+  font: 0.54rem var(--font-mono);
+  letter-spacing: 0.08em;
+}
+
+.inventoryCardTop h3,
+.purchaseIdentity h3,
+.recipeCard h3 {
+  margin-top: 0.18rem;
+  font-size: 0.94rem;
+}
+
+.inventoryCardTop p,
+.purchaseIdentity p,
+.recipeCard p {
+  margin-top: 0.18rem;
+  color: var(--cc-muted);
+  font-size: 0.58rem;
+  line-height: 1.4;
+}
+
+.inventoryCardTop > b {
+  width: fit-content;
+  padding: 0.2rem 0.42rem;
+  border: 1px solid #4e646d;
+  color: var(--cc-muted);
+  font: 0.56rem var(--font-mono);
+}
+
+.inventoryCardTop > b[data-alert="true"] {
+  border-color: #8b554e;
+  color: #ffb3aa;
+}
+
+.inventoryLevels {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  border-top: 1px solid var(--cc-line);
+  border-bottom: 1px solid var(--cc-line);
+}
+
+.inventoryLevels > div {
+  padding: 0.65rem 0.75rem;
+  border-right: 1px solid var(--cc-line);
+}
+
+.inventoryLevels > div:last-child {
+  border-right: 0;
+}
+
+.inventoryLevels span,
+.inventoryLevels strong,
+.inventoryLevels small {
+  display: block;
+}
+
+.inventoryLevels span {
+  color: var(--cc-muted);
+  font-size: 0.55rem;
+}
+
+.inventoryLevels strong {
+  margin-top: 0.18rem;
+  font-size: 0.72rem;
+}
+
+.inventoryLevels small {
+  margin-top: 0.13rem;
+  color: #72848c;
+  font-size: 0.53rem;
+}
+
+.inventoryActions {
+  display: flex;
+  gap: 0.45rem;
+  padding: 0.65rem 0.75rem;
+}
+
+.inventoryActions button,
+.adjustmentButtons button,
+.recipeSaleButton,
+.wasteCard > button,
+.wasteInline button,
+.receivingBar button {
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.32rem;
+  padding: 0.38rem 0.58rem;
+  border: 1px solid #3a5059;
+  background: #08161e;
+  color: var(--ivory);
+  font-size: 0.59rem;
+}
+
+.inventoryActions button[data-danger] {
+  color: #ffb0a8;
+  border-color: #68433f;
+}
+
+.inventoryActions button:hover,
+.adjustmentButtons button:hover,
+.recipeSaleButton:hover,
+.wasteCard > button:hover,
+.wasteInline button:hover,
+.receivingBar button:hover {
+  border-color: var(--mint);
+  color: var(--mint);
+}
+
+.inlineAdjustment {
+  display: grid;
+  grid-template-columns: minmax(180px, 1.2fr) minmax(150px, 0.8fr) 130px auto;
+  gap: 0.55rem;
+  align-items: end;
+  padding: 0.7rem 0.75rem;
+  border-top: 1px solid #4c4034;
+  background: rgba(200, 169, 107, 0.06);
+}
+
+.inlineAdjustment > div:first-child strong,
+.inlineAdjustment > div:first-child small {
+  display: block;
+}
+
+.inlineAdjustment > div:first-child strong {
+  font-size: 0.66rem;
+}
+
+.inlineAdjustment > div:first-child small {
+  margin-top: 0.16rem;
+  color: var(--cc-muted);
+  font-size: 0.55rem;
+  line-height: 1.4;
+}
+
+.inlineAdjustment select,
+.inlineAdjustment input,
+.receivingBar input,
+.wasteInline input {
+  width: 100%;
+  min-width: 0;
+  min-height: 34px;
+  border: 1px solid #3a5059;
+  background: #07131b;
+  color: var(--ivory);
+  padding: 0.35rem 0.45rem;
+  font-size: 0.6rem;
+}
+
+.adjustmentAmount {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.35rem;
+  align-items: center;
+}
+
+.adjustmentAmount span,
+.receivingBar > span,
+.wasteInline > span {
+  color: var(--cc-muted);
+  font-size: 0.58rem;
+}
+
+.adjustmentButtons {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.adjustmentButtons button[data-primary] {
+  border-color: var(--mint);
+  background: var(--mint);
+  color: var(--ink);
+}
+
+.purchaseCardList {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.purchaseCard {
+  display: grid;
+  gap: 0;
+}
+
+.purchaseIdentity {
+  display: grid;
+  grid-template-columns: 58px minmax(0, 1fr);
+  gap: 0.7rem;
+  align-items: center;
+  padding: 0.75rem;
+}
+
+.purchaseSupplyPhoto {
+  width: 58px;
+  height: 58px;
+  border: 1px solid #3a5059;
+}
+
+.purchaseFacts {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  border-top: 1px solid var(--cc-line);
+}
+
+.purchaseFacts > div {
+  padding: 0.6rem 0.75rem;
+  border-right: 1px solid var(--cc-line);
+}
+
+.purchaseFacts > div:last-child {
+  border-right: 0;
+}
+
+.purchaseFacts span,
+.purchaseFacts strong {
+  display: block;
+}
+
+.purchaseFacts span {
+  color: var(--cc-muted);
+  font-size: 0.54rem;
+}
+
+.purchaseFacts strong {
+  margin-top: 0.15rem;
+  font-size: 0.65rem;
+  text-transform: capitalize;
+}
+
+.purchaseFacts strong[data-alert="true"] {
+  color: #ffb3aa;
+}
+
+.receivingBar {
+  display: grid;
+  grid-template-columns: 24px minmax(160px, 1fr) 100px auto auto;
+  gap: 0.45rem;
+  align-items: center;
+  padding: 0.65rem 0.75rem;
+  border-top: 1px solid #3b594c;
+  background: rgba(46, 107, 87, 0.07);
+}
+
+.receivingBar > svg {
+  color: var(--mint);
+}
+
+.receivingBar strong,
+.receivingBar small {
+  display: block;
+}
+
+.receivingBar strong {
+  font-size: 0.63rem;
+}
+
+.receivingBar small {
+  margin-top: 0.12rem;
+  color: var(--cc-muted);
+  font-size: 0.54rem;
+}
+
+.receivingBar button {
+  border-color: var(--mint);
+  background: var(--mint);
+  color: var(--ink);
+}
+
+.supplierCardDetailed {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.supplierCardDetailed > header {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.7rem;
+  align-items: flex-start;
+}
+
+.supplierCardDetailed > header h3 {
+  margin-top: 0.15rem;
+}
+
+.supplierCardDetailed > header > b {
+  padding: 0.18rem 0.38rem;
+  border: 1px solid #3e6655;
+  color: var(--mint);
+  font: 0.54rem var(--font-mono);
+}
+
+.supplierPhotoStrip {
+  display: flex;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+}
+
+.supplierPhotoStrip > div {
+  width: 58px;
+  display: grid;
+  justify-items: center;
+  gap: 0.18rem;
+}
+
+.supplierSupplyPhoto {
+  width: 44px;
+  height: 44px;
+  border: 1px solid #3a5059;
+}
+
+.supplierPhotoStrip small {
+  width: 100%;
+  color: var(--cc-muted);
+  font-size: 0.48rem;
+  text-align: center;
+  line-height: 1.2;
+}
+
+.supplierContacts {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.supplierContacts > div {
+  padding: 0.5rem;
+  border: 1px solid rgba(52, 74, 84, 0.8);
+  background: #08161e;
+}
+
+.supplierContacts strong,
+.supplierContacts small,
+.supplierContacts span {
+  display: block;
+}
+
+.supplierContacts strong {
+  font-size: 0.62rem;
+}
+
+.supplierContacts small,
+.supplierContacts span {
+  margin-top: 0.08rem;
+  color: var(--cc-muted);
+  font-size: 0.52rem;
+}
+
+.supplierCardDetailed > footer {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.supplierCardDetailed > footer span {
+  padding: 0.18rem 0.36rem;
+  border: 1px solid #334a54;
+  color: var(--cc-muted);
+  font: 0.52rem var(--font-mono);
+}
+
+.recipeGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.7rem;
+}
+
+.recipeCard {
+  padding: 0.8rem;
+}
+
+.recipeCard > header {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.7rem;
+}
+
+.recipeCard > header > svg {
+  color: var(--mint);
+}
+
+.recipeIngredients {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.4rem;
+  margin-top: 0.7rem;
+}
+
+.recipeIngredients > div {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  gap: 0.45rem;
+  align-items: center;
+  padding: 0.4rem;
+  border: 1px solid #31464f;
+  background: #08161e;
+}
+
+.recipeSupplyPhoto {
+  width: 42px;
+  height: 42px;
+}
+
+.recipeIngredients strong,
+.recipeIngredients small {
+  display: block;
+}
+
+.recipeIngredients strong {
+  font-size: 0.58rem;
+}
+
+.recipeIngredients small {
+  margin-top: 0.1rem;
+  color: var(--cc-muted);
+  font-size: 0.5rem;
+}
+
+.recipeSaleButton {
+  margin-top: 0.7rem;
+  width: 100%;
+  border-color: #4a7764;
+  color: var(--mint);
+}
+
+.wasteGrid {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.wasteCard {
+  display: grid;
+  grid-template-columns: 62px minmax(0, 1fr) auto;
+  gap: 0.65rem;
+  align-items: center;
+  padding: 0.7rem;
+}
+
+.wasteCard .operationSupplyPhoto {
+  width: 62px;
+  height: 62px;
+}
+
+.wasteCard > div > strong,
+.wasteCard > div > small {
+  display: block;
+}
+
+.wasteCard > div > strong {
+  font-size: 0.68rem;
+}
+
+.wasteCard > div > small {
+  margin-top: 0.13rem;
+  color: var(--cc-muted);
+  font-size: 0.55rem;
+}
+
+.wasteInline {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: minmax(100px, 1fr) auto auto auto;
+  gap: 0.4rem;
+  align-items: center;
+  padding-top: 0.6rem;
+  border-top: 1px solid #63443f;
+}
+
+.wasteInline button:first-of-type {
+  border-color: #7f514b;
+  color: #ffb3aa;
+}
+
+
+@media (max-width: 980px) {
+  .inventoryCardGrid,
+  .recipeGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .inlineAdjustment {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .purchaseFacts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .receivingBar {
+    grid-template-columns: 24px minmax(140px, 1fr) 90px auto;
+  }
+
+  .receivingBar button {
+    grid-column: 2 / -1;
+  }
+}
+
+@media (max-width: 620px) {
+  .inventoryCardTop {
+    grid-template-columns: 64px minmax(0, 1fr);
+  }
+
+  .inventoryCardTop .operationSupplyPhoto {
+    width: 64px;
+    height: 64px;
+  }
+
+  .inventoryCardTop > b {
+    grid-column: 2;
+  }
+
+  .inventoryLevels,
+  .purchaseFacts,
+  .recipeIngredients,
+  .inlineAdjustment {
+    grid-template-columns: 1fr;
+  }
+
+  .inventoryLevels > div,
+  .purchaseFacts > div {
+    border-right: 0;
+    border-bottom: 1px solid var(--cc-line);
+  }
+
+  .inventoryLevels > div:last-child,
+  .purchaseFacts > div:last-child {
+    border-bottom: 0;
+  }
+
+  .inventoryActions {
+    flex-direction: column;
+  }
+
+  .receivingBar {
+    grid-template-columns: 24px minmax(0, 1fr) auto;
+  }
+
+  .receivingBar input {
+    grid-column: 1 / 3;
+  }
+
+  .receivingBar button {
+    grid-column: 1 / -1;
+  }
+
+  .wasteCard {
+    grid-template-columns: 54px minmax(0, 1fr);
+  }
+
+  .wasteCard .operationSupplyPhoto {
+    width: 54px;
+    height: 54px;
+  }
+
+  .wasteCard > button {
+    grid-column: 2;
+  }
+
+  .wasteInline {
+    grid-template-columns: 1fr auto;
+  }
+}
