@@ -933,13 +933,11 @@ export default function MarinaraAutoinventoryPreviewPage() {
                     role="switch"
                     aria-checked={automationMasterOn}
                     onClick={() => {
-                      setAutomationMasterOn((current) => {
-                        const next = !current;
-                        window.localStorage.setItem("jourvis-autoinventory-automation-master", String(next));
-                        if (next) log(`Jourvis Automation switched ON. Watching ${automationEnabledCount} configured supplies.`);
-                        else log("Jourvis Automation switched OFF. No new automatic supplier contacts will be started.");
-                        return next;
-                      });
+                      const next = !automationMasterOn;
+                      setAutomationMasterOn(next);
+                      window.localStorage.setItem("jourvis-autoinventory-automation-master", String(next));
+                      if (next) log(`Jourvis Automation switched ON. Watching ${automationEnabledCount} configured supplies.`);
+                      else log("Jourvis Automation switched OFF. No new automatic supplier contacts will be started.");
                     }}
                   >
                     <span>Jourvis Auto</span>
