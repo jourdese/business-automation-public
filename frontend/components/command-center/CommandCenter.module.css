@@ -2147,7 +2147,7 @@
 
 .inventoryLevels {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   border-top: 1px solid var(--cc-line);
   border-bottom: 1px solid var(--cc-line);
 }
@@ -2181,6 +2181,49 @@
   margin-top: 0.13rem;
   color: #72848c;
   font-size: 0.53rem;
+}
+
+.inventoryUsedBy {
+  display: grid;
+  grid-template-columns: 70px minmax(0, 1fr);
+  gap: 0.65rem;
+  align-items: start;
+  padding: 0.58rem 0.75rem;
+  border-bottom: 1px solid var(--cc-line);
+  background: rgba(7, 19, 27, 0.42);
+}
+
+.inventoryUsedBy > span {
+  color: var(--mint);
+  font: 0.52rem var(--font-mono);
+  letter-spacing: 0.08em;
+}
+
+.inventoryUsedBy > div {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.inventoryUsedBy > div > span {
+  padding: 0.28rem 0.38rem;
+  border: 1px solid #314750;
+  background: #08161e;
+}
+
+.inventoryUsedBy strong,
+.inventoryUsedBy small {
+  display: block;
+}
+
+.inventoryUsedBy strong {
+  font-size: 0.54rem;
+}
+
+.inventoryUsedBy small {
+  margin-top: 0.05rem;
+  color: var(--cc-muted);
+  font-size: 0.47rem;
 }
 
 .inventoryActions {
@@ -3356,6 +3399,10 @@
 
 @media (max-width: 620px) {
   .inventoryLevels {
+    grid-template-columns: 1fr;
+  }
+
+  .inventoryUsedBy {
     grid-template-columns: 1fr;
   }
 }
