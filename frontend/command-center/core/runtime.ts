@@ -107,6 +107,20 @@ export type CommandCenterRecipe = {
   ingredients: Record<string, number>;
 };
 
+export type CommandCenterMenuItem = {
+  id: string;
+  name: string;
+  printedName: string;
+  dishKey: string;
+  category: string;
+  variant?: string;
+  referencePrice?: number;
+  referenceSource: "archived-menu-photo" | "demo";
+  referencePublicationDate?: string;
+  currentPriceVerified: boolean;
+  recipeId?: string;
+};
+
 export type CommandCenterStockAdjustmentReason =
   | "external_delivery"
   | "physical_count"
@@ -156,6 +170,7 @@ export type CommandCenterRuntimeState = {
   purchases: CommandCenterPurchase[];
   suppliers: CommandCenterSupplier[];
   recipes: CommandCenterRecipe[];
+  menuItems: CommandCenterMenuItem[];
   pausedItemIds: string[];
   activity: CommandCenterActivity[];
 };
