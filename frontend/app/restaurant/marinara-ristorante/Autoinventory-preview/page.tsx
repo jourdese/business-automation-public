@@ -1744,6 +1744,7 @@ export default function MarinaraAutoinventoryPreviewPage() {
           <div><span>Low</span><strong>{metrics.low}</strong></div>
           <div><span>Confirmed incoming</span><strong>{metrics.incoming}</strong></div>
           <div className={styles.headerActions}>
+            <a href="/command-center/marinara-ristorante/operations/inventory"><Sparkles size={14} aria-hidden /> Command Center</a>
             <button id="jourvis-global-configure" type="button" onClick={() => openJourvisUpdate(selected)}><Settings2 size={14} aria-hidden /> Update with Jourvis</button>
             <a href="/restaurant/marinara-ristorante"><ArrowLeft size={14} aria-hidden /> Marinara</a>
             <button type="button" onClick={resetDemo}><RefreshCw size={14} aria-hidden /> Reset demo data</button>
