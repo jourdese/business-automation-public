@@ -21,6 +21,12 @@ import {
   type JourvisTaskAction,
 } from "./runtime";
 import { deriveJourvisTasks } from "./task-engine";
+import {
+  inventoryRuleSnapshot,
+  normalizeActivity,
+  prependActivity,
+  type ActivityInput,
+} from "./activity-audit";
 import { createMarinaraRuntimeSeed } from "../businesses/marinara-runtime";
 
 type CommandCenterRuntimeContextValue = {
@@ -35,6 +41,10 @@ type CommandCenterRuntimeContextValue = {
   ) => void;
   setAutomationMasterOn: (enabled: boolean) => void;
   resumeItem: (itemId: string) => void;
+  recordConfigurationUpdate: (
+    itemId: string,
+    previous: CommandCenterInventoryItem,
+  ) => void;
   resetDemo: () => void;
 };
 
@@ -67,7 +77,11 @@ function createGenericSeed(businessId: string): CommandCenterRuntimeState {
         id: "seed-generic",
         at: new Date(0).toISOString(),
         module: "system",
+        action: "runtime_initialized",
         message: "Command Center runtime initialized.",
+        actor: "system",
+        executionMode: "system",
+        reason: "The shared Jourvis Command Center runtime was initialized for this business.",
       },
     ],
   };
@@ -107,18 +121,18 @@ function createPurchase(
 
 function addActivity(
   state: CommandCenterRuntimeState,
-  module: string,
-  message: string,
+  input: ActivityInput,
 ) {
-  return [
-    {
-      id: `activity-${Date.now()}-${state.activity.length + 1}`,
-      at: new Date().toISOString(),
-      module,
-      message,
-    },
-    ...state.activity,
-  ].slice(0, 80);
+  return prependActivity(state, input);
+}
+
+function normalizeStoredState(
+  stored: CommandCenterRuntimeState,
+): CommandCenterRuntimeState {
+  return {
+    ...stored,
+    activity: (stored.activity ?? []).map((entry) => normalizeActivity(entry)),
+  };
 }
 
 function planAutonomousPurchases(
