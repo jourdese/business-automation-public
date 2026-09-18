@@ -24,6 +24,8 @@ export function createMarinaraRuntimeSeed(): CommandCenterRuntimeState {
       packPrice: item.packPrice,
       purchaseUnit: item.purchaseUnit,
       leadDays: item.leadDays,
+      dailyUse: item.dailyUse,
+      zone: item.zone,
       purchasingMode: item.purchasingMode,
       automationEnabled: true,
       automationMode: "autobuy",
@@ -40,6 +42,58 @@ export function createMarinaraRuntimeSeed(): CommandCenterRuntimeState {
         .filter((item) => item.supplierId === supplier.id)
         .map((item) => item.id),
     })),
+    recipes: [
+      {
+        id: "seafood-marinara",
+        name: "Seafood Marinara",
+        description: "Pasta, tomato sauce, shrimp, squid, basil and Parmigiano.",
+        ingredients: {
+          pasta: 0.18,
+          tomato: 0.16,
+          shrimp: 0.07,
+          squid: 0.05,
+          basil: 0.003,
+          parmesan: 0.015,
+          "olive-oil": 0.012,
+        },
+      },
+      {
+        id: "shrimp-alfredo",
+        name: "Shrimp & Mushroom Alfredo",
+        description: "Creamy pasta with shrimp, mushroom and Parmigiano.",
+        ingredients: {
+          pasta: 0.18,
+          shrimp: 0.09,
+          mushroom: 0.06,
+          cream: 0.12,
+          parmesan: 0.02,
+          "olive-oil": 0.01,
+        },
+      },
+      {
+        id: "quattro",
+        name: "Quattro Formaggi Pizza",
+        description: "Pizza flour, mozzarella and Parmigiano.",
+        ingredients: {
+          flour: 0.24,
+          mozzarella: 0.13,
+          parmesan: 0.035,
+          tomato: 0.08,
+          basil: 0.002,
+        },
+      },
+      {
+        id: "salmon",
+        name: "Grilled Salmon Fillet",
+        description: "Salmon with olive oil, mushrooms and herbs.",
+        ingredients: {
+          salmon: 0.19,
+          mushroom: 0.05,
+          "olive-oil": 0.016,
+          basil: 0.002,
+        },
+      },
+    ],
     pausedItemIds: [],
     activity: [],
   };
