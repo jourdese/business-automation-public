@@ -186,7 +186,7 @@ export default function CommandCenterShell({ children }: { children: ReactNode }
           };
         })
       : [
-          { label: "View decisions", href: sectionHref(business.id, "decisions"), primary: true },
+          { label: "Review activity", href: sectionHref(business.id, "activity"), primary: true },
           { label: "Latest briefing", href: sectionHref(business.id, "briefings") },
           { label: "Operations", href: sectionHref(business.id, "operations") },
         ];
