@@ -1260,11 +1260,13 @@ export default function MarinaraAutoinventoryPreviewPage() {
                     <div>
                       <span>JOURVIS</span>
                       <p>
-                        {selectedProcurement
-                          ? `${selectedProcurement.id}: ${procurementStatusLabel(selectedProcurement.status)}. Requested stock does not count as incoming until both sides confirm.`
-                          : orderAmount > 0
-                            ? `Suggested request: ${orderAmount} ${selected.unit}. You can change the quantity and contact before sending.`
-                            : "Current and confirmed incoming stock cover the configured target."}
+                        {selectedAutomationAlert
+                          ? "This request is outside my automatic limit. Approve this one-time exception or reject it."
+                          : selectedProcurement
+                            ? `${selectedProcurement.id}: ${procurementStatusLabel(selectedProcurement.status)}. Requested stock does not count as incoming until both sides confirm.`
+                            : orderAmount > 0
+                              ? `Suggested request: ${orderAmount} ${selected.unit}. You can change the quantity and contact before sending.`
+                              : "Current and confirmed incoming stock cover the configured target."}
                       </p>
                     </div>
                   </div>
