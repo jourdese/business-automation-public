@@ -51,6 +51,7 @@ export type Ingredient = {
 };
 
 export const INVENTORY_CONFIG_STORAGE_KEY = "jourvis:marinara:autoinventory-config:v1";
+export const INVENTORY_RUNTIME_STORAGE_KEY = "jourvis:marinara:autoinventory-runtime:v1";
 
 export const suppliers: Supplier[] = [
   {
@@ -130,10 +131,20 @@ export function getContact(item: Pick<Ingredient, "supplierId" | "contactId">) {
 export function loadConfiguredIngredients() {
   if (typeof window === "undefined") return initialIngredients;
   try {
-    const stored = window.localStorage.getItem(INVENTORY_CONFIG_STORAGE_KEY);
-    if (!stored) return initialIngredients;
-    const parsed = JSON.parse(stored) as Array<Partial<Ingredient> & { id: string }>;
-    return initialIngredients.map((base) => ({ ...base, ...(parsed.find((item) => item.id === base.id) ?? {}) }));
+    const storedConfig = window.localStorage.getItem(INVENTORY_CONFIG_STORAGE_KEY);
+    const storedRuntime = window.localStorage.getItem(INVENTORY_RUNTIME_STORAGE_KEY);
+    const configured = storedConfig
+      ? JSON.parse(storedConfig) as Array<Partial<Ingredient> & { id: string }>
+      : [];
+    const runtime = storedRuntime
+      ? JSON.parse(storedRuntime) as Array<Pick<Ingredient, "id" | "current" | "incoming">>
+      : [];
+
+    return initialIngredients.map((base) => ({
+      ...base,
+      ...(configured.find((item) => item.id === base.id) ?? {}),
+      ...(runtime.find((item) => item.id === base.id) ?? {}),
+    }));
   } catch {
     return initialIngredients;
   }
@@ -191,4 +202,20 @@ export function saveConfiguredIngredients(items: Ingredient[]) {
     automationPreview,
   }));
   window.localStorage.setItem(INVENTORY_CONFIG_STORAGE_KEY, JSON.stringify(configOnly));
+}
+
+
+export function saveInventoryRuntime(items: Ingredient[]) {
+  if (typeof window === "undefined") return;
+  const runtime = items.map(({ id, current, incoming }) => ({
+    id,
+    current,
+    incoming,
+  }));
+  window.localStorage.setItem(INVENTORY_RUNTIME_STORAGE_KEY, JSON.stringify(runtime));
+}
+
+export function resetInventoryRuntime() {
+  if (typeof window === "undefined") return;
+  window.localStorage.removeItem(INVENTORY_RUNTIME_STORAGE_KEY);
 }
