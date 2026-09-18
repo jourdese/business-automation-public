@@ -74,6 +74,9 @@ type CommandCenterRuntimeContextValue = {
     recipe: Omit<CommandCenterRecipe, "id"> & { id?: string },
   ) => void;
   archiveRecipe: (recipeId: string) => void;
+  createInventoryItem: (
+    item: Omit<CommandCenterInventoryItem, "id">,
+  ) => string;
   recordRecipeSale: (recipeId: string, quantity?: number) => void;
   resumeItem: (itemId: string) => void;
   resetDemo: () => void;
@@ -1327,6 +1330,78 @@ export function CommandCenterRuntimeProvider({
     });
   }, []);
 
+  const createInventoryItem = useCallback(
+    (draft: Omit<CommandCenterInventoryItem, "id">) => {
+      const id = nextEntityId(
+        "inventory",
+        draft.name,
+        state.inventory.map((item) => item.id),
+      );
+
+      setState((current) => {
+        if (current.inventory.some((item) => item.id === id)) return current;
+
+        const supplierExists = current.suppliers.some(
+          (supplier) => supplier.id === draft.supplierId,
+        );
+        const normalized: CommandCenterInventoryItem = {
+          ...normalizeInventoryAuthorityConfiguration({
+            ...draft,
+            id,
+          }),
+          supplierId: supplierExists ? draft.supplierId : "",
+          contactId: supplierExists ? draft.contactId : "",
+          current: Math.max(0, draft.current),
+          fullLevel: Math.max(0.01, draft.fullLevel),
+          reorderAt: Math.max(0, Math.min(draft.reorderAt, draft.fullLevel)),
+          incoming: Math.max(0, draft.incoming),
+          packSize: Math.max(0.01, draft.packSize),
+          packPrice: Math.max(0, draft.packPrice),
+          leadDays: Math.max(0, draft.leadDays),
+          dailyUse:
+            draft.dailyUse === undefined ? undefined : Math.max(0, draft.dailyUse),
+          automationTriggerPercent: Math.max(
+            0,
+            Math.min(100, draft.automationTriggerPercent),
+          ),
+          maxAutoOrderQty: Math.max(0, draft.maxAutoOrderQty),
+          maxAutoOrderSpend: Math.max(0, draft.maxAutoOrderSpend),
+          maxCounteroffers: Math.max(0, draft.maxCounteroffers),
+          maxDeliveryFee: Math.max(0, draft.maxDeliveryFee),
+          maxLeadDays: Math.max(0, draft.maxLeadDays),
+        };
+
+        return {
+          ...current,
+          inventory: [normalized, ...current.inventory],
+          suppliers: current.suppliers.map((supplier) =>
+            supplier.id === normalized.supplierId &&
+            !supplier.itemIds.includes(id)
+              ? { ...supplier, itemIds: [...supplier.itemIds, id] }
+              : supplier,
+          ),
+          activity: addActivity(current, {
+            module: "inventory",
+            action: "inventory_item_created",
+            message: `Owner created inventory item ${normalized.name} from the recipe workflow.`,
+            actor: "owner",
+            executionMode: "manual",
+            reason:
+              "The owner needed an ingredient that did not yet exist in Inventory. Jourvis created the inventory configuration first so recipes, stock, supplier routing, and future purchasing can share one canonical ingredient.",
+            configuration: inventoryRuleSnapshot(
+              normalized,
+              current.automationMasterOn,
+            ),
+            relatedEntityId: id,
+          }),
+        };
+      });
+
+      return id;
+    },
+    [state.inventory],
+  );
+
   const recordRecipeSale = useCallback(
     (recipeId: string, quantity = 1) => {
       if (!Number.isFinite(quantity) || quantity <= 0) return;
@@ -1450,6 +1525,7 @@ export function CommandCenterRuntimeProvider({
       archiveMenuItem,
       saveRecipe,
       archiveRecipe,
+      createInventoryItem,
       recordRecipeSale,
       resumeItem,
       resetDemo,
@@ -1471,6 +1547,7 @@ export function CommandCenterRuntimeProvider({
       archiveMenuItem,
       saveRecipe,
       archiveRecipe,
+      createInventoryItem,
       recordRecipeSale,
       state,
       tasks,
