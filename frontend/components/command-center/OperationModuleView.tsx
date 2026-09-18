@@ -6,7 +6,8 @@ import {
   ArrowRight,
   Bot,
   CheckCircle2,
-  MinusCircle,
+  ChefHat,
+  CircleDollarSign,
   PackageCheck,
   PlusCircle,
   ReceiptText,
@@ -21,6 +22,7 @@ import {
   type CommandCenterStockAdjustmentReason,
 } from "@/command-center/core/runtime";
 import { useCommandCenterRuntime } from "@/command-center/core/runtime-provider";
+import MenuPhoto from "./MenuPhoto";
 import SupplyPhoto from "./SupplyPhoto";
 import styles from "./CommandCenter.module.css";
 
@@ -280,9 +282,11 @@ export default function OperationModuleView() {
   }
 
   if (moduleId === "purchasing") {
-    const purchases = state.purchases.filter((purchase) =>
-      isPurchaseActive(purchase.status),
-    );
+    const purchases = [...state.purchases].sort((a, b) => {
+      const active = Number(isPurchaseActive(b.status)) - Number(isPurchaseActive(a.status));
+      if (active) return active;
+      return b.createdAt.localeCompare(a.createdAt);
+    });
 
     return (
       <section className={styles.sectionPage}>
@@ -330,6 +334,8 @@ export default function OperationModuleView() {
                       {purchase.origin === "jourvis"
                         ? "Started automatically by Jourvis"
                         : "Started after owner approval"}
+                      {" · "}
+                      {supplierById.get(purchase.supplierId)?.name ?? purchase.supplierId}
                     </p>
                   </div>
                 </div>
@@ -337,6 +343,8 @@ export default function OperationModuleView() {
                 <div className={styles.purchaseFacts}>
                   <div><span>Quantity</span><strong>{purchase.quantity} {item?.unit ?? ""}</strong></div>
                   <div><span>Value</span><strong>₱{Math.round(purchase.quotedTotal ?? purchase.estimatedTotal).toLocaleString("en-PH")}</strong></div>
+                  <div><span>Pack price</span><strong>₱{Math.round(purchase.quotedPackPrice ?? item?.packPrice ?? 0).toLocaleString("en-PH")}</strong></div>
+                  <div><span>Mode</span><strong>{item?.purchasingMode === "quote" ? "Supplier quote" : "Fixed price"}</strong></div>
                   <div><span>Received</span><strong>{received} {item?.unit ?? ""}</strong></div>
                   <div>
                     <span>Status</span>
@@ -344,6 +352,11 @@ export default function OperationModuleView() {
                       {task ? "Needs owner" : purchase.status.replaceAll("_", " ")}
                     </strong>
                   </div>
+                </div>
+
+                <div className={styles.purchaseExplanation}>
+                  <span>WHY THIS WORKFLOW EXISTS</span>
+                  <p>{purchase.explanation}</p>
                 </div>
 
                 {canReceive && item ? (
@@ -431,7 +444,7 @@ export default function OperationModuleView() {
                   <b>{activeSupplierPurchases.length} active</b>
                 </header>
 
-                <div className={styles.supplierPhotoStrip}>
+                <div className={styles.supplierPriceList}>
                   {suppliedItems.map((item) => (
                     <div key={item.id}>
                       <SupplyPhoto
@@ -439,7 +452,18 @@ export default function OperationModuleView() {
                         className={styles.supplierSupplyPhoto}
                         size={44}
                       />
-                      <small>{item.name}</small>
+                      <span>
+                        <strong>{item.name}</strong>
+                        <small>{item.purchaseUnit}</small>
+                      </span>
+                      <span>
+                        <strong>₱{Math.round(item.packPrice).toLocaleString("en-PH")}</strong>
+                        <small>{item.purchasingMode === "quote" ? "quote basis" : "fixed price"}</small>
+                      </span>
+                      <span>
+                        <strong>{item.leadDays} day{item.leadDays === 1 ? "" : "s"}</strong>
+                        <small>lead time</small>
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -465,6 +489,130 @@ export default function OperationModuleView() {
                       : "—"} days
                   </span>
                 </footer>
+              </article>
+            );
+          })}
+        </div>
+      </section>
+    );
+  }
+
+  if (moduleId === "menu" && state.recipes.length) {
+    return (
+      <section className={styles.sectionPage}>
+        <OperationHeader
+          businessId={business.id}
+          moduleLabel={module.label}
+          description={module.description}
+        />
+
+        <div className={styles.operationModuleHero}>
+          <div>
+            <span>MENU ECONOMICS</span>
+            <h2>Connect what guests order to the inventory Jourvis operates.</h2>
+            <p>
+              These menu items use Marinara's supplied food photos and the migrated recipe
+              mappings. Ingredient cost is estimated from the current configured pack prices;
+              selling prices are intentionally left unverified until a real menu/POS source is connected.
+            </p>
+          </div>
+          <ChefHat size={36} aria-hidden />
+        </div>
+
+        <div className={styles.menuGrid}>
+          {state.recipes.map((recipe) => {
+            const ingredients = Object.entries(recipe.ingredients)
+              .map(([itemId, amount]) => {
+                const item = state.inventory.find((entry) => entry.id === itemId);
+                if (!item) return null;
+                const unitCost = item.packPrice / Math.max(item.packSize, 0.01);
+                return {
+                  item,
+                  amount,
+                  cost: unitCost * amount,
+                  servings: amount > 0 ? Math.floor(item.current / amount) : 999,
+                };
+              })
+              .filter((entry): entry is NonNullable<typeof entry> => Boolean(entry));
+
+            const ingredientCost = ingredients.reduce((sum, entry) => sum + entry.cost, 0);
+            const possibleServings = ingredients.length
+              ? Math.min(...ingredients.map((entry) => entry.servings))
+              : 0;
+            const riskyIngredients = ingredients.filter(
+              ({ item }) => item.current <= item.reorderAt,
+            );
+
+            return (
+              <article className={styles.menuCard} key={recipe.id}>
+                <MenuPhoto
+                  menuId={recipe.id}
+                  className={styles.menuDishPhoto}
+                />
+
+                <div className={styles.menuCardBody}>
+                  <div className={styles.menuCardTitle}>
+                    <div>
+                      <span>MENU ITEM</span>
+                      <h3>{recipe.name}</h3>
+                    </div>
+                    <b data-risk={riskyIngredients.length > 0}>
+                      {riskyIngredients.length
+                        ? `${riskyIngredients.length} stock risk`
+                        : "Ready"}
+                    </b>
+                  </div>
+
+                  <p>{recipe.description}</p>
+
+                  <div className={styles.menuEconomics}>
+                    <div>
+                      <CircleDollarSign size={15} aria-hidden />
+                      <span>
+                        <small>Est. ingredient cost</small>
+                        <strong>₱{Math.round(ingredientCost).toLocaleString("en-PH")}</strong>
+                      </span>
+                    </div>
+                    <div>
+                      <ShoppingBasket size={15} aria-hidden />
+                      <span>
+                        <small>Possible servings</small>
+                        <strong>{possibleServings}</strong>
+                      </span>
+                    </div>
+                    <div>
+                      <ReceiptText size={15} aria-hidden />
+                      <span>
+                        <small>Selling price</small>
+                        <strong>Not connected</strong>
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className={styles.menuIngredientStrip}>
+                    {ingredients.map(({ item, amount }) => (
+                      <div key={item.id} data-low={item.current <= item.reorderAt}>
+                        <SupplyPhoto
+                          supplyId={item.id}
+                          className={styles.recipeSupplyPhoto}
+                          size={38}
+                        />
+                        <span>
+                          <strong>{item.name}</strong>
+                          <small>{amount} {item.unit}</small>
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+
+                  <button
+                    type="button"
+                    className={styles.recipeSaleButton}
+                    onClick={() => recordRecipeSale(recipe.id, 1)}
+                  >
+                    Simulate POS sale
+                  </button>
+                </div>
               </article>
             );
           })}
