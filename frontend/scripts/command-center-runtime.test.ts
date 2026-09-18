@@ -15,6 +15,7 @@ import {
 } from '../command-center/core/runtime.ts';
 import { deriveJourvisTasks } from '../command-center/core/task-engine.ts';
 import { buildCommandCenterForecast } from '../command-center/core/forecast-engine.ts';
+import { buildCommandCenterPerformance } from '../command-center/core/performance-engine.ts';
 
 function item(
   patch: Partial<CommandCenterInventoryItem> = {},
@@ -487,4 +488,125 @@ await test('Forecast links ingredient risk to active recipes', () => {
 
   const row = buildCommandCenterForecast(runtime, 7).inventoryRows[0];
   assert.deepEqual(row?.affectedRecipes, ['Shrimp Pasta']);
+});
+
+
+await test('Performance derives menu recipe coverage and food cost from live runtime data', () => {
+  const shrimp = item({
+    packSize: 5,
+    packPrice: 2800,
+  });
+  const runtime = state(shrimp);
+  runtime.recipes = [
+    {
+      id: 'recipe-shrimp',
+      name: 'Shrimp Pasta',
+      description: 'Test recipe',
+      active: true,
+      ingredients: { shrimp: 0.1 },
+    },
+  ];
+  runtime.menuItems = [
+    {
+      id: 'menu-shrimp',
+      name: 'Shrimp Pasta',
+      printedName: 'Shrimp Pasta',
+      dishKey: 'shrimp-pasta',
+      category: 'Pasta',
+      currentPrice: 200,
+      referenceSource: 'demo',
+      currentPriceVerified: true,
+      active: true,
+      available: true,
+      recipeId: 'recipe-shrimp',
+    },
+    {
+      id: 'menu-unmapped',
+      name: 'Unmapped',
+      printedName: 'Unmapped',
+      dishKey: 'unmapped',
+      category: 'Pasta',
+      currentPrice: 100,
+      referenceSource: 'demo',
+      currentPriceVerified: true,
+      active: true,
+      available: true,
+    },
+  ];
+
+  const performance = buildCommandCenterPerformance(runtime, 0);
+
+  assert.equal(performance.recipeCoveragePercent, 50);
+  assert.equal(performance.recipeMappedMenuCount, 1);
+  assert.equal(performance.pricedMappedMenuCount, 1);
+  assert.equal(performance.averageFoodCostPercent, 28);
+});
+
+await test('Performance reports automatic/manual activity mix without fake financial KPIs', () => {
+  const runtime = state(item());
+  runtime.activity = [
+    {
+      id: 'a1',
+      at: '2026-09-19T00:00:00.000Z',
+      module: 'purchasing',
+      action: 'automatic_one',
+      message: 'Automatic',
+      actor: 'jourvis',
+      executionMode: 'automatic',
+      reason: 'test',
+    },
+    {
+      id: 'a2',
+      at: '2026-09-19T00:01:00.000Z',
+      module: 'inventory',
+      action: 'automatic_two',
+      message: 'Automatic',
+      actor: 'jourvis',
+      executionMode: 'automatic',
+      reason: 'test',
+    },
+    {
+      id: 'a3',
+      at: '2026-09-19T00:02:00.000Z',
+      module: 'inventory',
+      action: 'manual_one',
+      message: 'Manual',
+      actor: 'owner',
+      executionMode: 'manual',
+      reason: 'test',
+    },
+  ];
+
+  const performance = buildCommandCenterPerformance(runtime, 2);
+
+  assert.equal(performance.automationSharePercent, 67);
+  assert.equal(performance.automaticActivityCount, 2);
+  assert.equal(performance.manualActivityCount, 1);
+  assert.equal(performance.ownerExceptionCount, 2);
+});
+
+await test('Performance purchase completion uses only closed workflows', () => {
+  const shrimp = item();
+  const received = purchase({
+    id: 'JV-0001',
+    status: 'received',
+    receivedQuantity: 10,
+  });
+  const rejected = purchase({
+    id: 'JV-0002',
+    status: 'rejected',
+  });
+  const active = purchase({
+    id: 'JV-0003',
+    status: 'in_transit',
+  });
+  const performance = buildCommandCenterPerformance(
+    state(shrimp, [received, rejected, active]),
+    0,
+  );
+
+  assert.equal(performance.activeWorkflowCount, 1);
+  assert.equal(performance.receivedPurchaseCount, 1);
+  assert.equal(performance.closedPurchaseCount, 2);
+  assert.equal(performance.purchaseCompletionPercent, 50);
 });
