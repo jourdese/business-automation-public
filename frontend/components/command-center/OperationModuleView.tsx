@@ -95,7 +95,8 @@ export default function OperationModuleView({
   function applyAdjustment() {
     if (!adjustment) return;
     const amount = Number(adjustment.amount);
-    if (!Number.isFinite(amount) || amount <= 0) return;
+    if (!Number.isFinite(amount) || amount === 0) return;
+    if (adjustment.mode === "waste" && amount < 0) return;
 
     adjustInventory(
       adjustment.itemId,
@@ -256,7 +257,9 @@ export default function OperationModuleView({
                           : `Adjust stock · ${item.name}`}
                       </strong>
                       <small>
-                        This manual action will be written to Activity with its reason and timestamp.
+                        {adjustment.mode === "waste"
+                          ? "This manual action will be written to Activity with its reason and timestamp."
+                          : "Enter a positive or negative change. Jourvis will clamp the final stock level at zero and record the exact applied correction."}
                       </small>
                     </div>
 
@@ -284,9 +287,9 @@ export default function OperationModuleView({
                     <div className={styles.adjustmentAmount}>
                       <input
                         type="number"
-                        min="0"
+                        min={adjustment.mode === "waste" ? "0" : undefined}
                         step="0.01"
-                        placeholder="Amount"
+                        placeholder={adjustment.mode === "waste" ? "Amount" : "Change by (+ / -)"}
                         value={adjustment.amount}
                         onChange={(event) =>
                           setAdjustment((current) =>
