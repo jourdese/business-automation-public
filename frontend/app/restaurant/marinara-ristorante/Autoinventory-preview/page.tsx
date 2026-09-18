@@ -1896,9 +1896,7 @@ export default function MarinaraAutoinventoryPreviewPage() {
                   <div className={styles.summaryBoardFooter}>
                     <span>{ingredients.filter((item) => stockFilter === "All" || item.zone === stockFilter).length} supplies shown</span>
                     {urgent.length > 1 ? (
-                      <button type="button" className={styles.primaryButton} onClick={() => openContact(urgent, "Group restock")}>
-                        Group restock · {urgent.length}
-                      </button>
+                      <small>{urgent.length} low-stock items · Jourvis will surface them one decision at a time</small>
                     ) : null}
                   </div>
                 </div>
