@@ -17,6 +17,7 @@ import {
   type CommandCenterInventoryItem,
   type CommandCenterPurchase,
   type CommandCenterRuntimeState,
+  type CommandCenterStockAdjustmentReason,
   type JourvisRuntimeTask,
   type JourvisTaskAction,
 } from "./runtime";
@@ -41,6 +42,13 @@ type CommandCenterRuntimeContextValue = {
   ) => void;
   setAutomationMasterOn: (enabled: boolean) => void;
   setItemAutomationEnabled: (itemId: string, enabled: boolean) => void;
+  adjustInventory: (
+    itemId: string,
+    change: number,
+    reason: CommandCenterStockAdjustmentReason,
+  ) => void;
+  receivePurchase: (purchaseId: string, quantity: number) => void;
+  recordRecipeSale: (recipeId: string, quantity?: number) => void;
   resumeItem: (itemId: string) => void;
   resetDemo: () => void;
 };
@@ -663,6 +671,182 @@ export function CommandCenterRuntimeProvider({
     [],
   );
 
+  const adjustInventory = useCallback(
+    (
+      itemId: string,
+      change: number,
+      reason: CommandCenterStockAdjustmentReason,
+    ) => {
+      if (!Number.isFinite(change) || change === 0) return;
+
+      setState((current) => {
+        const item = current.inventory.find((entry) => entry.id === itemId);
+        if (!item) return current;
+
+        const nextCurrent = Math.max(0, Math.round((item.current + change) * 100) / 100);
+        const actualChange = Math.round((nextCurrent - item.current) * 100) / 100;
+        if (actualChange === 0) return current;
+
+        const labels: Record<CommandCenterStockAdjustmentReason, string> = {
+          external_delivery: "outside-Jourvis delivery",
+          physical_count: "physical count correction",
+          waste: "waste / spoilage",
+          transfer: "stock transfer",
+          other: "manual stock adjustment",
+        };
+
+        const updated = { ...item, current: nextCurrent };
+
+        return {
+          ...current,
+          inventory: current.inventory.map((entry) =>
+            entry.id === itemId ? updated : entry,
+          ),
+          activity: addActivity(current, {
+            module: reason === "waste" ? "waste" : "inventory",
+            action: reason === "waste" ? "waste_recorded" : "stock_adjusted",
+            message:
+              reason === "waste"
+                ? `Owner recorded ${Math.abs(actualChange)} ${item.unit} of ${item.name} as waste / spoilage.`
+                : `Owner adjusted ${item.name} by ${actualChange > 0 ? "+" : ""}${actualChange} ${item.unit}.`,
+            actor: "owner",
+            executionMode: "manual",
+            reason:
+              `The owner recorded a ${labels[reason]}. On-hand stock changed from ${item.current} to ${nextCurrent} ${item.unit}.`,
+            configuration: inventoryRuleSnapshot(updated, current.automationMasterOn),
+            relatedEntityId: item.id,
+          }),
+        };
+      });
+    },
+    [],
+  );
+
+  const receivePurchase = useCallback(
+    (purchaseId: string, quantity: number) => {
+      if (!Number.isFinite(quantity) || quantity <= 0) return;
+
+      setState((current) => {
+        const purchase = current.purchases.find((entry) => entry.id === purchaseId);
+        if (!purchase) return current;
+        const item = current.inventory.find((entry) => entry.id === purchase.itemId);
+        if (!item) return current;
+
+        const alreadyReceived = purchase.receivedQuantity ?? 0;
+        const remaining = Math.max(0, purchase.quantity - alreadyReceived);
+        const receivedNow = Math.min(remaining, Math.round(quantity * 100) / 100);
+        if (receivedNow <= 0) return current;
+
+        const receivedTotal = Math.round((alreadyReceived + receivedNow) * 100) / 100;
+        const complete = receivedTotal >= purchase.quantity - 0.001;
+        const updatedItem = {
+          ...item,
+          current: Math.round((item.current + receivedNow) * 100) / 100,
+          incoming: Math.max(0, Math.round((item.incoming - receivedNow) * 100) / 100),
+        };
+
+        return {
+          ...current,
+          purchases: current.purchases.map((entry) =>
+            entry.id === purchaseId
+              ? {
+                  ...entry,
+                  receivedQuantity: receivedTotal,
+                  status: complete ? "received" : "partial_received",
+                  explanation: complete
+                    ? "Physical delivery fully received."
+                    : "Physical delivery partially received; remaining quantity stays incoming.",
+                }
+              : entry,
+          ),
+          inventory: current.inventory.map((entry) =>
+            entry.id === item.id ? updatedItem : entry,
+          ),
+          activity: addActivity(current, {
+            module: "inventory",
+            action: complete ? "delivery_received" : "delivery_partially_received",
+            message: `${purchase.id}: owner received ${receivedNow} ${item.unit} of ${item.name}${complete ? "" : " (partial)"}.`,
+            actor: "owner",
+            executionMode: "manual",
+            reason:
+              `A person confirmed the physical delivery quantity. Jourvis moved only the confirmed ${receivedNow} ${item.unit} from incoming to on-hand stock; unreceived quantity remains incoming.`,
+            configuration: inventoryRuleSnapshot(updatedItem, current.automationMasterOn),
+            relatedEntityId: item.id,
+            relatedRequestId: purchase.id,
+          }),
+        };
+      });
+    },
+    [],
+  );
+
+  const recordRecipeSale = useCallback(
+    (recipeId: string, quantity = 1) => {
+      if (!Number.isFinite(quantity) || quantity <= 0) return;
+
+      setState((current) => {
+        const recipe = current.recipes.find((entry) => entry.id === recipeId);
+        if (!recipe) return current;
+
+        const shortages = Object.entries(recipe.ingredients).filter(([itemId, amount]) => {
+          const item = current.inventory.find((entry) => entry.id === itemId);
+          return !item || item.current < amount * quantity;
+        });
+
+        if (shortages.length) {
+          return {
+            ...current,
+            activity: addActivity(current, {
+              module: "recipes",
+              action: "recipe_sale_blocked",
+              message: `Simulated POS sale for ${quantity} × ${recipe.name} could not deduct inventory.`,
+              actor: "external",
+              executionMode: "automatic",
+              reason:
+                "The recipe mapping found insufficient on-hand stock for at least one required ingredient, so Jourvis did not create negative inventory.",
+            }),
+          };
+        }
+
+        const nextInventory = current.inventory.map((item) => {
+          const amount = recipe.ingredients[item.id] ?? 0;
+          if (!amount) return item;
+          return {
+            ...item,
+            current: Math.max(
+              0,
+              Math.round((item.current - amount * quantity) * 1000) / 1000,
+            ),
+          };
+        });
+
+        const ingredientSummary = Object.entries(recipe.ingredients)
+          .map(([itemId, amount]) => {
+            const item = current.inventory.find((entry) => entry.id === itemId);
+            return item
+              ? `${item.name} ${Math.round(amount * quantity * 1000) / 1000} ${item.unit}`
+              : itemId;
+          })
+          .join(", ");
+
+        return {
+          ...current,
+          inventory: nextInventory,
+          activity: addActivity(current, {
+            module: "recipes",
+            action: "recipe_inventory_deducted",
+            message: `POS sale: ${quantity} × ${recipe.name}. Jourvis deducted recipe inventory automatically.`,
+            actor: "external",
+            executionMode: "automatic",
+            reason:
+              `A simulated POS sale matched the configured recipe. Jourvis automatically applied the recipe quantities to inventory: ${ingredientSummary}.`,
+          }),
+        };
+      });
+    },
+    [],
+  );
+
   const resumeItem = useCallback((itemId: string) => {
     setState((current) => {
       const item = current.inventory.find((entry) => entry.id === itemId);
@@ -711,6 +895,9 @@ export function CommandCenterRuntimeProvider({
       applyInventoryConfiguration,
       setAutomationMasterOn,
       setItemAutomationEnabled,
+      adjustInventory,
+      receivePurchase,
+      recordRecipeSale,
       resumeItem,
       resetDemo,
     }),
@@ -723,6 +910,9 @@ export function CommandCenterRuntimeProvider({
       applyInventoryConfiguration,
       setAutomationMasterOn,
       setItemAutomationEnabled,
+      adjustInventory,
+      receivePurchase,
+      recordRecipeSale,
       state,
       tasks,
     ],
