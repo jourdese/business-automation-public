@@ -373,14 +373,10 @@ export default function MarinaraAutoinventoryPreviewPage() {
     });
 
     if (Object.keys(blocked).length) {
-      setAutomationAlerts((current) => {
-        const next = { ...current };
-        Object.entries(blocked).forEach(([id, message]) => {
-          if (!next[id]) log(message);
-          next[id] = message;
-        });
-        return next;
-      });
+      Object.entries(blocked)
+        .filter(([id]) => !automationAlerts[id])
+        .forEach(([, message]) => log(message));
+      setAutomationAlerts((current) => ({ ...current, ...blocked }));
     }
 
     if (!eligible.length) return;
