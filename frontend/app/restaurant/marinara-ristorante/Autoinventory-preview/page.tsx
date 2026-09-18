@@ -34,6 +34,7 @@ import {
   suppliers,
 } from "./inventory-config";
 import StockIcon from "./StockIcon";
+import JourvisPresence from "./JourvisPresence";
 import styles from "./autoinventory-preview.module.css";
 
 type Tone = "good" | "watch" | "low" | "critical";
@@ -338,6 +339,32 @@ export default function MarinaraAutoinventoryPreviewPage() {
         request.lines.some((line) => line.itemId === itemId),
     );
   }
+
+  const selectedAutomationAlert = automationAlerts[selected.id];
+  const selectedNeedsRestock = selected.current <= selected.reorderAt;
+  const jourvisAttention = Boolean(selectedAutomationAlert) || (
+    selectedProcurement?.status === "quote_received"
+  );
+
+  const jourvisMessage = selectedAutomationAlert
+    ? `I paused ${selected.name}. I need your decision.`
+    : selectedProcurement
+      ? `${selected.name}: ${procurementStatusLabel(selectedProcurement.status)}.`
+      : selectedNeedsRestock && selected.automationEnabled && automationMasterOn
+        ? `I’m watching ${selected.name}. It’s below the reorder point.`
+        : selectedNeedsRestock
+          ? `${selected.name} is low. I can help handle the restock.`
+          : `I’m here. ${selected.name} is at ${percent(selected)}%.`;
+
+  const jourvisDetail = selectedAutomationAlert
+    ? selectedAutomationAlert
+    : selectedProcurement?.automationNote
+      ? selectedProcurement.automationNote
+      : selectedProcurement
+        ? "I’ll keep the request separate from incoming stock until the supplier and buyer have confirmed the order."
+        : selected.automationEnabled
+          ? `Automation is ${automationMasterOn ? "active" : "ready but globally paused"} for this supply in ${selected.automationMode.replace("_", " ")} mode.`
+          : "Open Configure if you want me to watch this supply, contact the supplier, or negotiate inside your limits.";
 
   const automationEnabledCount = ingredients.filter((item) => item.automationEnabled).length;
 
@@ -1513,6 +1540,36 @@ export default function MarinaraAutoinventoryPreviewPage() {
           </section>
         </div>
       ) : null}
+
+      <JourvisPresence
+        status={jourvisAttention ? "Needs your decision" : automationMasterOn ? "Watching inventory" : "Available"}
+        message={jourvisMessage}
+        detail={jourvisDetail}
+        attention={jourvisAttention}
+        actions={
+          selectedProcurement
+            ? [
+                { label: "View purchase flow", onClick: () => setActiveTab("orders"), primary: true },
+                { label: `Configure ${selected.name}`, href: `/restaurant/marinara-ristorante/Autoinventory-preview/configure?stock=${selected.id}` },
+              ]
+            : selectedNeedsRestock
+              ? [
+                  ...(automationMasterOn
+                    ? []
+                    : [{ label: "Turn Jourvis Auto on", onClick: () => {
+                        setAutomationMasterOn(true);
+                        window.localStorage.setItem("jourvis-autoinventory-automation-master", "true");
+                        log(`Jourvis Automation switched ON. Watching ${automationEnabledCount} configured supplies.`);
+                      }, primary: true }]),
+                  { label: selected.purchasingMode === "quote" ? "Request supplier quote" : "Contact supplier", onClick: () => openContact([selected], `Contact ${selectedSupplier.name}`), primary: automationMasterOn },
+                  { label: "Configure automation", href: `/restaurant/marinara-ristorante/Autoinventory-preview/configure?stock=${selected.id}` },
+                ]
+              : [
+                  { label: "Configure automation", href: `/restaurant/marinara-ristorante/Autoinventory-preview/configure?stock=${selected.id}`, primary: true },
+                  { label: "View purchase flow", onClick: () => setActiveTab("orders") },
+                ]
+        }
+      />
     </div>
   );
 }
