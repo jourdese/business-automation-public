@@ -324,7 +324,6 @@ export default function MarinaraAutoinventoryPreviewPage() {
   }
 
   const automationEnabledCount = ingredients.filter((item) => item.automationEnabled).length;
-  const automationAlertCount = Object.keys(automationAlerts).length;
 
   useEffect(() => {
     if (!automationMasterOn) return;
