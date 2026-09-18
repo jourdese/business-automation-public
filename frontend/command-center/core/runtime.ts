@@ -51,6 +51,8 @@ export type CommandCenterInventoryItem = {
   packPrice: number;
   purchaseUnit: string;
   leadDays: number;
+  dailyUse?: number;
+  zone?: string;
   purchasingMode: "fixed" | "quote";
   automationEnabled: boolean;
   automationMode: "assist" | "auto_contact" | "autobuy";
@@ -86,6 +88,20 @@ export type CommandCenterPurchase = {
   automationMode?: "assist" | "auto_contact" | "autobuy";
   explanation: string;
 };
+
+export type CommandCenterRecipe = {
+  id: string;
+  name: string;
+  description: string;
+  ingredients: Record<string, number>;
+};
+
+export type CommandCenterStockAdjustmentReason =
+  | "external_delivery"
+  | "physical_count"
+  | "waste"
+  | "transfer"
+  | "other";
 
 export type CommandCenterSupplier = {
   id: string;
@@ -128,6 +144,7 @@ export type CommandCenterRuntimeState = {
   inventory: CommandCenterInventoryItem[];
   purchases: CommandCenterPurchase[];
   suppliers: CommandCenterSupplier[];
+  recipes: CommandCenterRecipe[];
   pausedItemIds: string[];
   activity: CommandCenterActivity[];
 };
