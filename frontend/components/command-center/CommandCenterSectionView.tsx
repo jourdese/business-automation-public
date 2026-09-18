@@ -75,12 +75,14 @@ export default function CommandCenterSectionView({
     const activePurchaseByItem = new Map(
       activePurchases.map((purchase) => [purchase.itemId, purchase]),
     );
-    const workItems = state.inventory.filter(
-      (item) =>
-        item.current <= item.reorderAt ||
-        inventoryPercent(item) <= item.automationTriggerPercent ||
-        activePurchaseByItem.has(item.id),
-    );
+    const workItems = state.inventory
+      .filter(
+        (item) =>
+          item.current <= item.reorderAt ||
+          inventoryPercent(item) <= item.automationTriggerPercent ||
+          activePurchaseByItem.has(item.id),
+      )
+      .sort((a, b) => inventoryPercent(a) - inventoryPercent(b));
     const queuedWork = workItems.filter(
       (item) => !activePurchaseByItem.has(item.id),
     );
