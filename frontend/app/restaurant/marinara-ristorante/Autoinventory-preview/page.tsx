@@ -1268,17 +1268,15 @@ export default function MarinaraAutoinventoryPreviewPage() {
       }
 
       const firstItem = items[0];
-      const overOrderCap = quotedTotal > groupSpendCap;
-      const maxQuotedPack = Math.max(...quotedLines.map((line) => line.quotedPackPrice ?? 0));
-      const note = overOrderCap
-        ? `Supplier quoted ${formatMoney(quotedTotal)}, which is ${formatMoney(quotedTotal - groupSpendCap)} above the automatic order limit of ${formatMoney(groupSpendCap)}.`
-        : firstItem && maxQuotedPack > firstItem.autoAcceptPackPrice
-          ? `Supplier price is above Jourvis' automatic price limit. Approve this quote once, reject it, or review it in Orders.`
-          : "Supplier terms are outside Jourvis' automatic delivery rules. Owner approval is required.";
+      const explanation = firstItem
+        ? quoteDecisionExplanation(quotedRequest, firstItem, ingredients)
+        : undefined;
 
       updateProcurement(request.id, () => ({
         ...quotedRequest,
-        automationNote: note,
+        automationNote:
+          explanation?.detail ??
+          "This quote is outside at least one automatic buying rule, so Jourvis stopped for owner approval.",
       }));
       log(`${request.id}: Jourvis paused for owner approval because the supplier quote falls outside the configured automation limits.`);
       return;
@@ -2210,6 +2208,10 @@ export default function MarinaraAutoinventoryPreviewPage() {
                     const contact = supplier.contacts.find((candidate) => candidate.id === request.contactId) ?? supplier.contacts[0];
                     const total = procurementTotal(request, ingredients);
                     const requestItem = ingredients.find((item) => item.id === request.lines[0]?.itemId);
+                    const decisionExplanation =
+                      request.status === "quote_received" && requestItem
+                        ? quoteDecisionExplanation(request, requestItem, ingredients)
+                        : undefined;
 
                     return (
                       <article id={`procurement-${request.id}`} className={styles.procurementCard} key={request.id} data-status={request.status}>
@@ -2286,11 +2288,20 @@ export default function MarinaraAutoinventoryPreviewPage() {
                         </div>
 
                         {request.status === "quote_received" ? (
-                          <div className={styles.quoteSummary}>
-                            <span>SUPPLIER QUOTE</span>
-                            <strong>{formatMoney(total)}</strong>
-                            <small>Includes {formatMoney(request.deliveryFee)} demo delivery fee · ETA {request.etaDays} day{request.etaDays === 1 ? "" : "s"}</small>
-                          </div>
+                          <>
+                            <div className={styles.quoteSummary}>
+                              <span>SUPPLIER QUOTE</span>
+                              <strong>{formatMoney(total)}</strong>
+                              <small>Includes {formatMoney(request.deliveryFee)} demo delivery fee · ETA {request.etaDays} day{request.etaDays === 1 ? "" : "s"}</small>
+                            </div>
+                            {decisionExplanation ? (
+                              <div className={styles.quoteWhy}>
+                                <span>WHY JOURVIS NEEDS YOU</span>
+                                <strong>{decisionExplanation.primary}</strong>
+                                <p>{decisionExplanation.detail}</p>
+                              </div>
+                            ) : null}
+                          </>
                         ) : null}
 
                         {request.status === "in_transit" || request.status === "partial_received" ? (
