@@ -2,6 +2,7 @@
 
 import {
   type PointerEvent as ReactPointerEvent,
+  type ReactNode,
   useCallback,
   useEffect,
   useRef,
@@ -23,6 +24,8 @@ export type JourvisPresenceAction = {
   href?: string;
   onClick?: () => void;
   primary?: boolean;
+  danger?: boolean;
+  keepOpen?: boolean;
 };
 
 type Position = {
@@ -50,6 +53,9 @@ export default function JourvisPresence({
   actions = [],
   focusTarget,
   focusLabel = "Jourvis needs this",
+  children,
+  wide = false,
+  openRequestKey,
 }: {
   eyebrow?: string;
   message: string;
@@ -59,6 +65,9 @@ export default function JourvisPresence({
   actions?: JourvisPresenceAction[];
   focusTarget?: string;
   focusLabel?: string;
+  children?: ReactNode;
+  wide?: boolean;
+  openRequestKey?: string | number;
 }) {
   const rootRef = useRef<HTMLDivElement>(null);
   const targetRef = useRef<HTMLElement | null>(null);
@@ -97,6 +106,12 @@ export default function JourvisPresence({
     const timer = window.setTimeout(() => setNudge(false), 5200);
     return () => window.clearTimeout(timer);
   }, [message, open]);
+
+  useEffect(() => {
+    if (openRequestKey === undefined) return;
+    setOpen(true);
+    setNudge(false);
+  }, [openRequestKey]);
 
   useEffect(() => {
     function keepOnScreen() {
@@ -283,6 +298,7 @@ export default function JourvisPresence({
       data-dragging={dragging}
       data-side={side}
       data-vertical={vertical}
+      data-wide={wide}
       style={
         position
           ? { left: position.left, top: position.top, right: "auto", bottom: "auto" }
@@ -349,6 +365,8 @@ export default function JourvisPresence({
             </div>
           </div>
 
+          {children ? <div className={styles.customContent}>{children}</div> : null}
+
           {attention && focusTarget ? (
             <button type="button" className={styles.showTarget} onClick={revealTarget}>
               <Crosshair size={14} aria-hidden />
@@ -370,9 +388,10 @@ export default function JourvisPresence({
                     key={action.label}
                     type="button"
                     data-primary={action.primary}
+                    data-danger={action.danger}
                     onClick={() => {
                       action.onClick?.();
-                      setOpen(false);
+                      if (!action.keepOpen) setOpen(false);
                     }}
                   >
                     {action.label}
