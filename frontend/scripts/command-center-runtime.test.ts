@@ -1,7 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  canAdvancePurchase,
   evaluatePurchaseAuthority,
+  normalizeInventoryAuthorityConfiguration,
   projectedInventoryAtDelivery,
   projectedInventoryPercentAtDelivery,
   suggestedPurchaseQuantity,
@@ -183,4 +185,89 @@ await test('a quote outside hard authority becomes an explained owner decision',
   assert.equal(tasks.length, 1);
   assert.equal(tasks[0]?.module, 'purchasing');
   assert.match(tasks[0]?.why ?? '', /absolute ceiling/i);
+});
+
+
+await test('absolute pack-price ceiling cannot be bypassed by an invalid auto-accept setting', () => {
+  const shrimp = item({
+    autoAcceptPackPrice: 3300,
+    hardMaxPackPrice: 3100,
+  });
+  const authority = evaluatePurchaseAuthority(
+    shrimp,
+    purchase({
+      quotedPackPrice: 3200,
+      quotedTotal: 6550,
+    }),
+  );
+
+  assert.equal(authority.withinAutoAccept, false);
+  assert.equal(authority.withinHardLimits, false);
+  assert.equal(authority.canNegotiate, false);
+});
+
+await test('authority configuration normalizes target and auto-accept beneath the hard ceiling', () => {
+  const normalized = normalizeInventoryAuthorityConfiguration(
+    item({
+      targetPackPrice: 3400,
+      autoAcceptPackPrice: 3300,
+      hardMaxPackPrice: 3100,
+    }),
+  );
+
+  assert.equal(normalized.hardMaxPackPrice, 3100);
+  assert.equal(normalized.autoAcceptPackPrice, 3100);
+  assert.equal(normalized.targetPackPrice, 3100);
+});
+
+await test('automatic scheduler recognizes negotiable quotes and sent counteroffers', () => {
+  const shrimp = item();
+  const negotiable = purchase({
+    quotedPackPrice: 3050,
+    quotedTotal: 6250,
+  });
+  const negotiatingState = state(shrimp, [negotiable], true);
+
+  assert.equal(canAdvancePurchase(negotiatingState, negotiable), true);
+
+  const counterSent = purchase({
+    status: 'counter_sent',
+    quotedPackPrice: 2800,
+    quotedTotal: 5750,
+    counteroffersUsed: 1,
+  });
+  assert.equal(
+    canAdvancePurchase(state(shrimp, [counterSent], true), counterSent),
+    true,
+  );
+});
+
+await test('paused global autonomy stops Jourvis approval and exposes the in-flight quote to the owner', () => {
+  const shrimp = item();
+  const quoted = purchase();
+  const paused = state(shrimp, [quoted], false);
+
+  assert.equal(canAdvancePurchase(paused, quoted), false);
+  const tasks = deriveJourvisTasks(paused);
+  assert.equal(tasks.length, 1);
+  assert.equal(tasks[0]?.module, 'purchasing');
+  assert.match(tasks[0]?.why ?? '', /paused/i);
+});
+
+await test('paused global autonomy exposes a fixed-price Jourvis request instead of leaving it stuck', () => {
+  const shrimp = item({ purchasingMode: 'fixed' });
+  const requested = purchase({
+    status: 'requested',
+    quotedPackPrice: undefined,
+    quotedTotal: undefined,
+    deliveryFee: undefined,
+    origin: 'jourvis',
+    automationMode: 'autobuy',
+  });
+  const paused = state(shrimp, [requested], false);
+
+  assert.equal(canAdvancePurchase(paused, requested), false);
+  const tasks = deriveJourvisTasks(paused);
+  assert.equal(tasks.length, 1);
+  assert.match(tasks[0]?.why ?? '', /paused/i);
 });
