@@ -1,14 +1,6 @@
 import type { CommandCenterBusiness } from "./types";
-
-const restaurantOperations = [
-  "inventory",
-  "purchasing",
-  "suppliers",
-  "menu",
-  "recipes",
-  "waste",
-  "labor",
-];
+import { marinaraRistoranteBusiness } from "../businesses/marinara-ristorante";
+import { ribCribBusiness } from "../businesses/rib-crib";
 
 const sharedCapabilities = [
   "forecast",
@@ -20,38 +12,8 @@ const sharedCapabilities = [
 ];
 
 const businesses: CommandCenterBusiness[] = [
-  {
-    id: "marinara-ristorante",
-    name: "Marinara Ristorante",
-    shortName: "Marinara",
-    industry: "restaurant",
-    currency: "PHP",
-    timezone: "Asia/Manila",
-    operations: restaurantOperations,
-    capabilities: [...sharedCapabilities, "inventory-automation", "supplier-procurement"],
-    demoMetrics: [
-      { label: "Revenue today", value: "₱84,240", change: "+7.4%", note: "demo seed" },
-      { label: "Est. operating profit", value: "₱18,320", change: "-2.1%", note: "demo seed" },
-      { label: "Jourvis working", value: "4", note: "automations in progress" },
-      { label: "Needs owner", value: "2", note: "exceptions only" },
-    ],
-  },
-  {
-    id: "rib-crib",
-    name: "The Rib Crib",
-    shortName: "Rib Crib",
-    industry: "restaurant",
-    currency: "PHP",
-    timezone: "Asia/Manila",
-    operations: restaurantOperations,
-    capabilities: sharedCapabilities,
-    demoMetrics: [
-      { label: "Revenue today", value: "₱61,800", change: "+4.2%", note: "illustrative" },
-      { label: "Est. operating profit", value: "₱13,900", change: "+1.8%", note: "illustrative" },
-      { label: "Jourvis working", value: "3", note: "automations in progress" },
-      { label: "Needs owner", value: "1", note: "exceptions only" },
-    ],
-  },
+  marinaraRistoranteBusiness,
+  ribCribBusiness,
 ];
 
 export const operationCatalog: Record<string, { label: string; description: string }> = {
