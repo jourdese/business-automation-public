@@ -512,27 +512,46 @@ export function CommandCenterRuntimeProvider({
       next: CommandCenterInventoryItem,
     ) => {
       setState((current) => {
-        const changed = (Object.keys(next) as Array<keyof CommandCenterInventoryItem>)
+        const live = current.inventory.find((item) => item.id === next.id);
+        if (!live) return current;
+
+        const configurableKeys: Array<keyof CommandCenterInventoryItem> = [
+          "automationEnabled",
+          "automationMode",
+          "automationTriggerPercent",
+          "maxAutoOrderSpend",
+          "autoAcceptPackPrice",
+        ];
+        const changed = configurableKeys
           .filter((key) => next[key] !== previous[key])
           .map((key) => `${String(key)}: ${String(previous[key])} → ${String(next[key])}`);
 
         if (!changed.length) return current;
 
+        const applied: CommandCenterInventoryItem = {
+          ...live,
+          automationEnabled: next.automationEnabled,
+          automationMode: next.automationMode,
+          automationTriggerPercent: next.automationTriggerPercent,
+          maxAutoOrderSpend: next.maxAutoOrderSpend,
+          autoAcceptPackPrice: next.autoAcceptPackPrice,
+        };
+
         return {
           ...current,
           inventory: current.inventory.map((item) =>
-            item.id === next.id ? next : item,
+            item.id === applied.id ? applied : item,
           ),
-          pausedItemIds: current.pausedItemIds.filter((id) => id !== next.id),
+          pausedItemIds: current.pausedItemIds.filter((id) => id !== applied.id),
           activity: addActivity(current, {
             module: "inventory",
             action: "configuration_updated",
-            message: `Owner updated Jourvis configuration for ${next.name}.`,
+            message: `Owner updated Jourvis configuration for ${applied.name}.`,
             actor: "owner",
             executionMode: "manual",
             reason: `The owner changed the operating rule through Jourvis Update. Changed settings: ${changed.join("; ")}.`,
-            configuration: inventoryRuleSnapshot(next, current.automationMasterOn),
-            relatedEntityId: next.id,
+            configuration: inventoryRuleSnapshot(applied, current.automationMasterOn),
+            relatedEntityId: applied.id,
           }),
         };
       });
@@ -584,7 +603,18 @@ export function CommandCenterRuntimeProvider({
 
   const resetDemo = useCallback(() => {
     window.localStorage.removeItem(storageKey(businessId));
-    setState(createSeed(businessId));
+    const seed = createSeed(businessId);
+    setState({
+      ...seed,
+      activity: addActivity(seed, {
+        module: "system",
+        action: "demo_reset",
+        message: "Owner reset the Command Center demo state.",
+        actor: "owner",
+        executionMode: "manual",
+        reason: "The owner explicitly requested a clean demo state. Previous browser-stored Command Center activity and runtime data were cleared.",
+      }),
+    });
   }, [businessId]);
 
   const value = useMemo(
