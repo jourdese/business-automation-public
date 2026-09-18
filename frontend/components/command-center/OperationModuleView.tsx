@@ -2126,14 +2126,394 @@ function RecipeEditorPanel({
             <span>INGREDIENTS</span>
             <strong>{draft.ingredients.length} mapped</strong>
           </div>
-          <button
-            type="button"
-            onClick={addIngredient}
-            disabled={draft.ingredients.length >= inventory.length}
-          >
-            <PlusCircle size={14} aria-hidden /> Add ingredient
-          </button>
+          <div className={styles.recipeBuilderActions}>
+            <button
+              type="button"
+              onClick={addIngredient}
+              disabled={draft.ingredients.length >= inventory.length}
+            >
+              <PlusCircle size={14} aria-hidden /> Add existing
+            </button>
+            <button type="button" onClick={openInventoryEditor}>
+              <PlusCircle size={14} aria-hidden /> Create inventory item
+            </button>
+          </div>
         </header>
+
+        {inventoryEditor ? (
+          <section className={styles.inlineInventoryEditor}>
+            <header>
+              <div>
+                <span>NEW INVENTORY ITEM</span>
+                <strong>Create the ingredient before adding its recipe quantity.</strong>
+                <small>
+                  Purchasing starts safely in the mode you choose; advanced authority can still be refined from Inventory.
+                </small>
+              </div>
+              <button
+                type="button"
+                onClick={() => setInventoryEditor(null)}
+                aria-label="Close inventory item editor"
+              >
+                <X size={14} aria-hidden />
+              </button>
+            </header>
+
+            <div className={styles.inlineInventoryGrid}>
+              <label>
+                <span>Name</span>
+                <input
+                  value={inventoryEditor.name}
+                  placeholder="e.g. Truffle oil"
+                  onChange={(event) =>
+                    setInventoryEditor((current) =>
+                      current
+                        ? { ...current, name: event.target.value }
+                        : current,
+                    )
+                  }
+                />
+              </label>
+              <label>
+                <span>Unit</span>
+                <input
+                  value={inventoryEditor.unit}
+                  placeholder="kg, L, pcs"
+                  onChange={(event) =>
+                    setInventoryEditor((current) =>
+                      current
+                        ? { ...current, unit: event.target.value }
+                        : current,
+                    )
+                  }
+                />
+              </label>
+              <label>
+                <span>Storage zone</span>
+                <input
+                  value={inventoryEditor.zone}
+                  placeholder="Pantry"
+                  onChange={(event) =>
+                    setInventoryEditor((current) =>
+                      current
+                        ? { ...current, zone: event.target.value }
+                        : current,
+                    )
+                  }
+                />
+              </label>
+
+              <label>
+                <span>Current stock</span>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={inventoryEditor.current}
+                  onChange={(event) =>
+                    setInventoryEditor((current) =>
+                      current
+                        ? { ...current, current: event.target.value }
+                        : current,
+                    )
+                  }
+                />
+              </label>
+              <label>
+                <span>Full level</span>
+                <input
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  value={inventoryEditor.fullLevel}
+                  onChange={(event) =>
+                    setInventoryEditor((current) =>
+                      current
+                        ? { ...current, fullLevel: event.target.value }
+                        : current,
+                    )
+                  }
+                />
+              </label>
+              <label>
+                <span>Reorder at</span>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={inventoryEditor.reorderAt}
+                  onChange={(event) =>
+                    setInventoryEditor((current) =>
+                      current
+                        ? { ...current, reorderAt: event.target.value }
+                        : current,
+                    )
+                  }
+                />
+              </label>
+              <label>
+                <span>Expected daily use</span>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.001"
+                  value={inventoryEditor.dailyUse}
+                  onChange={(event) =>
+                    setInventoryEditor((current) =>
+                      current
+                        ? { ...current, dailyUse: event.target.value }
+                        : current,
+                    )
+                  }
+                />
+              </label>
+
+              <label>
+                <span>Supplier</span>
+                <select
+                  value={inventoryEditor.supplierId}
+                  disabled={!suppliers.length}
+                  onChange={(event) => {
+                    const supplier = suppliers.find(
+                      (candidate) => candidate.id === event.target.value,
+                    );
+                    setInventoryEditor((current) =>
+                      current
+                        ? {
+                            ...current,
+                            supplierId: event.target.value,
+                            contactId: supplier?.contacts[0]?.id ?? "",
+                          }
+                        : current,
+                    );
+                  }}
+                >
+                  {!suppliers.length ? (
+                    <option value="">No supplier configured</option>
+                  ) : null}
+                  {suppliers.map((supplier) => (
+                    <option key={supplier.id} value={supplier.id}>
+                      {supplier.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                <span>Contact</span>
+                <select
+                  value={inventoryEditor.contactId}
+                  disabled={!inventoryEditor.supplierId}
+                  onChange={(event) =>
+                    setInventoryEditor((current) =>
+                      current
+                        ? { ...current, contactId: event.target.value }
+                        : current,
+                    )
+                  }
+                >
+                  {(suppliers.find(
+                    (supplier) =>
+                      supplier.id === inventoryEditor.supplierId,
+                  )?.contacts ?? []).map((contact) => (
+                    <option key={contact.id} value={contact.id}>
+                      {contact.name} · {contact.role}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                <span>Purchase mode</span>
+                <select
+                  value={inventoryEditor.purchasingMode}
+                  onChange={(event) =>
+                    setInventoryEditor((current) =>
+                      current
+                        ? {
+                            ...current,
+                            purchasingMode: event.target.value as "fixed" | "quote",
+                          }
+                        : current,
+                    )
+                  }
+                >
+                  <option value="fixed">Fixed / contracted price</option>
+                  <option value="quote">Supplier quote required</option>
+                </select>
+              </label>
+
+              <label>
+                <span>Pack size</span>
+                <input
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  value={inventoryEditor.packSize}
+                  onChange={(event) =>
+                    setInventoryEditor((current) =>
+                      current
+                        ? { ...current, packSize: event.target.value }
+                        : current,
+                    )
+                  }
+                />
+              </label>
+              <label>
+                <span>Pack price</span>
+                <div className={styles.moneyInput}>
+                  <b>₱</b>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={inventoryEditor.packPrice}
+                    onChange={(event) =>
+                      setInventoryEditor((current) =>
+                        current
+                          ? { ...current, packPrice: event.target.value }
+                          : current,
+                      )
+                    }
+                  />
+                </div>
+              </label>
+              <label>
+                <span>Purchase unit label</span>
+                <input
+                  value={inventoryEditor.purchaseUnit}
+                  placeholder="1 kg pack"
+                  onChange={(event) =>
+                    setInventoryEditor((current) =>
+                      current
+                        ? { ...current, purchaseUnit: event.target.value }
+                        : current,
+                    )
+                  }
+                />
+              </label>
+              <label>
+                <span>Lead time</span>
+                <div className={styles.numberWithUnit}>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.5"
+                    value={inventoryEditor.leadDays}
+                    onChange={(event) =>
+                      setInventoryEditor((current) =>
+                        current
+                          ? { ...current, leadDays: event.target.value }
+                          : current,
+                      )
+                    }
+                  />
+                  <span>days</span>
+                </div>
+              </label>
+
+              <label>
+                <span>Automation</span>
+                <select
+                  value={
+                    inventoryEditor.automationEnabled
+                      ? inventoryEditor.automationMode
+                      : "manual"
+                  }
+                  onChange={(event) =>
+                    setInventoryEditor((current) =>
+                      current
+                        ? event.target.value === "manual"
+                          ? {
+                              ...current,
+                              automationEnabled: false,
+                              automationMode: "assist",
+                            }
+                          : {
+                              ...current,
+                              automationEnabled: true,
+                              automationMode: event.target.value as
+                                | "assist"
+                                | "auto_contact"
+                                | "autobuy",
+                            }
+                        : current,
+                    )
+                  }
+                >
+                  <option value="manual">Manual</option>
+                  <option value="assist">Jourvis · watch only</option>
+                  <option value="auto_contact">Jourvis · contact supplier</option>
+                  <option value="autobuy">Jourvis · buy within limits</option>
+                </select>
+              </label>
+              <label>
+                <span>Action trigger</span>
+                <div className={styles.numberWithUnit}>
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="1"
+                    value={inventoryEditor.automationTriggerPercent}
+                    onChange={(event) =>
+                      setInventoryEditor((current) =>
+                        current
+                          ? {
+                              ...current,
+                              automationTriggerPercent: event.target.value,
+                            }
+                          : current,
+                      )
+                    }
+                  />
+                  <span>%</span>
+                </div>
+              </label>
+              <label>
+                <span>Max automatic spend</span>
+                <div className={styles.moneyInput}>
+                  <b>₱</b>
+                  <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    value={inventoryEditor.maxAutoOrderSpend}
+                    onChange={(event) =>
+                      setInventoryEditor((current) =>
+                        current
+                          ? {
+                              ...current,
+                              maxAutoOrderSpend: event.target.value,
+                            }
+                          : current,
+                      )
+                    }
+                  />
+                </div>
+              </label>
+            </div>
+
+            <footer>
+              <small>
+                Target/auto-accept/hard price guards are initialized from the pack price and can be refined in Inventory → Update.
+              </small>
+              <div>
+                <button
+                  type="button"
+                  onClick={() => setInventoryEditor(null)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  data-primary
+                  onClick={submitInventoryEditor}
+                >
+                  <Save size={14} aria-hidden /> Create & add
+                </button>
+              </div>
+            </footer>
+          </section>
+        ) : null}
 
         <div className={styles.recipeBuilderLines}>
           {draft.ingredients.map((entry, index) => {
