@@ -1929,32 +1929,27 @@ export default function MarinaraAutoinventoryPreviewPage() {
 
                   {!selectedAutomationAlert && !selectedAutomationPaused ? (
                     <div className={styles.summaryActions}>
-                    {selectedProcurement ? (
-                      <button
-                        type="button"
-                        className={styles.primaryButton}
-                        onClick={() => setActiveTab("orders")}
-                      >
-                        <ChevronRight size={15} aria-hidden /> View purchase flow
+                      {!selectedProcurement && orderAmount > 0 ? (
+                        <>
+                          <button id="jourvis-supplier-action" type="button" className={styles.primaryButton} onClick={() => approveRestockItem(selected)}>
+                            <Check size={15} aria-hidden /> Approve
+                          </button>
+                          <button type="button" className={styles.textAction} onClick={() => rejectItem(selected)}>
+                            <X size={15} aria-hidden /> Reject
+                          </button>
+                          <button type="button" className={styles.secondaryButton} onClick={() => openJourvisUpdate(selected)}>
+                            <Settings2 size={15} aria-hidden /> Update
+                          </button>
+                        </>
+                      ) : (
+                        <button type="button" className={styles.secondaryButton} onClick={() => openJourvisUpdate(selected)}>
+                          <Settings2 size={15} aria-hidden /> Update
+                        </button>
+                      )}
+                      <button type="button" className={styles.textAction} onClick={() => openStockAdjustment(selected)}>
+                        <PackageCheck size={15} aria-hidden /> Adjust stock
                       </button>
-                    ) : (
-                      <button
-                        id="jourvis-supplier-action"
-                        type="button"
-                        className={styles.primaryButton}
-                        disabled={orderAmount <= 0}
-                        onClick={() => openContact([selected], `Contact ${selectedSupplier.name}`)}
-                      >
-                        <Mail size={15} aria-hidden /> Contact supplier
-                      </button>
-                    )}
-                    <button type="button" className={styles.secondaryButton} onClick={() => openStockAdjustment(selected)}>
-                      <PackageCheck size={15} aria-hidden /> Adjust stock
-                    </button>
-                    <button type="button" className={styles.textAction} onClick={() => openJourvisUpdate(selected)}>
-                      <Settings2 size={15} aria-hidden /> Update
-                    </button>
-                  </div>
+                    </div>
                   ) : null}
 
                   <div className={styles.statusLegend} aria-label="Stock status legend">
@@ -2035,12 +2030,15 @@ export default function MarinaraAutoinventoryPreviewPage() {
                   </div>
 
                   <div className={styles.detailActions}>
-                    {selectedProcurement ? (
-                      <button type="button" className={styles.primaryButton} onClick={() => setActiveTab("orders")}><ChevronRight size={16} aria-hidden /> View purchase flow</button>
+                    {!selectedProcurement && orderAmount > 0 ? (
+                      <>
+                        <button type="button" className={styles.primaryButton} onClick={() => approveRestockItem(selected)}><Check size={16} aria-hidden /> Approve</button>
+                        <button type="button" className={styles.textAction} onClick={() => rejectItem(selected)}><X size={15} aria-hidden /> Reject</button>
+                        <button type="button" className={styles.secondaryButton} onClick={() => openJourvisUpdate(selected)}><Settings2 size={15} aria-hidden /> Update</button>
+                      </>
                     ) : (
-                      <button type="button" className={styles.primaryButton} disabled={orderAmount <= 0} onClick={() => openContact([selected], `Contact ${selectedSupplier.name}`)}><Mail size={16} aria-hidden /> Contact supplier</button>
+                      <button type="button" className={styles.secondaryButton} onClick={() => openJourvisUpdate(selected)}><Settings2 size={15} aria-hidden /> Update</button>
                     )}
-                    <button type="button" className={styles.textAction} onClick={() => openJourvisUpdate(selected)}><Settings2 size={15} aria-hidden /> Update</button>
                     <button type="button" className={styles.textAction} onClick={() => openStockAdjustment(selected)}><PackageCheck size={15} aria-hidden /> Adjust stock</button>
                     <button type="button" className={styles.textAction} onClick={() => recordWaste(selected)}><TriangleAlert size={15} aria-hidden /> Record demo waste</button>
                   </div>
@@ -2074,7 +2072,7 @@ export default function MarinaraAutoinventoryPreviewPage() {
             <section id="autoinventory-panel-orders" role="tabpanel" aria-labelledby="autoinventory-tab-orders" className={styles.panel}>
               <div className={styles.sectionHeading}>
                 <div><span>PROCUREMENT FLOW</span><h2>Jourvis handles the back-and-forth. You handle decisions and receiving.</h2></div>
-                {suggested.length ? <button type="button" className={styles.primaryButton} onClick={() => openContact(suggested, "Group restock")}>Group restock · {suggested.length}</button> : null}
+                {suggested.length ? <span className={styles.previewPill}>{suggested.length} suggested</span> : null}
               </div>
 
               <div className={styles.procurementColumns}>
@@ -2116,9 +2114,17 @@ export default function MarinaraAutoinventoryPreviewPage() {
                             <b>{suggestedOrder(item)} {item.unit}</b>
                           </div>
                         ))}
-                        <button type="button" className={styles.secondaryButton} onClick={() => openContact(items, `Contact ${supplier.name}`)}>
-                          <Mail size={15} aria-hidden /> {first.purchasingMode === "quote" ? "Request quote" : "Send purchase order"}
-                        </button>
+                        <div className={styles.procurementActions}>
+                          <button type="button" className={styles.primaryButton} onClick={() => approveRestockItems(items)}>
+                            <Check size={15} aria-hidden /> Approve
+                          </button>
+                          <button type="button" className={styles.textAction} onClick={() => items.forEach((item) => rejectItem(item))}>
+                            <X size={15} aria-hidden /> Reject
+                          </button>
+                          <button type="button" className={styles.secondaryButton} onClick={() => openJourvisUpdate(first)}>
+                            <Settings2 size={15} aria-hidden /> Update
+                          </button>
+                        </div>
                       </article>
                     );
                   }) : <div className={styles.emptyState}><Check size={18} aria-hidden /> No new supplier contact is needed.</div>}
