@@ -1500,7 +1500,7 @@ export default function MarinaraAutoinventoryPreviewPage() {
                       else log("Jourvis Automation switched OFF. No new automatic supplier contacts will be started.");
                     }}
                   >
-                    <span>Jourvis Auto</span>
+                    <span>Automation</span>
                     <i data-on={automationMasterOn}><b /></i>
                     <strong>{automationMasterOn ? "ON" : "OFF"}</strong>
                   </button>
@@ -1614,8 +1614,12 @@ export default function MarinaraAutoinventoryPreviewPage() {
                     </div>
                     <small>
                       {selected.automationEnabled
-                        ? `Trigger ≤ ${selected.automationTriggerPercent}% · target ${formatMoney(selected.targetPackPrice)} · auto-accept ≤ ${formatMoney(selected.autoAcceptPackPrice)} · hard stop ${formatMoney(selected.hardMaxPackPrice)}`
-                        : "Configure this supply if you want Jourvis to act automatically at a stock percentage you choose."}
+                        ? selected.automationMode === "autobuy"
+                          ? `Acts at ${selected.automationTriggerPercent}% · asks you above ${formatMoney(selected.maxAutoOrderSpend)} total or ${formatMoney(selected.autoAcceptPackPrice)} / pack`
+                          : selected.automationMode === "auto_contact"
+                            ? `Acts at ${selected.automationTriggerPercent}% · contacts the supplier, then brings purchase decisions to you`
+                            : `Watches from ${selected.automationTriggerPercent}% · alerts you but never contacts the supplier automatically`
+                        : "Off for this supply. Configure when Jourvis should act and how much authority it has."}
                     </small>
                     {selectedAutomationPaused ? (
                       <div className={styles.automationPausedNotice}>
