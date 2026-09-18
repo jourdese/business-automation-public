@@ -118,7 +118,8 @@ export default function CommandCenterShell({ children }: { children: ReactNode }
   const updateTask = updateTaskId
     ? tasks.find((task) => task.id === updateTaskId)
     : undefined;
-  const updateItem = updateTask && updateDraft ? updateDraft : undefined;
+  const updateItem = updateDraft ?? undefined;
+  const isUpdating = Boolean(updateTaskId && updateItem);
 
   function switchBusiness(nextBusinessId: string) {
     window.location.href = sectionHref(nextBusinessId, activeSection);
@@ -149,7 +150,7 @@ export default function CommandCenterShell({ children }: { children: ReactNode }
     setUpdateDraft(null);
   }
 
-  const jourvisActions = updateTask
+  const jourvisActions = isUpdating
     ? [
         {
           label: "Done updating",
@@ -301,28 +302,28 @@ export default function CommandCenterShell({ children }: { children: ReactNode }
       </section>
 
       <JourvisPresence
-        eyebrow={updateTask ? "JOURVIS · UPDATE" : topTask ? `JOURVIS · ${topTask.module.toUpperCase()}` : "JOURVIS · COMMAND CENTER"}
-        status={updateTask ? "Updating rule" : topTask ? "Needs you" : state.automationMasterOn ? "Autonomous · Running" : "Autonomous · Paused"}
+        eyebrow={isUpdating ? "JOURVIS · UPDATE" : topTask ? `JOURVIS · ${topTask.module.toUpperCase()}` : "JOURVIS · COMMAND CENTER"}
+        status={isUpdating ? "Updating rule" : topTask ? "Needs you" : state.automationMasterOn ? "Autonomous · Running" : "Autonomous · Paused"}
         message={
-          updateTask
+          isUpdating
             ? `Update the rule for ${updateItem?.name ?? "this item"} here.`
             : topTask
               ? topTask.whatHappened
               : `I’m supervising ${business.shortName}. Normal work keeps moving automatically.`
         }
         detail={
-          updateTask
-            ? "Changing a rule resumes this item and becomes the new instruction Jourvis follows."
+          isUpdating
+            ? "Changes are staged until you choose Done updating. Jourvis then records the change and its new configuration snapshot in Activity."
             : topTask
               ? `${topTask.why} ${topTask.whatJourvisDid}${topTask.whyOwnerIsNeeded ? ` ${topTask.whyOwnerIsNeeded}` : ""}`
               : "I observe, forecast, decide, act, verify, explain, and escalate only when your authority or safeguards require it."
         }
-        attention={!updateTask && Boolean(topTask)}
+        attention={!isUpdating && Boolean(topTask)}
         actions={jourvisActions}
-        wide={Boolean(updateTask)}
+        wide={isUpdating}
         openRequestKey={jourvisOpenKey}
       >
-        {updateTask && updateItem ? (
+        {isUpdating && updateItem ? (
           <div className={styles.jourvisRuleEditor}>
             <div className={styles.ruleEditorHeading}>
               <span>{updateItem.name.toUpperCase()}</span>
