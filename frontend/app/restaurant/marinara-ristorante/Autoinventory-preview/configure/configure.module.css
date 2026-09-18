@@ -1053,3 +1053,248 @@
   margin: 0;
   padding: 0.85rem;
 }
+
+
+/* Simple three-part Jourvis rule */
+.simpleAutomationCard {
+  margin-top: 0.85rem;
+  border: 1px solid #36505a;
+  background:
+    linear-gradient(rgba(167, 227, 197, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(167, 227, 197, 0.025) 1px, transparent 1px),
+    #081720;
+  background-size: 20px 20px;
+}
+
+.simpleAutomationCard[data-enabled="true"] {
+  border-color: #4b7464;
+}
+
+.simpleAutomationHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.simpleAutomationHead > div {
+  min-width: 0;
+}
+
+.simpleAutomationHead span,
+.simpleRuleContent > span,
+.simpleRuleSummary > span {
+  color: var(--mint);
+  font: 0.58rem var(--font-mono);
+  letter-spacing: 0.09em;
+}
+
+.simpleAutomationHead h4 {
+  margin-top: 0.16rem;
+  font-size: 1.05rem;
+}
+
+.simpleAutomationHead p {
+  margin-top: 0.25rem;
+  color: var(--slate);
+  font-size: 0.7rem;
+  line-height: 1.45;
+}
+
+.simpleRuleStep {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  gap: 0.8rem;
+  padding: 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.simpleRuleNumber {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #45665a;
+  background: rgba(46, 107, 87, 0.18);
+  color: var(--mint);
+  font: 0.72rem var(--font-mono);
+  font-weight: 800;
+}
+
+.simpleRuleContent {
+  min-width: 0;
+}
+
+.simpleRuleContent h4 {
+  margin-top: 0.18rem;
+  font-size: 0.92rem;
+}
+
+.simpleRuleContent > p {
+  margin-top: 0.25rem;
+  color: var(--slate);
+  font-size: 0.68rem;
+  line-height: 1.45;
+}
+
+.simpleTriggerRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 96px;
+  gap: 0.8rem;
+  align-items: center;
+  margin-top: 0.75rem;
+}
+
+.simpleTriggerRow > input[type="range"] {
+  width: 100%;
+  accent-color: var(--mint);
+}
+
+.simpleTriggerRow > label {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.simpleTriggerRow input[type="number"] {
+  width: 100%;
+  min-width: 0;
+  min-height: 38px;
+  padding: 0.4rem 0.5rem;
+  border: 1px solid #3a505a;
+  background: #07131b;
+  color: var(--ivory);
+}
+
+.simpleTriggerRow b {
+  color: var(--mint);
+  font-size: 0.72rem;
+}
+
+.simpleModeChoices {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.55rem;
+  margin-top: 0.7rem;
+}
+
+.simpleModeChoices button {
+  min-height: 92px;
+  padding: 0.72rem;
+  border: 1px solid #344a54;
+  background: #0a1821;
+  color: var(--slate);
+  text-align: left;
+}
+
+.simpleModeChoices button[data-active="true"] {
+  border-color: var(--mint);
+  background: #10272f;
+  color: var(--ivory);
+  box-shadow: inset 0 0 0 1px rgba(167, 227, 197, 0.05);
+}
+
+.simpleModeChoices strong,
+.simpleModeChoices small {
+  display: block;
+}
+
+.simpleModeChoices strong {
+  font-size: 0.74rem;
+}
+
+.simpleModeChoices small {
+  margin-top: 0.3rem;
+  color: var(--slate);
+  font-size: 0.62rem;
+  line-height: 1.4;
+}
+
+.simpleLimits {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem;
+  margin-top: 0.7rem;
+}
+
+.simpleLimits label {
+  padding: 0.72rem;
+  border: 1px solid #344a54;
+  background: #0a1821;
+}
+
+.simpleLimits label > span,
+.simpleLimits label > small {
+  display: block;
+}
+
+.simpleLimits label > span {
+  color: var(--slate);
+  font-size: 0.66rem;
+}
+
+.simpleLimits label > div {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.45rem;
+}
+
+.simpleLimits input {
+  width: 100%;
+  min-width: 0;
+  min-height: 38px;
+  padding: 0.4rem 0.5rem;
+  border: 1px solid #3a505a;
+  background: #07131b;
+  color: var(--ivory);
+}
+
+.simpleLimits label > div > b {
+  color: var(--slate);
+  font-size: 0.7rem;
+}
+
+.simpleLimits small {
+  margin-top: 0.35rem;
+  color: var(--slate);
+  font-size: 0.62rem;
+  line-height: 1.4;
+}
+
+.simpleRuleSummary {
+  margin: 0.85rem;
+  padding: 0.8rem;
+  border: 1px solid #466b5c;
+  border-left: 3px solid var(--mint);
+  background: rgba(46, 107, 87, 0.12);
+}
+
+.simpleRuleSummary p {
+  margin-top: 0.3rem;
+  color: var(--ivory);
+  font-size: 0.72rem;
+  line-height: 1.55;
+}
+
+.simpleRuleSummary strong {
+  color: var(--mint);
+}
+
+@media (max-width: 760px) {
+  .simpleAutomationHead {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .simpleModeChoices,
+  .simpleLimits {
+    grid-template-columns: 1fr;
+  }
+
+  .simpleTriggerRow {
+    grid-template-columns: 1fr;
+  }
+}
