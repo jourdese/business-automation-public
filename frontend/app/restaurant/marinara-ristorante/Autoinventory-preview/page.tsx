@@ -1669,7 +1669,7 @@ export default function MarinaraAutoinventoryPreviewPage() {
           <div className={styles.headerActions}>
             <button id="jourvis-global-configure" type="button" onClick={() => openJourvisUpdate(selected)}><Settings2 size={14} aria-hidden /> Update with Jourvis</button>
             <a href="/restaurant/marinara-ristorante"><ArrowLeft size={14} aria-hidden /> Marinara</a>
-            <button type="button" onClick={resetDemo}><RefreshCw size={14} aria-hidden /> Reset</button>
+            <button type="button" onClick={resetDemo}><RefreshCw size={14} aria-hidden /> Reset demo data</button>
           </div>
         </section>
 
@@ -2442,12 +2442,29 @@ export default function MarinaraAutoinventoryPreviewPage() {
                     onClick: () => openJourvisUpdate(jourvisTaskItem),
                   },
                 ]
+              : jourvisWorkingRequest && ["in_transit", "partial_received"].includes(jourvisWorkingRequest.status)
+              ? [
+                  {
+                    label: "Receive",
+                    primary: true,
+                    onClick: () => receiveProcurement(jourvisWorkingRequest),
+                  },
+                  {
+                    label: "Update",
+                    keepOpen: true,
+                    onClick: () => openJourvisUpdate(jourvisWorkingItem ?? selected),
+                  },
+                ]
               : [
                   {
                     label: "Update",
                     primary: true,
                     keepOpen: true,
                     onClick: () => openJourvisUpdate(jourvisWorkingItem ?? selected),
+                  },
+                  {
+                    label: "Adjust stock",
+                    onClick: () => openStockAdjustment(jourvisWorkingItem ?? selected),
                   },
                 ]
         }
