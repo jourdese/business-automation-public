@@ -31,7 +31,7 @@ import {
   getSupplier,
   initialIngredients,
   loadConfiguredIngredients,
-  resetInventoryRuntime,
+  resetAutoinventoryCoreStorage,
   saveConfiguredIngredients,
   saveInventoryRuntime,
   suppliers,
@@ -898,23 +898,35 @@ export default function MarinaraAutoinventoryPreviewPage() {
   }
 
   function resetDemo() {
-    resetInventoryRuntime();
+    // Clear every Autoinventory-owned browser value so the demo truly starts fresh.
+    resetAutoinventoryCoreStorage();
     window.localStorage.removeItem(PROCUREMENT_RUNTIME_KEY);
     window.localStorage.removeItem(ACTIVITY_RUNTIME_KEY);
     window.localStorage.removeItem(AUTOMATION_REJECTED_KEY);
-    setIngredients(loadConfiguredIngredients());
+    window.localStorage.removeItem("jourvis-autoinventory-summary-labels");
+    window.localStorage.removeItem("jourvis-autoinventory-automation-master");
+
+    setIngredients(initialIngredients.map((item) => ({ ...item })));
     setSelectedId("shrimp");
     setActiveTab("overview");
     setStockFilter("All");
     setSearchTerm("");
+    setShowSummaryLabels(true);
+    setAutomationMasterOn(false);
     setAutomationAlerts({});
     setAutomationRejected({});
     setStockAdjustment(null);
+    setJourvisUpdateItemId(null);
     setProcurements([]);
     setActivity([
       "Jourvis finished the morning inventory scan.",
       "42 guests are forecast for tonight's dinner service.",
     ]);
+
+    // Remove any old query state left from a Configure → Jourvis redirect.
+    if (window.location.search) {
+      window.history.replaceState({}, "", window.location.pathname);
+    }
   }
 
   function chooseFilter(filter: StockFilter) {
