@@ -61,6 +61,7 @@ export default function CommandCenterSectionView({
     actOnTask,
     setAutomationMasterOn,
     setItemAutomationEnabled,
+    resumeItem,
   } = useCommandCenterRuntime();
   const [activityFilter, setActivityFilter] = useState<ActivityFilter>("all");
   const business = state.business;
@@ -187,7 +188,9 @@ export default function CommandCenterSectionView({
               const suggestedQty = suggestedPurchaseQuantity(item);
               const estimate = estimatedPurchaseTotal(item, suggestedQty);
               const automatic = item.automationEnabled;
-              const readyForJourvis = automatic && !state.automationMasterOn;
+              const paused = state.pausedItemIds.includes(item.id);
+              const readyForJourvis =
+                automatic && !paused && !state.automationMasterOn;
 
               return (
                 <article
@@ -213,17 +216,41 @@ export default function CommandCenterSectionView({
                   </div>
 
                   <div className={styles.taskQueueStatus}>
-                    <span data-state={automatic ? (readyForJourvis ? "ready" : "queued") : "manual"}>
-                      {automatic
-                        ? readyForJourvis
-                          ? "Ready for Jourvis"
-                          : "Queued"
-                        : "Manual"}
+                    <span
+                      data-state={
+                        paused
+                          ? "paused"
+                          : automatic
+                            ? readyForJourvis
+                              ? "ready"
+                              : "queued"
+                            : "manual"
+                      }
+                    >
+                      {paused
+                        ? "Paused by you"
+                        : automatic
+                          ? readyForJourvis
+                            ? "Ready for Jourvis"
+                            : "Queued"
+                          : "Manual"}
                     </span>
                     <small>
-                      Trigger {item.automationTriggerPercent}% · current {percent}%
+                      {paused
+                        ? "Jourvis will not retry until you resume this item."
+                        : `Trigger ${item.automationTriggerPercent}% · current ${percent}%`}
                     </small>
                   </div>
+
+                  {paused ? (
+                    <button
+                      type="button"
+                      className={styles.taskResumeButton}
+                      onClick={() => resumeItem(item.id)}
+                    >
+                      Resume Jourvis
+                    </button>
+                  ) : null}
 
                   <label className={styles.taskModeSwitch}>
                     <span>Manual</span>
