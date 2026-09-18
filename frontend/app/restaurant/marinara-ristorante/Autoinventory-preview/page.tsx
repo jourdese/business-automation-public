@@ -1258,12 +1258,17 @@ export default function MarinaraAutoinventoryPreviewPage() {
                             <span>{request.id} · {request.mode === "quote" ? "QUOTE REQUIRED" : "FIXED PRICE PO"}</span>
                             <h3>{supplier.name}</h3>
                             <small>{contact.name} · {contact.role}</small>
+                            <b className={styles.procurementOriginBadge} data-auto={request.origin === "automation"}>
+                              {request.origin === "automation" ? `Jourvis ${request.previewOnly ? "preview" : request.automationMode?.replace("_", " ")}` : "Manual"}
+                            </b>
                           </div>
                           <div className={styles.procurementStatus}>
                             <b>{procurementStatusLabel(request.status)}</b>
                             <small>{formatMoney(total)}</small>
                           </div>
                         </div>
+
+                        {request.automationNote ? <div className={styles.procurementAutomationNote}>{request.automationNote}</div> : null}
 
                         <div className={styles.procurementProgress} aria-label={`${request.id} progress`}>
                           {[
@@ -1370,7 +1375,11 @@ export default function MarinaraAutoinventoryPreviewPage() {
 
                           {request.status === "supplier_viewed" && request.mode === "fixed" ? (
                             <>
-                              <button type="button" className={styles.primaryButton} onClick={() => confirmProcurement(request, "acknowledgment")}>Supplier acknowledges PO</button>
+                              {request.origin === "automation" && request.automationMode === "auto_contact" && !request.buyerConfirmed ? (
+                                <button type="button" className={styles.primaryButton} onClick={() => buyerApprovesFixedAutomation(request)}>Owner approves PO</button>
+                              ) : (
+                                <button type="button" className={styles.primaryButton} onClick={() => confirmProcurement(request, "acknowledgment")}>Supplier acknowledges PO</button>
+                              )}
                               <button type="button" className={styles.textAction} onClick={() => declineProcurement(request)}>Supplier rejects</button>
                             </>
                           ) : null}
@@ -1378,7 +1387,7 @@ export default function MarinaraAutoinventoryPreviewPage() {
                           {request.status === "quote_received" ? (
                             <>
                               <button type="button" className={styles.primaryButton} onClick={() => buyerAcceptsQuote(request)}>Buyer accepts quote</button>
-                              <button type="button" className={styles.secondaryButton} onClick={() => buyerCountersQuote(request)}>Counter at previous price</button>
+                              <button type="button" className={styles.secondaryButton} onClick={() => buyerCountersQuote(request)}>Counter at target price</button>
                               <button type="button" className={styles.textAction} onClick={() => declineProcurement(request)}>Reject quote</button>
                             </>
                           ) : null}
