@@ -603,19 +603,89 @@ export default function MarinaraAutoinventoryPreviewPage() {
   }
 
   function supplierSubmitsQuote(request: ProcurementRequest) {
-    updateProcurement(request.id, (current) => ({
-      ...current,
+    const quotedLines = request.lines.map((line) => {
+      const item = ingredients.find((candidate) => candidate.id === line.itemId);
+      return {
+        ...line,
+        agreedQty: line.requestedQty,
+        quotedPackPrice: item ? Math.round(item.packPrice * 1.05) : 0,
+      };
+    });
+
+    const quotedRequest: ProcurementRequest = {
+      ...request,
       status: "quote_received",
       deliveryFee: 150,
-      lines: current.lines.map((line) => {
+      lines: quotedLines,
+    };
+
+    if (request.origin === "automation" && request.automationMode === "autobuy") {
+      const items = quotedLines
+        .map((line) => ingredients.find((candidate) => candidate.id === line.itemId))
+        .filter((item): item is Ingredient => Boolean(item));
+
+      const withinAutoAccept = quotedLines.every((line) => {
         const item = ingredients.find((candidate) => candidate.id === line.itemId);
-        return {
-          ...line,
-          agreedQty: line.requestedQty,
-          quotedPackPrice: item ? Math.round(item.packPrice * 1.05) : 0,
-        };
-      }),
-    }));
+        if (!item) return false;
+        const quantity = line.agreedQty ?? line.requestedQty;
+        const price = line.quotedPackPrice ?? Number.POSITIVE_INFINITY;
+        const lineSpend = Math.ceil(quantity / Math.max(item.packSize, 0.01)) * price;
+        return (
+          price <= item.autoAcceptPackPrice &&
+          price <= item.hardMaxPackPrice &&
+          lineSpend <= item.maxAutoOrderSpend &&
+          quantity <= item.maxAutoOrderQty &&
+          quotedRequest.deliveryFee <= item.maxDeliveryFee &&
+          quotedRequest.etaDays <= item.maxLeadDays
+        );
+      });
+
+      if (withinAutoAccept) {
+        updateProcurement(request.id, () => ({
+          ...quotedRequest,
+          status: "awaiting_confirmation",
+          buyerConfirmed: true,
+          automationNote: "Jourvis auto-accepted the supplier quote because every term stayed inside the configured limits.",
+        }));
+        log(`${request.id}: Jourvis auto-accepted the quote within the configured price, spend, delivery-fee and lead-time limits.`);
+        return;
+      }
+
+      const canAutoCounter = quotedLines.every((line) => {
+        const item = ingredients.find((candidate) => candidate.id === line.itemId);
+        if (!item) return false;
+        const price = line.quotedPackPrice ?? Number.POSITIVE_INFINITY;
+        return item.autoNegotiate && price <= item.hardMaxPackPrice && request.counteroffersUsed < item.maxCounteroffers;
+      });
+
+      if (canAutoCounter && items.length) {
+        updateProcurement(request.id, () => ({
+          ...quotedRequest,
+          status: "counter_sent",
+          buyerConfirmed: true,
+          counteroffersUsed: request.counteroffersUsed + 1,
+          automationNote: "Jourvis automatically countered at the configured target price.",
+          lines: quotedLines.map((line) => {
+            const item = ingredients.find((candidate) => candidate.id === line.itemId);
+            return {
+              ...line,
+              quotedPackPrice: item?.targetPackPrice ?? line.quotedPackPrice,
+            };
+          }),
+        }));
+        log(`${request.id}: supplier quote exceeded the auto-accept ceiling, so Jourvis automatically countered at the configured target price.`);
+        return;
+      }
+
+      updateProcurement(request.id, () => ({
+        ...quotedRequest,
+        automationNote: "Owner approval required: at least one quote term falls outside Jourvis automation limits.",
+      }));
+      log(`${request.id}: Jourvis paused for owner approval because the supplier quote falls outside the configured automation limits.`);
+      return;
+    }
+
+    updateProcurement(request.id, () => quotedRequest);
     log(`${request.id}: supplier submitted a demo quote. Buyer review is required.`);
   }
 
@@ -633,16 +703,28 @@ export default function MarinaraAutoinventoryPreviewPage() {
       ...current,
       status: "counter_sent",
       buyerConfirmed: true,
+      counteroffersUsed: current.counteroffersUsed + 1,
+      automationNote: undefined,
       lines: current.lines.map((line) => {
         const item = ingredients.find((candidate) => candidate.id === line.itemId);
         return {
           ...line,
-          quotedPackPrice: item?.packPrice ?? line.quotedPackPrice,
+          quotedPackPrice: item?.targetPackPrice ?? item?.packPrice ?? line.quotedPackPrice,
           agreedQty: line.agreedQty ?? line.requestedQty,
         };
       }),
     }));
-    log(`${request.id}: buyer sent a counteroffer using the previous configured pack price.`);
+    log(`${request.id}: buyer sent a counteroffer using the configured target price.`);
+  }
+
+  function buyerApprovesFixedAutomation(request: ProcurementRequest) {
+    updateProcurement(request.id, (current) => ({
+      ...current,
+      status: "awaiting_confirmation",
+      buyerConfirmed: true,
+      automationNote: "Owner approved the automatically prepared fixed-price order.",
+    }));
+    log(`${request.id}: owner approved the automatically prepared fixed-price order. Awaiting supplier confirmation.`);
   }
 
   function declineProcurement(request: ProcurementRequest) {
