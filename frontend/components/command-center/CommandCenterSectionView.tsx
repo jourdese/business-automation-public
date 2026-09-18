@@ -450,7 +450,7 @@ export default function CommandCenterSectionView({
       >
         <div className={styles.cardGrid}>
           {business.operations.map((moduleId) => {
-            const module = operationCatalog[moduleId] ?? {
+            const operationModule = operationCatalog[moduleId] ?? {
               label: moduleId,
               description: "Business operation managed through Jourvis.",
             };
@@ -462,8 +462,8 @@ export default function CommandCenterSectionView({
                 key={moduleId}
               >
                 <span>{moduleTaskCount ? `${moduleTaskCount} NEED${moduleTaskCount === 1 ? "S" : ""} YOU` : "JOURVIS MANAGED"}</span>
-                <h3>{module.label}</h3>
-                <p>{module.description}</p>
+                <h3>{operationModule.label}</h3>
+                <p>{operationModule.description}</p>
                 <b>{moduleTaskCount ? "Review exception" : "Open operation"} <ArrowRight size={14} /></b>
               </a>
             );
