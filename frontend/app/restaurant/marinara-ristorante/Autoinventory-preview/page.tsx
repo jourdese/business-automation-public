@@ -816,6 +816,18 @@ export default function MarinaraAutoinventoryPreviewPage() {
       saveConfiguredIngredients(next);
       return next;
     });
+    setAutomationRejected((current) => {
+      if (!current[id]) return current;
+      const next = { ...current };
+      delete next[id];
+      return next;
+    });
+    setAutomationAlerts((current) => {
+      if (!current[id]) return current;
+      const next = { ...current };
+      delete next[id];
+      return next;
+    });
   }
 
   function changeJourvisSupplier(item: Ingredient, supplierId: string) {
@@ -1123,15 +1135,6 @@ export default function MarinaraAutoinventoryPreviewPage() {
     log(
       `Jourvis automation paused for ${item.name} after your rejection. It will not try again until you resume it.`,
     );
-  }
-
-  function resumeAutomation(item: Ingredient) {
-    setAutomationRejected((current) => {
-      const next = { ...current };
-      delete next[item.id];
-      return next;
-    });
-    log(`Jourvis automation resumed for ${item.name}.`);
   }
 
   function supplierViewsRequest(request: ProcurementRequest) {
@@ -1460,9 +1463,8 @@ export default function MarinaraAutoinventoryPreviewPage() {
 
       {automationRejected[jourvisUpdateItem.id] ? (
         <div className={styles.jourvisPausedInline}>
-          <strong>Paused by you</strong>
-          <p>I will not start another automatic purchase for this item until you resume me.</p>
-          <button type="button" onClick={() => resumeAutomation(jourvisUpdateItem)}>Resume Jourvis</button>
+          <strong>Paused after your Reject</strong>
+          <p>I will not try this item again. Change any setting below if you want to update the rule and resume me.</p>
         </div>
       ) : null}
 
