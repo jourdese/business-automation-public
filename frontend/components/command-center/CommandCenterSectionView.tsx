@@ -1,12 +1,11 @@
 "use client";
 
-import { type ReactNode, useEffect, useMemo, useState } from "react";
+import { type ReactNode } from "react";
 import {
   ArrowRight,
   Bot,
   CheckCircle2,
   CircleAlert,
-  Clock3,
   LineChart,
   ShieldCheck,
   Sparkles,
@@ -14,38 +13,52 @@ import {
   TrendingUp,
   WalletCards,
 } from "lucide-react";
-import {
-  operationCatalog,
-  resolveCommandCenterBusiness,
-} from "@/command-center/core/business-registry";
+import { operationCatalog } from "@/command-center/core/business-registry";
 import { jourvisAutonomyLoop } from "@/command-center/core/autonomy";
+import { isPurchaseActive } from "@/command-center/core/runtime";
+import { useCommandCenterRuntime } from "@/command-center/core/runtime-provider";
 import type { CommandCenterSectionId } from "@/command-center/core/types";
 import styles from "./CommandCenter.module.css";
-
-function businessIdFromPath() {
-  if (typeof window === "undefined") return "marinara-ristorante";
-  const parts = window.location.pathname.split("/").filter(Boolean);
-  const index = parts.indexOf("command-center");
-  return index >= 0 ? parts[index + 1] || "marinara-ristorante" : "marinara-ristorante";
-}
 
 export default function CommandCenterSectionView({
   section,
 }: {
   section: CommandCenterSectionId;
 }) {
-  const [businessId, setBusinessId] = useState("marinara-ristorante");
-
-  useEffect(() => {
-    setBusinessId(businessIdFromPath());
-  }, []);
-
-  const business = useMemo(
-    () => resolveCommandCenterBusiness(businessId),
-    [businessId],
+  const { state, tasks, actOnTask } = useCommandCenterRuntime();
+  const business = state.business;
+  const activePurchases = state.purchases.filter((purchase) =>
+    isPurchaseActive(purchase.status),
   );
+  const lowStockCount = state.inventory.filter(
+    (item) => item.current <= item.reorderAt,
+  ).length;
 
   if (section === "overview") {
+    const financialSeeds = business.demoMetrics.slice(0, 2);
+    const overviewMetrics = [
+      ...financialSeeds,
+      {
+        label: "Jourvis working",
+        value: String(activePurchases.length),
+        note: "active operating workflows",
+      },
+      {
+        label: "Needs owner",
+        value: String(tasks.length),
+        note: "exceptions only",
+      },
+      ...(state.inventory.length
+        ? [
+            {
+              label: "Low stock",
+              value: String(lowStockCount),
+              note: "live Command Center demo state",
+            },
+          ]
+        : []),
+    ];
+
     return (
       <SectionFrame
         eyebrow="OWNER OVERVIEW"
@@ -53,12 +66,12 @@ export default function CommandCenterSectionView({
         description="You supervise the business. Jourvis handles normal work automatically, explains what it is doing, and escalates only when a human decision is genuinely required."
       >
         <div className={styles.metricGrid}>
-          {business.demoMetrics.map((metric) => (
+          {overviewMetrics.map((metric) => (
             <article className={styles.metricCard} key={metric.label}>
               <span>{metric.label}</span>
               <strong>{metric.value}</strong>
               <div>
-                {metric.change ? (
+                {"change" in metric && metric.change ? (
                   <b data-down={metric.change.startsWith("-")}>
                     {metric.change.startsWith("-") ? <TrendingDown size={12} /> : <TrendingUp size={12} />}
                     {metric.change}
@@ -91,23 +104,27 @@ export default function CommandCenterSectionView({
             <PanelHeading
               icon={<ShieldCheck size={17} />}
               eyebrow="NEEDS YOU"
-              title="Only exceptions reach the owner"
+              title={tasks.length ? `${tasks.length} exception${tasks.length === 1 ? "" : "s"} need the owner` : "No owner decisions waiting"}
             />
             <div className={styles.decisionPreview}>
-              <div data-priority="high">
-                <CircleAlert size={16} />
-                <span>
-                  <strong>Supplier quote outside your automatic limit</strong>
-                  <small>Jourvis stopped because the quote crossed a rule you set.</small>
-                </span>
-              </div>
-              <div>
-                <Clock3 size={16} />
-                <span>
-                  <strong>One operating rule needs confirmation</strong>
-                  <small>Jourvis will explain the rule and why it cannot continue alone.</small>
-                </span>
-              </div>
+              {tasks.slice(0, 2).map((task) => (
+                <div key={task.id} data-priority={task.priority === "high" ? "high" : undefined}>
+                  <CircleAlert size={16} />
+                  <span>
+                    <strong>{task.title}</strong>
+                    <small>{task.why}</small>
+                  </span>
+                </div>
+              ))}
+              {!tasks.length ? (
+                <div>
+                  <CheckCircle2 size={16} />
+                  <span>
+                    <strong>Jourvis is inside its authority.</strong>
+                    <small>Normal work can continue automatically without owner intervention.</small>
+                  </span>
+                </div>
+              ) : null}
             </div>
             <a className={styles.cardLink} href={`/command-center/${business.id}/decisions`}>
               Open decisions <ArrowRight size={14} />
@@ -125,14 +142,15 @@ export default function CommandCenterSectionView({
       ["Cash", "Next 30 days", "Predict inflows, outflows, and cash pressure."],
       ["Labor", "Next 14 days", "Predict staffing demand and labor cost."],
       ...(business.operations.includes("inventory")
-        ? [["Inventory", "Next 7 days", "Predict usage, shortages, and recommended purchasing."]]
+        ? [["Inventory", "Next 7 days", `${lowStockCount} items are already at or below their low-stock level. Jourvis will use future demand to prepare purchasing before shortages occur.`]]
         : []),
     ];
+
     return (
       <SectionFrame
         eyebrow="FORECAST"
         title="What Jourvis expects next."
-        description="Forecasts are not passive charts. Jourvis uses them to prepare actions before the business reaches a problem."
+        description="Forecasts are inputs to automation. Jourvis should prepare and execute the next action before the business reaches a problem."
       >
         <div className={styles.cardGrid}>
           {forecasts.map(([title, horizon, description]) => (
@@ -141,7 +159,7 @@ export default function CommandCenterSectionView({
               <span>{horizon}</span>
               <h3>{title}</h3>
               <p>{description}</p>
-              <small>Model inputs and confidence will be shown with every forecast.</small>
+              <small>Every production forecast will expose its inputs, confidence, explanation, and planned action.</small>
             </article>
           ))}
         </div>
@@ -158,20 +176,20 @@ export default function CommandCenterSectionView({
       >
         <div className={styles.metricGrid}>
           {[
-            ["Revenue", "₱84,240", "+7.4%"],
-            ["Gross margin", "57.1%", "+1.2 pts"],
-            ["Net margin", "21.7%", "-0.8 pts"],
-            ["Transactions", "126", "+9"],
+            ["Revenue", business.demoMetrics[0]?.value ?? "—", business.demoMetrics[0]?.change ?? ""],
+            ["Operating profit", business.demoMetrics[1]?.value ?? "—", business.demoMetrics[1]?.change ?? ""],
+            ["Active workflows", String(activePurchases.length), "Jourvis"],
+            ["Owner exceptions", String(tasks.length), "Live"],
           ].map(([label, value, change]) => (
             <article className={styles.metricCard} key={label}>
-              <span>{label}</span><strong>{value}</strong><div><b>{change}</b><small>illustrative</small></div>
+              <span>{label}</span><strong>{value}</strong><div><b>{change}</b><small>{label === "Revenue" || label === "Operating profit" ? "illustrative finance seed" : "runtime"}</small></div>
             </article>
           ))}
         </div>
         <article className={styles.panelCard}>
           <PanelHeading icon={<Sparkles size={17} />} eyebrow="JOURVIS EXPLAINS" title="Numbers need a reason" />
           <div className={styles.explainer}>
-            <p>Revenue can increase while profit falls. Jourvis will trace the difference to the underlying costs, pricing, demand, labor, waste, or operational changes rather than leaving the owner to interpret the chart alone.</p>
+            <p>Performance will not stop at charts. Jourvis will explain the operational causes behind revenue, margin, profit, cost, demand, labor, and forecast changes, then decide whether an action should be taken automatically.</p>
           </div>
         </article>
       </SectionFrame>
@@ -218,16 +236,17 @@ export default function CommandCenterSectionView({
               label: moduleId,
               description: "Business operation managed through Jourvis.",
             };
+            const moduleTaskCount = tasks.filter((task) => task.module === moduleId || (moduleId === "inventory" && task.module === "inventory") || (moduleId === "purchasing" && task.module === "purchasing")).length;
             return (
               <a
                 className={styles.operationCard}
                 href={`/command-center/${business.id}/operations/${moduleId}`}
                 key={moduleId}
               >
-                <span>OPERATION</span>
+                <span>{moduleTaskCount ? `${moduleTaskCount} NEED${moduleTaskCount === 1 ? "S" : ""} YOU` : "JOURVIS MANAGED"}</span>
                 <h3>{module.label}</h3>
                 <p>{module.description}</p>
-                <b>Jourvis managed <ArrowRight size={14} /></b>
+                <b>{moduleTaskCount ? "Review exception" : "Open operation"} <ArrowRight size={14} /></b>
               </a>
             );
           })}
@@ -245,7 +264,7 @@ export default function CommandCenterSectionView({
       >
         <div className={styles.briefingList}>
           {[
-            ["Daily", "Today", "Revenue, operating changes, completed automation, risks, and owner decisions."],
+            ["Daily", "Today", `Jourvis is handling ${activePurchases.length} active workflows and ${tasks.length} owner exception${tasks.length === 1 ? "" : "s"}.`],
             ["Weekly", "This week", "Trends, forecast accuracy, cost movement, operational performance, and recurring issues."],
             ["Monthly", "This month", "Financial and operating review with major changes, opportunities, and next-month priorities."],
           ].map(([label, period, body]) => (
@@ -255,6 +274,19 @@ export default function CommandCenterSectionView({
             </article>
           ))}
         </div>
+        {state.activity.length ? (
+          <article className={styles.panelCard}>
+            <PanelHeading icon={<Bot size={17} />} eyebrow="LATEST ACTIVITY" title="What Jourvis has been doing" />
+            <div className={styles.autonomyLoop}>
+              {state.activity.slice(0, 6).map((entry, index) => (
+                <div key={entry.id}>
+                  <span>{String(index + 1).padStart(2, "0")}</span>
+                  <div><strong>{entry.module}</strong><small>{entry.message}</small></div>
+                </div>
+              ))}
+            </div>
+          </article>
+        ) : null}
       </SectionFrame>
     );
   }
@@ -268,10 +300,10 @@ export default function CommandCenterSectionView({
       >
         <div className={styles.insightList}>
           {[
-            ["Margin pressure", "Revenue is rising faster than profit. Jourvis would trace the change to the exact costs or operating behavior responsible."],
-            ["Demand shift", "A recurring increase in demand can automatically feed Forecast, Purchasing, and Labor planning."],
-            ["Supplier movement", "Jourvis can compare price history, lead time, reliability, and total landed cost across suppliers."],
-            ["Operational drift", "Repeated waste, delays, overrides, or manual exceptions become insights instead of disappearing into activity logs."],
+            ["Operational pressure", lowStockCount ? `${lowStockCount} inventory item${lowStockCount === 1 ? " is" : "s are"} already below the configured low-stock level.` : "No inventory shortages are currently visible in the shared runtime."],
+            ["Automation load", `Jourvis currently has ${activePurchases.length} active purchasing workflow${activePurchases.length === 1 ? "" : "s"}.`],
+            ["Owner dependency", tasks.length ? `${tasks.length} exception${tasks.length === 1 ? " currently requires" : "s currently require"} human authority.` : "No current workflow requires owner authority."],
+            ["Cross-module intelligence", "As Finance, Forecast, Labor, CRM, and other providers are connected, Jourvis will explain causes across modules instead of treating each dashboard separately."],
           ].map(([title, description]) => (
             <article key={title}><Sparkles size={16} /><div><strong>{title}</strong><p>{description}</p></div></article>
           ))}
@@ -287,28 +319,50 @@ export default function CommandCenterSectionView({
       description="Every escalation explains what happened, the rule involved, what Jourvis already did, and exactly why human authority is required."
     >
       <div className={styles.decisionsList}>
-        <article>
-          <div className={styles.decisionTop}><span data-priority="high">HIGH</span><small>Purchasing · demo</small></div>
-          <h3>Supplier quote exceeds automatic buying authority</h3>
-          <dl>
-            <div><dt>What happened</dt><dd>A supplier returned a price above the configured automatic threshold.</dd></div>
-            <div><dt>Why</dt><dd>The quoted total exceeds a rule set by the owner.</dd></div>
-            <div><dt>What Jourvis did</dt><dd>Stopped the purchase instead of accepting terms outside its authority.</dd></div>
-            <div><dt>Why you are needed</dt><dd>Only the owner can approve the exception or update the rule.</dd></div>
-          </dl>
-          <div className={styles.decisionActions}><button>Approve</button><button>Reject</button><button>Update</button></div>
-        </article>
-        <article>
-          <div className={styles.decisionTop}><span>MEDIUM</span><small>Operations · demo</small></div>
-          <h3>Forecast recommends an action outside current authority</h3>
-          <dl>
-            <div><dt>What happened</dt><dd>Jourvis forecasts higher demand than the current operating plan covers.</dd></div>
-            <div><dt>Why you are needed</dt><dd>The relevant automation rule has not granted Jourvis authority to make the change automatically.</dd></div>
-          </dl>
-          <div className={styles.decisionActions}><button>Approve</button><button>Reject</button><button>Update</button></div>
-        </article>
+        {tasks.map((task) => (
+          <article key={task.id}>
+            <div className={styles.decisionTop}>
+              <span data-priority={task.priority === "high" ? "high" : undefined}>{task.priority.toUpperCase()}</span>
+              <small>{task.module} · live demo runtime</small>
+            </div>
+            <h3>{task.title}</h3>
+            <dl className={styles.taskExplanation}>
+              <div><dt>What happened</dt><dd>{task.whatHappened}</dd></div>
+              <div><dt>Why</dt><dd>{task.why}</dd></div>
+              <div><dt>What Jourvis did</dt><dd>{task.whatJourvisDid}</dd></div>
+              {task.whyOwnerIsNeeded ? <div><dt>Why you are needed</dt><dd>{task.whyOwnerIsNeeded}</dd></div> : null}
+            </dl>
+            <div className={styles.decisionActions}>
+              {task.actions.map((action) => (
+                <button
+                  key={action}
+                  type="button"
+                  onClick={() => {
+                    if (action === "update") {
+                      window.dispatchEvent(
+                        new CustomEvent("jourvis-command-center-update", {
+                          detail: { taskId: task.id },
+                        }),
+                      );
+                      return;
+                    }
+                    actOnTask(task.id, action);
+                  }}
+                >
+                  {action.charAt(0).toUpperCase() + action.slice(1)}
+                </button>
+              ))}
+            </div>
+          </article>
+        ))}
+        {!tasks.length ? (
+          <article>
+            <div className={styles.decisionTop}><span>READY</span><small>Jourvis</small></div>
+            <h3>No owner decisions are waiting.</h3>
+            <p className={styles.demoNote}>Jourvis is currently operating inside the authority and safeguards configured for this business.</p>
+          </article>
+        ) : null}
       </div>
-      <p className={styles.demoNote}>Decision cards are structural demo surfaces on this branch; they are not connected to live business actions yet.</p>
     </SectionFrame>
   );
 }
