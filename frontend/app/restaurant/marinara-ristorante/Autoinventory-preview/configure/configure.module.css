@@ -659,7 +659,7 @@
 
 .guideProgress {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 4px;
   margin-bottom: 1rem;
 }
@@ -1004,4 +1004,52 @@
   .triggerControl {
     grid-template-columns: 1fr;
   }
+}
+
+
+.advancedRules {
+  margin-top: 1rem;
+  border: 1px solid #334852;
+  background: #081720;
+}
+
+.advancedRules > summary {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  padding: 0.7rem 0.85rem;
+  color: var(--ivory);
+  font-size: 0.74rem;
+  font-weight: 700;
+  list-style: none;
+}
+
+.advancedRules > summary::-webkit-details-marker {
+  display: none;
+}
+
+.advancedRules > summary::after {
+  content: "+";
+  color: var(--mint);
+  font: 0.8rem var(--font-mono);
+}
+
+.advancedRules[open] > summary::after {
+  content: "−";
+}
+
+.advancedRules > p {
+  margin: 0 0.85rem;
+  padding: 0.65rem 0 0;
+  border-top: 1px solid var(--border);
+  color: var(--slate);
+  font-size: 0.68rem;
+  line-height: 1.5;
+}
+
+.advancedRules .automationRules {
+  margin: 0;
+  padding: 0.85rem;
 }
