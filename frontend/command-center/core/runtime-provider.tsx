@@ -54,6 +54,7 @@ type CommandCenterRuntimeContextValue = {
   ) => void;
   receivePurchase: (purchaseId: string, quantity: number) => void;
   updatePurchaseQuantity: (purchaseId: string, quantity: number) => void;
+  startOwnerPurchase: (itemId: string) => void;
   recordRecipeSale: (recipeId: string, quantity?: number) => void;
   resumeItem: (itemId: string) => void;
   resetDemo: () => void;
@@ -1030,6 +1031,42 @@ export function CommandCenterRuntimeProvider({
     [],
   );
 
+  const startOwnerPurchase = useCallback((itemId: string) => {
+    setState((current) => {
+      const item = current.inventory.find((entry) => entry.id === itemId);
+      if (!item) return current;
+
+      const alreadyActive = current.purchases.some(
+        (purchase) =>
+          purchase.itemId === itemId &&
+          isPurchaseActive(purchase.status),
+      );
+      if (alreadyActive) return current;
+
+      const quantity = suggestedPurchaseQuantity(item);
+      if (quantity <= 0) return current;
+
+      const purchase = createPurchase(current, item, "owner");
+      return {
+        ...current,
+        purchases: [purchase, ...current.purchases],
+        pausedItemIds: current.pausedItemIds.filter((id) => id !== itemId),
+        activity: addActivity(current, {
+          module: "purchasing",
+          action: "owner_started_purchase",
+          message: `Owner started ${purchase.id} for ${item.name} from the supplier restock suggestions.`,
+          actor: "owner",
+          executionMode: "manual",
+          reason:
+            "The owner manually approved the suggested restock. Jourvis started a separate item-scoped supplier workflow so this item's authority and audit trail remain independent.",
+          configuration: inventoryRuleSnapshot(item, current.automationMasterOn),
+          relatedEntityId: item.id,
+          relatedRequestId: purchase.id,
+        }),
+      };
+    });
+  }, []);
+
   const recordRecipeSale = useCallback(
     (recipeId: string, quantity = 1) => {
       if (!Number.isFinite(quantity) || quantity <= 0) return;
@@ -1148,6 +1185,7 @@ export function CommandCenterRuntimeProvider({
       adjustInventory,
       receivePurchase,
       updatePurchaseQuantity,
+      startOwnerPurchase,
       recordRecipeSale,
       resumeItem,
       resetDemo,
@@ -1164,6 +1202,7 @@ export function CommandCenterRuntimeProvider({
       adjustInventory,
       receivePurchase,
       updatePurchaseQuantity,
+      startOwnerPurchase,
       recordRecipeSale,
       state,
       tasks,
