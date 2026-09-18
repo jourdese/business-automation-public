@@ -60,6 +60,14 @@ export function deriveJourvisTasks(
       const quotedPackPrice = purchase.quotedPackPrice ?? item.packPrice;
       const totalOver = quotedTotal - item.maxAutoOrderSpend;
       const packOver = quotedPackPrice - item.autoAcceptPackPrice;
+      const autonomousWithinAuthority =
+        purchase.origin === "jourvis" &&
+        purchase.automationMode === "autobuy" &&
+        totalOver <= 0 &&
+        packOver <= 0;
+
+      if (autonomousWithinAuthority) return;
+
       const reasons = [
         totalOver > 0
           ? `The quote is ₱${Math.round(totalOver).toLocaleString("en-PH")} above your automatic order limit.`
