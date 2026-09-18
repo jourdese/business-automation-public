@@ -506,6 +506,14 @@ export default function MarinaraAutoinventoryPreviewPage() {
   const jourvisTaskRequest = jourvisTask?.requestId
     ? procurements.find((request) => request.id === jourvisTask.requestId)
     : undefined;
+  const jourvisWorkingRequest = !jourvisTask
+    ? activeProcurements.find((request) =>
+        ["requested", "supplier_viewed", "counter_sent", "awaiting_confirmation", "confirmed", "in_transit", "partial_received"].includes(request.status),
+      )
+    : undefined;
+  const jourvisWorkingItem = jourvisWorkingRequest
+    ? ingredients.find((item) => item.id === jourvisWorkingRequest.lines[0]?.itemId)
+    : undefined;
 
   const jourvisAttention = Boolean(jourvisTask);
   const jourvisFocusTarget = jourvisTask
@@ -550,8 +558,20 @@ export default function MarinaraAutoinventoryPreviewPage() {
           : jourvisTask.kind === "automation_paused"
             ? `${jourvisTaskItem.name} reached my ${jourvisTaskItem.automationTriggerPercent}% trigger, but Jourvis Auto is paused.`
             : `${jourvisTaskItem.name} is low and needs restocking.`
-    : selectedProcurement
-      ? `${selected.name}: ${procurementStatusLabel(selectedProcurement.status)}.`
+    : jourvisWorkingRequest && jourvisWorkingItem
+      ? jourvisWorkingRequest.status === "requested"
+        ? `I sent the ${jourvisWorkingItem.name} request. I’m waiting for the supplier to open it.`
+        : jourvisWorkingRequest.status === "supplier_viewed"
+          ? `The supplier opened the ${jourvisWorkingItem.name} request. I’m waiting for their response.`
+          : jourvisWorkingRequest.status === "counter_sent"
+            ? `I sent the ${jourvisWorkingItem.name} counteroffer. I’m waiting for the supplier.`
+            : jourvisWorkingRequest.status === "awaiting_confirmation"
+              ? `The ${jourvisWorkingItem.name} price is agreed. I’m waiting for final supplier confirmation.`
+              : jourvisWorkingRequest.status === "confirmed"
+                ? `${jourvisWorkingItem.name} is confirmed. I’m waiting for dispatch.`
+                : jourvisWorkingRequest.status === "partial_received"
+                  ? `${jourvisWorkingItem.name} was only partially received. The remainder is still open.`
+                  : `${jourvisWorkingItem.name} is in transit.`
       : selected.automationEnabled
         ? `I’m watching ${selected.name} at ${percent(selected)}%.`
         : `I’m here. ${selected.name} is at ${percent(selected)}%.`;
@@ -566,10 +586,10 @@ export default function MarinaraAutoinventoryPreviewPage() {
           : jourvisTask.kind === "automation_paused"
             ? "Turn Jourvis Auto on if you want me to start handling configured items again."
             : `Current stock is ${percent(jourvisTaskItem)}%. You can contact the supplier or configure automation.`
-    : selectedProcurement?.automationNote
-      ? selectedProcurement.automationNote
-      : selectedProcurement
-        ? "The supplier-side demo now advances automatically. I’ll bring you only the decisions that belong to you."
+    : jourvisWorkingRequest?.automationNote
+      ? jourvisWorkingRequest.automationNote
+      : jourvisWorkingRequest
+        ? "I’m handling the supplier-side demo automatically. I’ll interrupt you only when a decision belongs to you."
         : selected.automationEnabled
           ? `I act at ${selected.automationTriggerPercent}% or lower in ${selected.automationMode === "assist" ? "watch only" : selected.automationMode === "auto_contact" ? "contact supplier" : "buy within limits"} mode.`
           : "Configure this supply if you want me to watch it or handle purchasing within your limits.";
@@ -2107,7 +2127,7 @@ export default function MarinaraAutoinventoryPreviewPage() {
 
       <JourvisPresence
         eyebrow={jourvisTasks.length ? `JOURVIS · ${jourvisTasks.length} NEED${jourvisTasks.length === 1 ? "S" : ""} YOU` : "JOURVIS"}
-        status={jourvisTasks.length ? `Needs you · ${jourvisTasks.length}` : automationMasterOn ? "Watching inventory" : "Available"}
+        status={jourvisTasks.length ? `Needs you · ${jourvisTasks.length}` : jourvisWorkingRequest ? "Working" : automationMasterOn ? "Watching" : "Available"}
         message={jourvisMessage}
         detail={jourvisDetail}
         attention={jourvisAttention}
@@ -2147,10 +2167,12 @@ export default function MarinaraAutoinventoryPreviewPage() {
                         }, primary: true },
                         { label: "Configure automation", href: `/restaurant/marinara-ristorante/Autoinventory-preview/configure?stock=${jourvisTaskItem.id}` },
                       ]
-            : selectedProcurement
+            : jourvisWorkingRequest
               ? [
                   { label: "View purchase flow", onClick: () => setActiveTab("orders"), primary: true },
-                  { label: `Configure ${selected.name}`, href: `/restaurant/marinara-ristorante/Autoinventory-preview/configure?stock=${selected.id}` },
+                  ...(jourvisWorkingItem
+                    ? [{ label: `View ${jourvisWorkingItem.name}`, onClick: () => setSelectedId(jourvisWorkingItem.id) }]
+                    : []),
                 ]
               : [
                   { label: "Configure automation", href: `/restaurant/marinara-ristorante/Autoinventory-preview/configure?stock=${selected.id}`, primary: true },
