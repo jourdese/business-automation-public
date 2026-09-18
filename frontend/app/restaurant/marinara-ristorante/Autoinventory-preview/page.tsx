@@ -494,7 +494,7 @@ export default function MarinaraAutoinventoryPreviewPage() {
     });
 
     return tasks.sort((a, b) => b.priority - a.priority);
-  }, [automationAlerts, automationMasterOn, ingredients, procurements]);
+  }, [automationAlerts, automationMasterOn, automationRejected, ingredients, procurements]);
 
   const jourvisTask = jourvisTasks[0];
   const jourvisTaskItem = jourvisTask
