@@ -5,6 +5,7 @@ import { ArrowLeft, Check, ChevronLeft, ChevronRight, RotateCcw, Save, Search, S
 import CompanionMark from "@/components/jourvis/CompanionMark";
 import {
   type Ingredient,
+  automationModeLabel,
   getContact,
   getSupplier,
   initialIngredients,
@@ -366,7 +367,7 @@ export default function AutoinventoryConfigurePage() {
                   ? "Set the order and price limits I must not cross without you."
                   : "Review the simple rule I’ll follow."
             : selected.automationEnabled
-              ? `I’m configured for ${selected.name} in ${selected.automationMode.replace("_", " ")} mode.`
+              ? `I’m configured for ${selected.name} in ${automationModeLabel(selected.automationMode)} mode.`
               : `Want me to learn how to manage ${selected.name}?`
         }
         detail={
