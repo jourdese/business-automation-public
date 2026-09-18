@@ -1306,6 +1306,22 @@ export default function MarinaraAutoinventoryPreviewPage() {
       }),
     );
 
+    const nextLines = request.lines.map((line) => {
+      const receipt = receiptByItem.get(line.itemId);
+      if (!receipt) return line;
+      const receivedTotal = round(receipt.alreadyReceived + receipt.receivedNow);
+      const remainingAfter = round(Math.max(0, receipt.agreed - receivedTotal));
+      return {
+        ...line,
+        receivedTotal,
+        deliveryQty: remainingAfter,
+      };
+    });
+    const completed = nextLines.every((line) => {
+      const agreed = line.agreedQty ?? line.requestedQty;
+      return (line.receivedTotal ?? 0) >= agreed;
+    });
+
     setIngredients((current) =>
       current.map((item) => {
         const receipt = receiptByItem.get(item.id);
@@ -1318,26 +1334,11 @@ export default function MarinaraAutoinventoryPreviewPage() {
       }),
     );
 
-    let completed = true;
-    updateProcurement(request.id, (current) => {
-      const lines = current.lines.map((line) => {
-        const receipt = receiptByItem.get(line.itemId);
-        if (!receipt) return line;
-        const receivedTotal = round(receipt.alreadyReceived + receipt.receivedNow);
-        const remainingAfter = round(Math.max(0, receipt.agreed - receivedTotal));
-        if (remainingAfter > 0) completed = false;
-        return {
-          ...line,
-          receivedTotal,
-          deliveryQty: remainingAfter,
-        };
-      });
-      return {
-        ...current,
-        status: completed ? "received" : "partial_received",
-        lines,
-      };
-    });
+    updateProcurement(request.id, (current) => ({
+      ...current,
+      status: completed ? "received" : "partial_received",
+      lines: nextLines,
+    }));
 
     log(
       completed
