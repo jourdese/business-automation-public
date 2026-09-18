@@ -1996,3 +1996,59 @@
     grid-column: 2;
   }
 }
+
+
+.taskQueuePhoto,
+.managingSupplyPhoto,
+.operationSupplyPhoto,
+.purchaseSupplyPhoto,
+.supplierSupplyPhoto,
+.recipeSupplyPhoto {
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: rgba(247, 244, 238, 0.04);
+}
+
+.taskQueuePhoto {
+  width: 48px;
+  height: 48px;
+  flex: 0 0 auto;
+  border: 1px solid #3a4f59;
+}
+
+.taskQueuePhoto img,
+.managingSupplyPhoto img,
+.operationSupplyPhoto img,
+.purchaseSupplyPhoto img,
+.supplierSupplyPhoto img,
+.recipeSupplyPhoto img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.taskQueueIdentity {
+  display: grid;
+  grid-template-columns: 48px 34px minmax(0, 1fr);
+}
+
+.managingSupplyPhoto {
+  width: 38px;
+  height: 38px;
+  border: 1px solid #3b5d4f;
+}
+
+.jourvisManagingList article {
+  grid-template-columns: 38px 38px minmax(0, 1fr) auto;
+}
+
+@media (max-width: 680px) {
+  .jourvisManagingList article {
+    grid-template-columns: 38px 38px minmax(0, 1fr);
+  }
+
+  .jourvisManagingList article > b {
+    grid-column: 3;
+  }
+}
