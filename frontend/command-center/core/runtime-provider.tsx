@@ -68,6 +68,7 @@ function createGenericSeed(businessId: string): CommandCenterRuntimeState {
     inventory: [],
     purchases: [],
     suppliers: [],
+    recipes: [],
     pausedItemIds: [],
     activity: [],
   };
