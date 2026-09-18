@@ -254,8 +254,9 @@ export default function CommandCenterShell({ children }: { children: ReactNode }
             <strong>{state.automationMasterOn ? "RUNNING" : "PAUSED"}</strong>
           </div>
           <p>
-            Jourvis operates continuously and brings the owner only exceptions,
-            approvals, ambiguity, or rules that require human authority.
+            {state.automationMasterOn
+              ? "Jourvis is working through automatic tasks and will bring you only exceptions that need human authority."
+              : "Jourvis is sleeping. Review the Overview queue and choose which tasks should be automatic before starting it."}
           </p>
         </div>
       </aside>
@@ -309,14 +310,18 @@ export default function CommandCenterShell({ children }: { children: ReactNode }
             ? `Update the rule for ${updateItem?.name ?? "this item"} here.`
             : topTask
               ? topTask.whatHappened
-              : `I’m supervising ${business.shortName}. Normal work keeps moving automatically.`
+              : state.automationMasterOn
+                ? `I’m supervising ${business.shortName}. Normal work keeps moving automatically.`
+                : `I’m sleeping for now. Review ${business.shortName}'s task queue, choose Manual or Jourvis for each task, then wake me when you are ready.`
         }
         detail={
           isUpdating
             ? "Changes are staged until you choose Done updating. Jourvis then records the change and its new configuration snapshot in Activity."
             : topTask
               ? `${topTask.why} ${topTask.whatJourvisDid}${topTask.whyOwnerIsNeeded ? ` ${topTask.whyOwnerIsNeeded}` : ""}`
-              : "I observe, forecast, decide, act, verify, explain, and escalate only when your authority or safeguards require it."
+              : state.automationMasterOn
+                ? "I observe, forecast, decide, act, verify, explain, and escalate only when your authority or safeguards require it."
+                : "I will not start new automatic work while the main automation switch is off. The queue remains visible so you can prepare how each task should be handled."
         }
         attention={!isUpdating && Boolean(topTask)}
         actions={jourvisActions}
