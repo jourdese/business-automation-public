@@ -1,6 +1,7 @@
 "use client";
 
 import { type ReactNode, useEffect, useMemo, useState } from "react";
+import { usePathname } from "next/navigation";
 import {
   BarChart3,
   Bot,
@@ -43,11 +44,8 @@ const icons: Record<CommandCenterSectionId, typeof CircleGauge> = {
   decisions: ShieldCheck,
 };
 
-function readPath() {
-  if (typeof window === "undefined") {
-    return { businessId: "marinara-ristorante", section: "overview" as CommandCenterSectionId };
-  }
-  const parts = window.location.pathname.split("/").filter(Boolean);
+function readPath(pathname: string) {
+  const parts = pathname.split("/").filter(Boolean);
   const root = parts.indexOf("command-center");
   const businessId = root >= 0 ? parts[root + 1] || "marinara-ristorante" : "marinara-ristorante";
   const candidate = root >= 0 ? parts[root + 2] : undefined;
@@ -64,8 +62,11 @@ function sectionHref(businessId: string, section: CommandCenterSectionId) {
 }
 
 export default function CommandCenterShell({ children }: { children: ReactNode }) {
-  const [businessId, setBusinessId] = useState("marinara-ristorante");
-  const [activeSection, setActiveSection] = useState<CommandCenterSectionId>("overview");
+  const pathname = usePathname();
+  const { businessId, section: activeSection } = useMemo(
+    () => readPath(pathname),
+    [pathname],
+  );
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [updateTaskId, setUpdateTaskId] = useState<string | null>(null);
   const [updateBaseline, setUpdateBaseline] = useState<CommandCenterInventoryItem | null>(null);
@@ -79,18 +80,6 @@ export default function CommandCenterShell({ children }: { children: ReactNode }
     setAutomationMasterOn,
     resetDemo,
   } = useCommandCenterRuntime();
-
-  useEffect(() => {
-    const sync = () => {
-      const next = readPath();
-      setBusinessId(next.businessId);
-      setActiveSection(next.section);
-      setMobileNavOpen(false);
-    };
-    sync();
-    window.addEventListener("popstate", sync);
-    return () => window.removeEventListener("popstate", sync);
-  }, []);
 
   useEffect(() => {
     const handleUpdate = (event: Event) => {
@@ -116,9 +105,6 @@ export default function CommandCenterShell({ children }: { children: ReactNode }
   );
   const businesses = listCommandCenterBusinesses();
   const topTask = tasks[0];
-  const updateTask = updateTaskId
-    ? tasks.find((task) => task.id === updateTaskId)
-    : undefined;
   const updateItem = updateDraft ?? undefined;
   const isUpdating = Boolean(updateTaskId && updateItem);
 
@@ -239,6 +225,7 @@ export default function CommandCenterShell({ children }: { children: ReactNode }
                 href={sectionHref(business.id, section.id)}
                 data-active={active}
                 title={section.description}
+                onClick={() => setMobileNavOpen(false)}
               >
                 <Icon size={16} aria-hidden />
                 <span>{section.label}</span>
