@@ -152,6 +152,28 @@ function addActivity(
   return prependActivity(state, input);
 }
 
+function entitySlug(value: string) {
+  return value
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 48) || "item";
+}
+
+function nextEntityId(
+  prefix: string,
+  name: string,
+  existingIds: string[],
+) {
+  const base = `${prefix}-${entitySlug(name)}`;
+  if (!existingIds.includes(base)) return base;
+  let index = 2;
+  while (existingIds.includes(`${base}-${index}`)) index += 1;
+  return `${base}-${index}`;
+}
+
 function normalizeStoredState(
   stored: CommandCenterRuntimeState,
 ): CommandCenterRuntimeState {
@@ -1103,13 +1125,215 @@ export function CommandCenterRuntimeProvider({
     });
   }, []);
 
+  const saveMenuItem = useCallback(
+    (
+      draft: Omit<
+        CommandCenterMenuItem,
+        | "id"
+        | "printedName"
+        | "dishKey"
+        | "referencePrice"
+        | "referenceSource"
+        | "referencePublicationDate"
+        | "currentPriceVerified"
+      > & { id?: string },
+    ) => {
+      setState((current) => {
+        const name = draft.name.trim();
+        const category = draft.category.trim();
+        if (!name || !category) return current;
+
+        const existing = draft.id
+          ? current.menuItems.find((item) => item.id === draft.id)
+          : undefined;
+        const currentPrice =
+          draft.currentPrice !== undefined &&
+          Number.isFinite(draft.currentPrice) &&
+          draft.currentPrice >= 0
+            ? Math.round(draft.currentPrice * 100) / 100
+            : undefined;
+        const id =
+          existing?.id ??
+          nextEntityId(
+            "menu",
+            name,
+            current.menuItems.map((item) => item.id),
+          );
+        const nextItem: CommandCenterMenuItem = existing
+          ? {
+              ...existing,
+              name,
+              category,
+              variant: draft.variant?.trim() || undefined,
+              description: draft.description?.trim() || undefined,
+              currentPrice,
+              currentPriceVerified: currentPrice !== undefined,
+              active: draft.active,
+              available: draft.available,
+              recipeId: draft.recipeId || undefined,
+            }
+          : {
+              id,
+              name,
+              printedName: name,
+              dishKey: entitySlug(name),
+              category,
+              variant: draft.variant?.trim() || undefined,
+              description: draft.description?.trim() || undefined,
+              currentPrice,
+              referenceSource: "demo",
+              currentPriceVerified: currentPrice !== undefined,
+              active: draft.active,
+              available: draft.available,
+              recipeId: draft.recipeId || undefined,
+            };
+
+        return {
+          ...current,
+          menuItems: existing
+            ? current.menuItems.map((item) =>
+                item.id === existing.id ? nextItem : item,
+              )
+            : [nextItem, ...current.menuItems],
+          activity: addActivity(current, {
+            module: "menu",
+            action: existing ? "menu_item_updated" : "menu_item_created",
+            message: existing
+              ? `Owner updated menu item ${name}.`
+              : `Owner created menu item ${name}.`,
+            actor: "owner",
+            executionMode: "manual",
+            reason:
+              "The owner changed live menu configuration in Command Center. Archived reference price/source fields remain separate and unchanged.",
+            relatedEntityId: id,
+          }),
+        };
+      });
+    },
+    [],
+  );
+
+  const archiveMenuItem = useCallback((itemId: string) => {
+    setState((current) => {
+      const item = current.menuItems.find((entry) => entry.id === itemId);
+      if (!item || !item.active) return current;
+
+      return {
+        ...current,
+        menuItems: current.menuItems.map((entry) =>
+          entry.id === itemId
+            ? { ...entry, active: false, available: false }
+            : entry,
+        ),
+        activity: addActivity(current, {
+          module: "menu",
+          action: "menu_item_archived",
+          message: `Owner archived menu item ${item.name}.`,
+          actor: "owner",
+          executionMode: "manual",
+          reason:
+            "Archiving keeps the menu history and archived source reference while removing the item from active service.",
+          relatedEntityId: itemId,
+        }),
+      };
+    });
+  }, []);
+
+  const saveRecipe = useCallback(
+    (draft: Omit<CommandCenterRecipe, "id"> & { id?: string }) => {
+      setState((current) => {
+        const name = draft.name.trim();
+        if (!name) return current;
+
+        const existing = draft.id
+          ? current.recipes.find((recipe) => recipe.id === draft.id)
+          : undefined;
+        const inventoryIds = new Set(current.inventory.map((item) => item.id));
+        const ingredients = Object.fromEntries(
+          Object.entries(draft.ingredients)
+            .filter(
+              ([itemId, amount]) =>
+                inventoryIds.has(itemId) &&
+                Number.isFinite(amount) &&
+                amount > 0,
+            )
+            .map(([itemId, amount]) => [
+              itemId,
+              Math.round(amount * 1000) / 1000,
+            ]),
+        );
+        const id =
+          existing?.id ??
+          nextEntityId(
+            "recipe",
+            name,
+            current.recipes.map((recipe) => recipe.id),
+          );
+        const nextRecipe: CommandCenterRecipe = {
+          id,
+          name,
+          description: draft.description.trim(),
+          notes: draft.notes?.trim() || undefined,
+          active: draft.active,
+          ingredients,
+        };
+
+        return {
+          ...current,
+          recipes: existing
+            ? current.recipes.map((recipe) =>
+                recipe.id === existing.id ? nextRecipe : recipe,
+              )
+            : [nextRecipe, ...current.recipes],
+          activity: addActivity(current, {
+            module: "recipes",
+            action: existing ? "recipe_updated" : "recipe_created",
+            message: existing
+              ? `Owner updated recipe ${name}.`
+              : `Owner created recipe ${name}.`,
+            actor: "owner",
+            executionMode: "manual",
+            reason:
+              `The owner saved a recipe with ${Object.keys(ingredients).length} inventory ingredient mapping${Object.keys(ingredients).length === 1 ? "" : "s"}. Menu economics and future POS deductions now use this recipe configuration.`,
+            relatedEntityId: id,
+          }),
+        };
+      });
+    },
+    [],
+  );
+
+  const archiveRecipe = useCallback((recipeId: string) => {
+    setState((current) => {
+      const recipe = current.recipes.find((entry) => entry.id === recipeId);
+      if (!recipe || !recipe.active) return current;
+
+      return {
+        ...current,
+        recipes: current.recipes.map((entry) =>
+          entry.id === recipeId ? { ...entry, active: false } : entry,
+        ),
+        activity: addActivity(current, {
+          module: "recipes",
+          action: "recipe_archived",
+          message: `Owner archived recipe ${recipe.name}.`,
+          actor: "owner",
+          executionMode: "manual",
+          reason:
+            "Archiving preserves historical menu links and recipe configuration while preventing the recipe from being used for new simulated POS deductions.",
+          relatedEntityId: recipeId,
+        }),
+      };
+    });
+  }, []);
+
   const recordRecipeSale = useCallback(
     (recipeId: string, quantity = 1) => {
       if (!Number.isFinite(quantity) || quantity <= 0) return;
 
       setState((current) => {
         const recipe = current.recipes.find((entry) => entry.id === recipeId);
-        if (!recipe) return current;
+        if (!recipe || !recipe.active) return current;
 
         const shortages = Object.entries(recipe.ingredients).filter(([itemId, amount]) => {
           const item = current.inventory.find((entry) => entry.id === itemId);
@@ -1222,6 +1446,10 @@ export function CommandCenterRuntimeProvider({
       receivePurchase,
       updatePurchaseQuantity,
       startOwnerPurchase,
+      saveMenuItem,
+      archiveMenuItem,
+      saveRecipe,
+      archiveRecipe,
       recordRecipeSale,
       resumeItem,
       resetDemo,
@@ -1239,6 +1467,10 @@ export function CommandCenterRuntimeProvider({
       receivePurchase,
       updatePurchaseQuantity,
       startOwnerPurchase,
+      saveMenuItem,
+      archiveMenuItem,
+      saveRecipe,
+      archiveRecipe,
       recordRecipeSale,
       state,
       tasks,
