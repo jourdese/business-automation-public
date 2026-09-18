@@ -615,8 +615,15 @@ export function CommandCenterRuntimeProvider({
           "automationEnabled",
           "automationMode",
           "automationTriggerPercent",
-          "maxAutoOrderSpend",
+          "targetPackPrice",
           "autoAcceptPackPrice",
+          "hardMaxPackPrice",
+          "maxAutoOrderQty",
+          "maxAutoOrderSpend",
+          "autoNegotiate",
+          "maxCounteroffers",
+          "maxDeliveryFee",
+          "maxLeadDays",
         ];
         const changed = configurableKeys
           .filter((key) => next[key] !== previous[key])
@@ -629,8 +636,15 @@ export function CommandCenterRuntimeProvider({
           automationEnabled: next.automationEnabled,
           automationMode: next.automationMode,
           automationTriggerPercent: next.automationTriggerPercent,
-          maxAutoOrderSpend: next.maxAutoOrderSpend,
+          targetPackPrice: next.targetPackPrice,
           autoAcceptPackPrice: next.autoAcceptPackPrice,
+          hardMaxPackPrice: next.hardMaxPackPrice,
+          maxAutoOrderQty: next.maxAutoOrderQty,
+          maxAutoOrderSpend: next.maxAutoOrderSpend,
+          autoNegotiate: next.autoNegotiate,
+          maxCounteroffers: next.maxCounteroffers,
+          maxDeliveryFee: next.maxDeliveryFee,
+          maxLeadDays: next.maxLeadDays,
         };
 
         return {
