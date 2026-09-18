@@ -106,6 +106,7 @@ function createPurchase(
     id: nextRequestId(state),
     itemId: item.id,
     supplierId: item.supplierId,
+    contactId: item.contactId,
     quantity,
     status: item.purchasingMode === "quote" ? "quote_requested" : "requested",
     estimatedTotal: estimatedPurchaseTotal(item, quantity),
@@ -113,6 +114,8 @@ function createPurchase(
     origin,
     automationMode: item.automationMode,
     counteroffersUsed: 0,
+    buyerConfirmed: origin === "owner" && item.purchasingMode === "fixed",
+    supplierConfirmed: false,
     explanation:
       origin === "jourvis"
         ? "Jourvis started this purchase automatically because stock reached its configured trigger."
@@ -144,7 +147,33 @@ function normalizeStoredState(
     recipes: stored.recipes ?? seed.recipes,
     menuItems: stored.menuItems ?? seed.menuItems,
     pausedItemIds: stored.pausedItemIds ?? [],
-    purchases: stored.purchases ?? [],
+    purchases: (stored.purchases ?? []).map((purchase) => {
+      const item = (stored.inventory ?? seed.inventory).find(
+        (entry) => entry.id === purchase.itemId,
+      );
+      const buyerAlreadyConfirmed = [
+        "approved",
+        "awaiting_confirmation",
+        "confirmed",
+        "in_transit",
+        "partial_received",
+        "received",
+      ].includes(purchase.status);
+      const supplierAlreadyConfirmed = [
+        "confirmed",
+        "in_transit",
+        "partial_received",
+        "received",
+      ].includes(purchase.status);
+      return {
+        ...purchase,
+        contactId: purchase.contactId ?? item?.contactId,
+        buyerConfirmed:
+          purchase.buyerConfirmed ?? buyerAlreadyConfirmed,
+        supplierConfirmed:
+          purchase.supplierConfirmed ?? supplierAlreadyConfirmed,
+      };
+    }),
     activity: (stored.activity ?? []).map((entry) => normalizeActivity(entry)),
   };
 }
@@ -243,42 +272,86 @@ function advanceOneAutonomousStep(
 
   let replacement: CommandCenterPurchase = purchase;
   let message = "";
+  let action = "workflow_advanced";
+  let actor: CommandCenterActivity["actor"] = "external";
+  let reason = "The supplier workflow advanced to its next verified state.";
 
-  if (purchase.status === "requested") {
-    replacement = { ...purchase, status: "confirmed", etaDays: item.leadDays };
-    message = `${purchase.id}: supplier confirmed the fixed-price purchase for ${item.name}.`;
-  } else if (purchase.status === "quote_requested") {
-    const quotedPackPrice = Math.round(item.packPrice * 1.05);
-    const deliveryFee = 150;
-    const etaDays = item.leadDays;
-    const quotedTotal =
-      Math.ceil(purchase.quantity / Math.max(item.packSize, 0.01)) *
-      quotedPackPrice +
-      deliveryFee;
+  if (
+    purchase.status === "requested" ||
+    purchase.status === "quote_requested"
+  ) {
     replacement = {
       ...purchase,
-      status: "quote_received",
-      quotedPackPrice,
-      quotedTotal,
-      deliveryFee,
-      etaDays,
-      counteroffersUsed: purchase.counteroffersUsed ?? 0,
+      status: "supplier_viewed",
     };
-    message = `${purchase.id}: supplier returned a quote for ${item.name}.`;
+    message = `${purchase.id}: supplier viewed the request for ${item.name}.`;
+    action = "supplier_viewed";
+    reason =
+      "The supplier opened the request. Jourvis records this separately from agreement or confirmation so the owner can see where the workflow is waiting.";
+  } else if (purchase.status === "supplier_viewed") {
+    if (item.purchasingMode === "quote") {
+      const quotedPackPrice = Math.round(item.packPrice * 1.05);
+      const deliveryFee = 150;
+      const etaDays = item.leadDays;
+      const quotedTotal =
+        Math.ceil(purchase.quantity / Math.max(item.packSize, 0.01)) *
+        quotedPackPrice +
+        deliveryFee;
+      replacement = {
+        ...purchase,
+        status: "quote_received",
+        quotedPackPrice,
+        quotedTotal,
+        deliveryFee,
+        etaDays,
+        counteroffersUsed: purchase.counteroffersUsed ?? 0,
+      };
+      message = `${purchase.id}: supplier returned a quote for ${item.name}.`;
+      action = "quote_received";
+      reason =
+        "The supplier returned price, delivery-fee, and ETA terms after viewing the request. Jourvis has not treated the quote as accepted yet.";
+    } else {
+      replacement = {
+        ...purchase,
+        status: "awaiting_confirmation",
+        buyerConfirmed: true,
+        etaDays: purchase.etaDays ?? item.leadDays,
+        explanation:
+          purchase.origin === "jourvis"
+            ? "Jourvis accepted the configured fixed-price purchase within its authority and is waiting for final supplier confirmation."
+            : "The owner already approved the fixed-price purchase; Jourvis is waiting for final supplier confirmation.",
+      };
+      message = `${purchase.id}: fixed-price terms for ${item.name} are accepted; waiting for supplier confirmation.`;
+      action =
+        purchase.origin === "jourvis"
+          ? "fixed_purchase_auto_approved"
+          : "fixed_purchase_owner_approved";
+      actor = purchase.origin === "jourvis" ? "jourvis" : "system";
+      reason =
+        purchase.origin === "jourvis"
+          ? "Jourvis accepted the known fixed-price terms because spend, pack price, quantity, and lead time remained inside the configured authority."
+          : "The owner had already approved the fixed-price restock before the supplier viewed it; no second buyer approval is required.";
+    }
   } else if (purchase.status === "quote_received") {
     const authority = evaluatePurchaseAuthority(item, purchase);
     if (authority.withinAutoAccept) {
       replacement = {
         ...purchase,
-        status: "approved",
+        status: "awaiting_confirmation",
+        buyerConfirmed: true,
         explanation:
-          "Jourvis accepted the supplier quote automatically because price, spend, quantity, delivery fee, and lead time stayed inside its authority.",
+          "Jourvis accepted the supplier quote automatically because price, spend, quantity, delivery fee, and lead time stayed inside its authority. Final supplier confirmation is still pending.",
       };
-      message = `${purchase.id}: Jourvis accepted the quote automatically within configured limits.`;
+      message = `${purchase.id}: Jourvis accepted the quote within configured limits; waiting for supplier confirmation.`;
+      action = "quote_auto_approved";
+      actor = "jourvis";
+      reason =
+        "Jourvis accepted the quote automatically because total spend, pack price, quantity, delivery fee, and lead time all remained inside the configured authority limits.";
     } else if (authority.canNegotiate) {
       replacement = {
         ...purchase,
         status: "counter_sent",
+        buyerConfirmed: true,
         quotedPackPrice: item.targetPackPrice,
         quotedTotal: authority.negotiatedTotal,
         counteroffersUsed: authority.counteroffersUsed + 1,
@@ -286,21 +359,50 @@ function advanceOneAutonomousStep(
           "Jourvis automatically countered at the configured target price because the supplier quote was outside the auto-accept range but still within negotiation authority.",
       };
       message = `${purchase.id}: Jourvis automatically countered at ₱${Math.round(item.targetPackPrice).toLocaleString("en-PH")} per pack.`;
+      action = "quote_auto_countered";
+      actor = "jourvis";
+      reason =
+        `Jourvis automatically negotiated because the quote was outside auto-accept limits, auto-negotiate was enabled, the counteroffer count was below ${item.maxCounteroffers}, and the target price ₱${Math.round(item.targetPackPrice).toLocaleString("en-PH")} kept the resulting order within the configured spending and hard-price limits.`;
     }
   } else if (purchase.status === "counter_sent") {
     replacement = {
       ...purchase,
-      status: "approved",
+      status: "awaiting_confirmation",
+      buyerConfirmed: true,
       explanation:
-        "The supplier accepted Jourvis' automatic counteroffer within the configured negotiation limits.",
+        "The supplier accepted Jourvis' automatic counteroffer. Final supplier confirmation is still pending before stock becomes incoming.",
     };
-    message = `${purchase.id}: supplier accepted Jourvis' counteroffer.`;
+    message = `${purchase.id}: supplier accepted Jourvis' counteroffer; waiting for final confirmation.`;
+    action = "counteroffer_accepted";
+    reason =
+      "The supplier accepted the automatic counteroffer Jourvis had already sent within its negotiation authority.";
   } else if (purchase.status === "approved") {
-    replacement = { ...purchase, status: "confirmed" };
-    message = `${purchase.id}: supplier confirmed the approved purchase.`;
+    replacement = {
+      ...purchase,
+      status: "awaiting_confirmation",
+      buyerConfirmed: true,
+    };
+    message = `${purchase.id}: buyer approval recorded; waiting for supplier confirmation.`;
+    action = "buyer_approval_migrated";
+    actor = "system";
+    reason =
+      "This stored purchase used the earlier approved state. Jourvis migrated it into the explicit final-confirmation stage without changing the buyer decision.";
+  } else if (purchase.status === "awaiting_confirmation") {
+    replacement = {
+      ...purchase,
+      status: "confirmed",
+      supplierConfirmed: true,
+    };
+    message = `${purchase.id}: supplier gave final confirmation for ${item.name}.`;
+    action = "supplier_confirmed";
+    reason =
+      "The supplier gave final confirmation after buyer acceptance. Jourvis now treats the agreed quantity as confirmed incoming stock.";
   } else if (purchase.status === "confirmed") {
     replacement = { ...purchase, status: "in_transit" };
     message = `${purchase.id}: supplier marked the delivery in transit.`;
+    action = "shipment_in_transit";
+    reason =
+      "The supplier changed the confirmed purchase to in transit. Jourvis recorded the external status update automatically.";
   }
 
   return {
@@ -319,38 +421,11 @@ function advanceOneAutonomousStep(
     activity: message
       ? addActivity(state, {
           module: "purchasing",
-          action:
-            purchase.status === "requested"
-              ? "supplier_confirmed"
-              : purchase.status === "quote_requested"
-                ? "quote_received"
-                : purchase.status === "quote_received"
-                  ? replacement.status === "counter_sent"
-                    ? "quote_auto_countered"
-                    : "quote_auto_approved"
-                  : purchase.status === "counter_sent"
-                    ? "counteroffer_accepted"
-                    : purchase.status === "approved"
-                      ? "supplier_confirmed"
-                      : "shipment_in_transit",
+          action,
           message,
-          actor:
-            purchase.status === "quote_received"
-              ? "jourvis"
-              : "external",
+          actor,
           executionMode: "automatic",
-          reason:
-            purchase.status === "quote_received"
-              ? replacement.status === "counter_sent"
-                ? `Jourvis automatically negotiated because the quote was outside auto-accept limits, auto-negotiate was enabled, the counteroffer count was below ${item.maxCounteroffers}, and the target price ₱${Math.round(item.targetPackPrice).toLocaleString("en-PH")} kept the resulting order within the configured spending and hard-price limits.`
-                : `Jourvis accepted the quote automatically because total spend, pack price, quantity, delivery fee, and lead time all remained inside the configured authority limits.`
-              : purchase.status === "quote_requested"
-                ? "The supplier returned a quote in response to the purchase request. This was recorded automatically because no owner action created the supplier response."
-                : purchase.status === "counter_sent"
-                  ? "The supplier accepted the automatic counteroffer Jourvis had already sent within its negotiation authority."
-                  : purchase.status === "confirmed"
-                    ? "The supplier changed the purchase to in transit. Jourvis recorded the external status update automatically."
-                    : "The supplier confirmed the purchase after the previous authorized step. Jourvis recorded the supplier response automatically.",
+          reason,
           configuration: inventoryRuleSnapshot(item, state.automationMasterOn),
           relatedEntityId: item.id,
           relatedRequestId: purchase.id,
