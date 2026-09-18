@@ -2347,3 +2347,40 @@
     grid-template-columns: 1fr;
   }
 }
+
+
+.automationPausedNotice {
+  margin-top: 0.55rem;
+  padding: 0.6rem;
+  border: 1px solid #7b643a;
+  border-left: 3px solid var(--gold);
+  background: rgba(92, 68, 28, 0.22);
+}
+
+.automationPausedNotice > span {
+  color: #f0c67c;
+  font: 0.55rem var(--font-mono);
+  letter-spacing: 0.08em;
+}
+
+.automationPausedNotice > p {
+  margin-top: 0.25rem;
+  color: var(--slate);
+  font-size: 0.62rem;
+  line-height: 1.45;
+}
+
+.automationPausedNotice > button {
+  min-height: 34px;
+  margin-top: 0.5rem;
+  padding: 0.4rem 0.55rem;
+  border: 1px solid var(--gold);
+  background: rgba(200, 169, 107, 0.12);
+  color: #f4d9a0;
+  font-size: 0.64rem;
+}
+
+.automationPausedNotice > button:hover {
+  background: rgba(200, 169, 107, 0.2);
+  color: var(--ivory);
+}
