@@ -398,79 +398,173 @@ export default function MarinaraAutoinventoryPreviewPage() {
 
   const selectedAutomationAlert = automationAlerts[selected.id];
   const selectedNeedsRestock = selected.current <= selected.reorderAt;
-  const selectedAutomationTriggered = selected.automationEnabled && automationTriggered(selected);
-  const selectedProcurementNeedsOwner = Boolean(
-    selectedProcurement?.status === "quote_received" ||
-      (
-        selectedProcurement?.status === "supplier_viewed" &&
-        selectedProcurement.mode === "fixed" &&
-        selectedProcurement.origin === "automation" &&
-        selectedProcurement.automationMode === "auto_contact" &&
-        !selectedProcurement.buyerConfirmed
-      ),
-  );
-  const selectedNeedsAutomationEnable =
-    selectedAutomationTriggered && !automationMasterOn;
-  const selectedNeedsManualRestock =
-    !selectedProcurement &&
-    selectedNeedsRestock &&
-    (!selected.automationEnabled || selected.automationMode === "assist");
+  const selectedAutomationTriggered =
+    selected.automationEnabled && automationTriggered(selected);
 
-  const jourvisAttention =
-    Boolean(selectedAutomationAlert) ||
-    selectedProcurementNeedsOwner ||
-    selectedNeedsAutomationEnable ||
-    selectedNeedsManualRestock;
+  type DashboardTask = {
+    id: string;
+    kind:
+      | "automation_exception"
+      | "quote_approval"
+      | "fixed_approval"
+      | "automation_paused"
+      | "manual_restock";
+    priority: number;
+    itemId: string;
+    requestId?: string;
+  };
 
-  const jourvisFocusTarget = selectedAutomationAlert
-    ? activeTab === "overview"
-      ? "#jourvis-automation-decision"
-      : "#autoinventory-tab-overview"
-    : selectedProcurementNeedsOwner && selectedProcurement
-      ? activeTab === "orders"
-        ? `#procurement-${selectedProcurement.id}`
-        : "#autoinventory-tab-orders"
-      : selectedNeedsAutomationEnable
-        ? activeTab === "overview"
-          ? "#jourvis-auto-master"
-          : "#autoinventory-tab-overview"
-        : selectedNeedsManualRestock
+  const jourvisTasks = useMemo(() => {
+    const tasks: DashboardTask[] = [];
+    const activeIds = new Set(
+      procurements
+        .filter((request) => activeProcurementStatus(request.status))
+        .flatMap((request) => request.lines.map((line) => line.itemId)),
+    );
+
+    Object.keys(automationAlerts).forEach((itemId) => {
+      tasks.push({
+        id: `exception-${itemId}`,
+        kind: "automation_exception",
+        priority: 100,
+        itemId,
+      });
+    });
+
+    procurements.forEach((request) => {
+      const firstItemId = request.lines[0]?.itemId;
+      if (!firstItemId) return;
+      if (request.status === "quote_received") {
+        tasks.push({
+          id: `quote-${request.id}`,
+          kind: "quote_approval",
+          priority: 95,
+          itemId: firstItemId,
+          requestId: request.id,
+        });
+        return;
+      }
+      if (
+        request.status === "supplier_viewed" &&
+        request.mode === "fixed" &&
+        !request.buyerConfirmed
+      ) {
+        tasks.push({
+          id: `fixed-${request.id}`,
+          kind: "fixed_approval",
+          priority: 90,
+          itemId: firstItemId,
+          requestId: request.id,
+        });
+      }
+    });
+
+    ingredients.forEach((item) => {
+      if (
+        item.automationEnabled &&
+        automationTriggered(item) &&
+        !automationMasterOn &&
+        !activeIds.has(item.id)
+      ) {
+        tasks.push({
+          id: `paused-${item.id}`,
+          kind: "automation_paused",
+          priority: 80,
+          itemId: item.id,
+        });
+        return;
+      }
+      if (
+        item.current <= item.reorderAt &&
+        !activeIds.has(item.id) &&
+        (!item.automationEnabled || item.automationMode === "assist")
+      ) {
+        tasks.push({
+          id: `restock-${item.id}`,
+          kind: "manual_restock",
+          priority: 60,
+          itemId: item.id,
+        });
+      }
+    });
+
+    return tasks.sort((a, b) => b.priority - a.priority);
+  }, [automationAlerts, automationMasterOn, ingredients, procurements]);
+
+  const jourvisTask = jourvisTasks[0];
+  const jourvisTaskItem = jourvisTask
+    ? ingredients.find((item) => item.id === jourvisTask.itemId)
+    : undefined;
+  const jourvisTaskRequest = jourvisTask?.requestId
+    ? procurements.find((request) => request.id === jourvisTask.requestId)
+    : undefined;
+
+  const jourvisAttention = Boolean(jourvisTask);
+  const jourvisFocusTarget = jourvisTask
+    ? jourvisTask.kind === "automation_exception"
+      ? activeTab === "overview"
+        ? jourvisTask.itemId === selected.id
+          ? "#jourvis-automation-decision"
+          : `#summary-item-${jourvisTask.itemId}`
+        : "#autoinventory-tab-overview"
+      : jourvisTask.kind === "quote_approval" || jourvisTask.kind === "fixed_approval"
+        ? activeTab === "orders" && jourvisTaskRequest
+          ? `#procurement-${jourvisTaskRequest.id}`
+          : "#autoinventory-tab-orders"
+        : jourvisTask.kind === "automation_paused"
           ? activeTab === "overview"
-            ? "#jourvis-supplier-action"
+            ? "#jourvis-auto-master"
             : "#autoinventory-tab-overview"
-          : undefined;
+          : activeTab === "overview"
+            ? `#summary-item-${jourvisTask.itemId}`
+            : "#autoinventory-tab-overview"
+    : undefined;
 
-  const jourvisFocusLabel = selectedAutomationAlert
-    ? "Approve or reject"
-    : selectedProcurementNeedsOwner
-      ? "Your decision is needed"
-      : selectedNeedsAutomationEnable
-        ? "Turn me on"
-        : selectedNeedsManualRestock
-          ? "Restock from here"
-          : undefined;
+  const jourvisFocusLabel = jourvisTask
+    ? jourvisTask.kind === "automation_exception"
+      ? "Approve or reject"
+      : jourvisTask.kind === "quote_approval"
+        ? "Quote needs you"
+        : jourvisTask.kind === "fixed_approval"
+          ? "Approve this order"
+          : jourvisTask.kind === "automation_paused"
+            ? "Turn me on"
+            : "Restock needed"
+    : undefined;
 
-  const jourvisMessage = selectedAutomationAlert
-    ? `I paused ${selected.name}. I need your decision.`
+  const jourvisMessage = jourvisTask && jourvisTaskItem
+    ? jourvisTask.kind === "automation_exception"
+      ? `${jourvisTaskItem.name} is outside one of my automatic limits.`
+      : jourvisTask.kind === "quote_approval"
+        ? `${jourvisTaskItem.name} has a supplier quote that needs your decision.`
+        : jourvisTask.kind === "fixed_approval"
+          ? `${jourvisTaskItem.name} has a purchase order ready for approval.`
+          : jourvisTask.kind === "automation_paused"
+            ? `${jourvisTaskItem.name} reached my ${jourvisTaskItem.automationTriggerPercent}% trigger, but Jourvis Auto is paused.`
+            : `${jourvisTaskItem.name} is low and needs restocking.`
     : selectedProcurement
       ? `${selected.name}: ${procurementStatusLabel(selectedProcurement.status)}.`
-      : selectedAutomationTriggered
-        ? automationMasterOn
-          ? `I’m watching ${selected.name}. It reached my ${selected.automationTriggerPercent}% automation trigger.`
-          : `${selected.name} reached my ${selected.automationTriggerPercent}% trigger, but Jourvis Auto is off.`
-        : selectedNeedsRestock
-          ? `${selected.name} is low. I can help handle the restock.`
-          : `I’m here. ${selected.name} is at ${percent(selected)}%.`;
+      : selected.automationEnabled
+        ? `I’m watching ${selected.name} at ${percent(selected)}%.`
+        : `I’m here. ${selected.name} is at ${percent(selected)}%.`;
 
-  const jourvisDetail = selectedAutomationAlert
-    ? selectedAutomationAlert
+  const jourvisDetail = jourvisTask && jourvisTaskItem
+    ? jourvisTask.kind === "automation_exception"
+      ? automationAlerts[jourvisTaskItem.id]
+      : jourvisTask.kind === "quote_approval" && jourvisTaskRequest
+        ? `${getSupplier(jourvisTaskItem).name} quoted ${formatMoney(procurementTotal(jourvisTaskRequest, ingredients))}. Approve, reject, or review the quote.`
+        : jourvisTask.kind === "fixed_approval" && jourvisTaskRequest
+          ? `The known order total is ${formatMoney(procurementTotal(jourvisTaskRequest, ingredients))}. Jourvis is waiting for your approval before supplier confirmation.`
+          : jourvisTask.kind === "automation_paused"
+            ? "Turn Jourvis Auto on if you want me to start handling configured items again."
+            : `Current stock is ${percent(jourvisTaskItem)}%. You can contact the supplier or configure automation.`
     : selectedProcurement?.automationNote
       ? selectedProcurement.automationNote
       : selectedProcurement
-        ? "I’ll keep the request separate from incoming stock until the supplier and buyer have confirmed the order."
+        ? "The supplier-side demo now advances automatically. I’ll bring you only the decisions that belong to you."
         : selected.automationEnabled
-          ? `Automation is ${automationMasterOn ? "active" : "ready but globally paused"} in ${selected.automationMode.replace("_", " ")} mode. I act at ${selected.automationTriggerPercent}% or lower.`
-          : "Open Configure if you want me to watch this supply, contact the supplier, or negotiate inside your limits.";
+          ? `I act at ${selected.automationTriggerPercent}% or lower in ${selected.automationMode === "assist" ? "watch only" : selected.automationMode === "auto_contact" ? "contact supplier" : "buy within limits"} mode.`
+          : "Configure this supply if you want me to watch it or handle purchasing within your limits.";
 
   const automationEnabledCount = ingredients.filter((item) => item.automationEnabled).length;
 
@@ -1311,6 +1405,7 @@ export default function MarinaraAutoinventoryPreviewPage() {
 
                         return (
                           <button
+                            id={`summary-item-${item.id}`}
                             key={item.id}
                             type="button"
                             className={`${styles.summaryTile} ${summaryToneClass(itemTone, styles)} ${active ? styles.summaryTileSelected : ""}`}
@@ -1944,34 +2039,51 @@ export default function MarinaraAutoinventoryPreviewPage() {
       ) : null}
 
       <JourvisPresence
-        status={jourvisAttention ? "Needs your decision" : automationMasterOn ? "Watching inventory" : "Available"}
+        eyebrow={jourvisTasks.length ? `JOURVIS · ${jourvisTasks.length} NEED${jourvisTasks.length === 1 ? "S" : ""} YOU` : "JOURVIS"}
+        status={jourvisTasks.length ? `Needs you · ${jourvisTasks.length}` : automationMasterOn ? "Watching inventory" : "Available"}
         message={jourvisMessage}
         detail={jourvisDetail}
         attention={jourvisAttention}
         focusTarget={jourvisFocusTarget}
         focusLabel={jourvisFocusLabel}
         actions={
-          selectedAutomationAlert
-            ? [
-                { label: "Approve", onClick: () => approveAutomationException(selected), primary: true },
-                { label: "Reject", onClick: () => rejectAutomationException(selected) },
-              ]
+          jourvisTask && jourvisTaskItem
+            ? jourvisTask.kind === "automation_exception"
+              ? [
+                  { label: "Approve once", onClick: () => approveAutomationException(jourvisTaskItem), primary: true },
+                  { label: "Reject", onClick: () => rejectAutomationException(jourvisTaskItem) },
+                ]
+              : jourvisTask.kind === "quote_approval" && jourvisTaskRequest
+                ? [
+                    { label: "Approve quote", onClick: () => buyerAcceptsQuote(jourvisTaskRequest), primary: true },
+                    { label: "Reject", onClick: () => declineProcurement(jourvisTaskRequest) },
+                    { label: "Review in Orders", onClick: () => { setSelectedId(jourvisTaskItem.id); setActiveTab("orders"); } },
+                  ]
+                : jourvisTask.kind === "fixed_approval" && jourvisTaskRequest
+                  ? [
+                      { label: "Approve order", onClick: () => buyerApprovesFixedAutomation(jourvisTaskRequest), primary: true },
+                      { label: "Reject", onClick: () => declineProcurement(jourvisTaskRequest) },
+                    ]
+                  : jourvisTask.kind === "automation_paused"
+                    ? [
+                        { label: "Turn Jourvis Auto on", onClick: () => {
+                          setAutomationMasterOn(true);
+                          window.localStorage.setItem("jourvis-autoinventory-automation-master", "true");
+                          log(`Jourvis Automation switched ON. Watching ${automationEnabledCount} configured supplies.`);
+                        }, primary: true },
+                        { label: `Review ${jourvisTaskItem.name}`, onClick: () => { setSelectedId(jourvisTaskItem.id); setActiveTab("overview"); } },
+                      ]
+                    : [
+                        { label: "Contact supplier", onClick: () => {
+                          setSelectedId(jourvisTaskItem.id);
+                          openContact([jourvisTaskItem], `Contact ${getSupplier(jourvisTaskItem).name}`);
+                        }, primary: true },
+                        { label: "Configure automation", href: `/restaurant/marinara-ristorante/Autoinventory-preview/configure?stock=${jourvisTaskItem.id}` },
+                      ]
             : selectedProcurement
               ? [
-                { label: "View purchase flow", onClick: () => setActiveTab("orders"), primary: true },
-                { label: `Configure ${selected.name}`, href: `/restaurant/marinara-ristorante/Autoinventory-preview/configure?stock=${selected.id}` },
-              ]
-            : selectedNeedsRestock || selectedAutomationTriggered
-              ? [
-                  ...(automationMasterOn
-                    ? []
-                    : [{ label: "Turn Jourvis Auto on", onClick: () => {
-                        setAutomationMasterOn(true);
-                        window.localStorage.setItem("jourvis-autoinventory-automation-master", "true");
-                        log(`Jourvis Automation switched ON. Watching ${automationEnabledCount} configured supplies.`);
-                      }, primary: true }]),
-                  { label: selected.purchasingMode === "quote" ? "Request supplier quote" : "Contact supplier", onClick: () => openContact([selected], `Contact ${selectedSupplier.name}`), primary: automationMasterOn },
-                  { label: "Configure automation", href: `/restaurant/marinara-ristorante/Autoinventory-preview/configure?stock=${selected.id}` },
+                  { label: "View purchase flow", onClick: () => setActiveTab("orders"), primary: true },
+                  { label: `Configure ${selected.name}`, href: `/restaurant/marinara-ristorante/Autoinventory-preview/configure?stock=${selected.id}` },
                 ]
               : [
                   { label: "Configure automation", href: `/restaurant/marinara-ristorante/Autoinventory-preview/configure?stock=${selected.id}`, primary: true },
