@@ -2,6 +2,7 @@ import type {
   CommandCenterBusiness,
   BusinessMetricSeed,
   JourvisDecision,
+  CommandCenterActivity,
 } from "./types";
 
 export type CommandCenterForecast = {
@@ -27,6 +28,7 @@ export interface CommandCenterDataProvider {
   getOverviewMetrics(businessId: string): Promise<BusinessMetricSeed[]>;
   getForecasts(businessId: string): Promise<CommandCenterForecast[]>;
   getDecisions(businessId: string): Promise<JourvisDecision[]>;
+  getActivity(businessId: string): Promise<CommandCenterActivity[]>;
   getBriefings(businessId: string): Promise<CommandCenterBriefing[]>;
 }
 
