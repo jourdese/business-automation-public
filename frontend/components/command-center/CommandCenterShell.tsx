@@ -377,6 +377,78 @@ export default function CommandCenterShell({ children }: { children: ReactNode }
             </div>
 
             <details className={styles.ruleAdvanced}>
+              <summary>Stock settings</summary>
+              <div className={styles.ruleEditorGrid}>
+                <label>
+                  <span>Full level</span>
+                  <div><input type="number" min="0.01" step="0.01" value={updateItem.fullLevel} onChange={(event) => updateDraftItem({ fullLevel: Math.max(0.01, Number(event.target.value) || 0.01) })} /><b>{updateItem.unit}</b></div>
+                </label>
+                <label>
+                  <span>Low-stock warning</span>
+                  <div><input type="number" min="0" step="0.01" value={updateItem.reorderAt} onChange={(event) => updateDraftItem({ reorderAt: Math.max(0, Number(event.target.value) || 0) })} /><b>{updateItem.unit}</b></div>
+                </label>
+              </div>
+            </details>
+
+            <details className={styles.ruleAdvanced}>
+              <summary>Supplier & purchasing</summary>
+              <div className={styles.ruleEditorGrid}>
+                <label>
+                  <span>Supplier</span>
+                  <select
+                    value={updateItem.supplierId}
+                    onChange={(event) => {
+                      const supplierId = event.target.value;
+                      const supplier = state.suppliers.find((entry) => entry.id === supplierId);
+                      updateDraftItem({
+                        supplierId,
+                        contactId: supplier?.contacts[0]?.id ?? updateItem.contactId,
+                      });
+                    }}
+                  >
+                    {state.suppliers.map((supplier) => (
+                      <option key={supplier.id} value={supplier.id}>{supplier.name}</option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  <span>Contact</span>
+                  <select
+                    value={updateItem.contactId}
+                    onChange={(event) => updateDraftItem({ contactId: event.target.value })}
+                  >
+                    {(state.suppliers.find((supplier) => supplier.id === updateItem.supplierId)?.contacts ?? []).map((contact) => (
+                      <option key={contact.id} value={contact.id}>{contact.name} · {contact.channel}</option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  <span>Purchase mode</span>
+                  <select value={updateItem.purchasingMode} onChange={(event) => updateDraftItem({ purchasingMode: event.target.value as typeof updateItem.purchasingMode })}>
+                    <option value="fixed">Fixed price</option>
+                    <option value="quote">Supplier quote</option>
+                  </select>
+                </label>
+                <label>
+                  <span>Pack quantity</span>
+                  <div><input type="number" min="0.01" step="0.01" value={updateItem.packSize} onChange={(event) => updateDraftItem({ packSize: Math.max(0.01, Number(event.target.value) || 0.01) })} /><b>{updateItem.unit}</b></div>
+                </label>
+                <label>
+                  <span>Pack price / estimate</span>
+                  <div><b>₱</b><input type="number" min="0" value={updateItem.packPrice} onChange={(event) => updateDraftItem({ packPrice: Math.max(0, Number(event.target.value) || 0) })} /></div>
+                </label>
+                <label>
+                  <span>Purchase unit label</span>
+                  <input type="text" value={updateItem.purchaseUnit} onChange={(event) => updateDraftItem({ purchaseUnit: event.target.value })} />
+                </label>
+                <label>
+                  <span>Lead time</span>
+                  <div><input type="number" min="0" step="0.5" value={updateItem.leadDays} onChange={(event) => updateDraftItem({ leadDays: Math.max(0, Number(event.target.value) || 0) })} /><b>days</b></div>
+                </label>
+              </div>
+            </details>
+
+            <details className={styles.ruleAdvanced}>
               <summary>Advanced purchasing authority</summary>
               <div className={styles.ruleEditorGrid}>
                 <label>
