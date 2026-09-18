@@ -79,6 +79,7 @@ export default function JourvisPresence({
     startTop: number;
   } | null>(null);
   const movedRef = useRef(false);
+  const openRequestSeenRef = useRef(openRequestKey);
   const [position, setPosition] = useState<Position | null>(null);
   const [open, setOpen] = useState(false);
   const [nudge, setNudge] = useState(true);
@@ -108,7 +109,8 @@ export default function JourvisPresence({
   }, [message, open]);
 
   useEffect(() => {
-    if (openRequestKey === undefined) return;
+    if (openRequestKey === undefined || openRequestSeenRef.current === openRequestKey) return;
+    openRequestSeenRef.current = openRequestKey;
     setOpen(true);
     setNudge(false);
   }, [openRequestKey]);
