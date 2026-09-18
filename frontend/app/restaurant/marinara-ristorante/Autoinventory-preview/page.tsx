@@ -157,23 +157,6 @@ function automationTriggered(item: Ingredient) {
   return percent(item) <= Math.max(0, Math.min(100, item.automationTriggerPercent));
 }
 
-function automationExceptionSignature(item: Ingredient) {
-  const quantity = suggestedOrder(item);
-  const packPrice = item.purchasingMode === "fixed" ? item.packPrice : item.targetPackPrice;
-  const estimatedSpend =
-    Math.ceil(quantity / Math.max(item.packSize, 0.01)) * packPrice;
-  return [
-    round(item.current),
-    quantity,
-    estimatedSpend,
-    item.maxAutoOrderQty,
-    item.maxAutoOrderSpend,
-    item.hardMaxPackPrice,
-    item.leadDays,
-    item.maxLeadDays,
-  ].join("|");
-}
-
 function projectedAtDelivery(item: Ingredient) {
   return Math.max(0, item.current + item.incoming - item.dailyUse * item.leadDays);
 }
@@ -397,6 +380,7 @@ export default function MarinaraAutoinventoryPreviewPage() {
   }
 
   const selectedAutomationAlert = automationAlerts[selected.id];
+  const selectedAutomationPaused = Boolean(automationRejected[selected.id]);
   const selectedNeedsRestock = selected.current <= selected.reorderAt;
   const selectedAutomationTriggered =
     selected.automationEnabled && automationTriggered(selected);
@@ -582,9 +566,11 @@ export default function MarinaraAutoinventoryPreviewPage() {
       ? jourvisWorkingRequest.automationNote
       : jourvisWorkingRequest
         ? "I’m handling the supplier-side demo automatically. I’ll interrupt you only when a decision belongs to you."
-        : selected.automationEnabled
-          ? `I act at ${selected.automationTriggerPercent}% or lower in ${selected.automationMode === "assist" ? "watch only" : selected.automationMode === "auto_contact" ? "contact supplier" : "buy within limits"} mode.`
-          : "Configure this supply if you want me to watch it or handle purchasing within your limits.";
+        : selectedAutomationPaused
+          ? `You paused automation for ${selected.name} after rejecting a purchase. I will not try again until you resume it.`
+          : selected.automationEnabled
+            ? `I act at ${selected.automationTriggerPercent}% or lower in ${selected.automationMode === "assist" ? "watch only" : selected.automationMode === "auto_contact" ? "contact supplier" : "buy within limits"} mode.`
+            : "Configure this supply if you want me to watch it or handle purchasing within your limits.";
 
   const automationEnabledCount = ingredients.filter((item) => item.automationEnabled).length;
 
@@ -602,7 +588,7 @@ export default function MarinaraAutoinventoryPreviewPage() {
         item.automationEnabled &&
         item.automationMode !== "assist" &&
         automationTriggered(item) &&
-        automationRejected[item.id] !== automationExceptionSignature(item) &&
+        !automationRejected[item.id] &&
         !activeItemIds.has(item.id),
     );
 
@@ -1046,16 +1032,24 @@ export default function MarinaraAutoinventoryPreviewPage() {
   }
 
   function rejectAutomationException(item: Ingredient) {
-    const signature = automationExceptionSignature(item);
-    setAutomationRejected((current) => ({ ...current, [item.id]: signature }));
+    setAutomationRejected((current) => ({ ...current, [item.id]: "owner_paused" }));
     setAutomationAlerts((current) => {
       const next = { ...current };
       delete next[item.id];
       return next;
     });
     log(
-      `Jourvis automation rejected for ${item.name}. This exact request will stay paused unless the stock or automation rules change.`,
+      `Jourvis automation paused for ${item.name} after your rejection. It will not try again until you resume it.`,
     );
+  }
+
+  function resumeAutomation(item: Ingredient) {
+    setAutomationRejected((current) => {
+      const next = { ...current };
+      delete next[item.id];
+      return next;
+    });
+    log(`Jourvis automation resumed for ${item.name}.`);
   }
 
   function supplierViewsRequest(request: ProcurementRequest) {
@@ -1225,6 +1219,26 @@ export default function MarinaraAutoinventoryPreviewPage() {
 
   function declineProcurement(request: ProcurementRequest) {
     updateProcurement(request.id, (current) => ({ ...current, status: "declined" }));
+
+    if (request.origin === "automation") {
+      const itemIds = request.lines.map((line) => line.itemId);
+      setAutomationRejected((current) => {
+        const next = { ...current };
+        itemIds.forEach((itemId) => {
+          next[itemId] = "owner_paused";
+        });
+        return next;
+      });
+      const names = itemIds
+        .map((itemId) => ingredients.find((item) => item.id === itemId)?.name)
+        .filter(Boolean)
+        .join(", ");
+      log(
+        `${request.id}: rejected by owner. Jourvis automation is paused for ${names || "this supply"} until you resume it.`,
+      );
+      return;
+    }
+
     log(`${request.id}: procurement request was declined/cancelled. No incoming stock was created.`);
   }
 
@@ -1603,7 +1617,15 @@ export default function MarinaraAutoinventoryPreviewPage() {
                         ? `Trigger ≤ ${selected.automationTriggerPercent}% · target ${formatMoney(selected.targetPackPrice)} · auto-accept ≤ ${formatMoney(selected.autoAcceptPackPrice)} · hard stop ${formatMoney(selected.hardMaxPackPrice)}`
                         : "Configure this supply if you want Jourvis to act automatically at a stock percentage you choose."}
                     </small>
-                    {automationAlerts[selected.id] ? (
+                    {selectedAutomationPaused ? (
+                      <div className={styles.automationPausedNotice}>
+                        <span>PAUSED BY YOU</span>
+                        <p>Jourvis will not create another automatic purchase for {selected.name} until you resume it.</p>
+                        <button type="button" onClick={() => resumeAutomation(selected)}>
+                          Resume Jourvis for {selected.name}
+                        </button>
+                      </div>
+                    ) : automationAlerts[selected.id] ? (
                       <>
                         <p>{automationAlerts[selected.id]}</p>
                         <div id="jourvis-automation-decision" className={styles.automationDecisionActions}>
@@ -1642,7 +1664,7 @@ export default function MarinaraAutoinventoryPreviewPage() {
                     </div>
                   </div>
 
-                  {!selectedAutomationAlert ? (
+                  {!selectedAutomationAlert && !selectedAutomationPaused ? (
                     <div className={styles.summaryActions}>
                     {selectedProcurement ? (
                       <button
