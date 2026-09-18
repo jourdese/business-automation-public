@@ -95,6 +95,7 @@ function state(
     purchases,
     suppliers: [],
     recipes: [],
+    menuItems: [],
     pausedItemIds: [],
     activity: [],
   };
