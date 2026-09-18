@@ -1034,35 +1034,54 @@ export default function MarinaraAutoinventoryPreviewPage() {
     setProcurements((current) => current.map((request) => request.id === id ? updater(request) : request));
   }
 
-  function approveRestockItem(item: Ingredient) {
-    const quantity = suggestedOrder(item);
-    if (quantity <= 0) return;
-    const supplier = getSupplier(item);
-    const contact = getContact(item);
-    const request: ProcurementRequest = {
-      id: `REQ-${String(procurements.length + 1).padStart(3, "0")}`,
-      supplierId: supplier.id,
-      contactId: contact.id,
-      mode: item.purchasingMode,
-      status: "requested",
-      lines: [{ itemId: item.id, requestedQty: quantity }],
-      deliveryFee: 0,
-      etaDays: item.leadDays,
-      buyerConfirmed: item.purchasingMode === "fixed",
-      supplierConfirmed: false,
-      incomingApplied: false,
-      origin: "manual",
-      previewOnly: true,
-      counteroffersUsed: 0,
-      automationNote: "Owner approved the suggested restock through Jourvis.",
-    };
+  function approveRestockItems(items: Ingredient[]) {
+    const requestedItems = items.filter((item) => suggestedOrder(item) > 0);
+    if (!requestedItems.length) return;
+
+    const groups = supplierGroupsForItems(requestedItems);
+    const requests: ProcurementRequest[] = groups.map((group, index) => {
+      const first = group[0];
+      const supplier = getSupplier(first);
+      const contact = getContact(first);
+      return {
+        id: `REQ-${String(procurements.length + index + 1).padStart(3, "0")}`,
+        supplierId: supplier.id,
+        contactId: contact.id,
+        mode: first.purchasingMode,
+        status: "requested",
+        lines: group.map((item) => ({
+          itemId: item.id,
+          requestedQty: suggestedOrder(item),
+        })),
+        deliveryFee: 0,
+        etaDays: Math.max(...group.map((item) => item.leadDays)),
+        buyerConfirmed: first.purchasingMode === "fixed",
+        supplierConfirmed: false,
+        incomingApplied: false,
+        origin: "manual",
+        previewOnly: true,
+        counteroffersUsed: 0,
+        automationNote: "Owner approved the suggested restock through Jourvis.",
+      };
+    });
+
     setAutomationRejected((current) => {
       const next = { ...current };
-      delete next[item.id];
+      requestedItems.forEach((item) => delete next[item.id]);
       return next;
     });
-    setProcurements((current) => [request, ...current]);
-    log(`${request.id}: approved ${quantity} ${item.unit} of ${item.name}. Jourvis started the supplier flow.`);
+    setProcurements((current) => [...requests, ...current]);
+    requests.forEach((request) => {
+      const names = request.lines
+        .map((line) => ingredients.find((item) => item.id === line.itemId)?.name)
+        .filter(Boolean)
+        .join(", ");
+      log(`${request.id}: approved ${names}. Jourvis started the supplier flow.`);
+    });
+  }
+
+  function approveRestockItem(item: Ingredient) {
+    approveRestockItems([item]);
   }
 
   function rejectItem(item: Ingredient, reason = "purchase") {
