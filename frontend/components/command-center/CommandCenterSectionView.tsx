@@ -1,6 +1,6 @@
 "use client";
 
-import { type ReactNode } from "react";
+import { type ReactNode, useMemo, useState } from "react";
 import {
   ArrowRight,
   Bot,
@@ -20,12 +20,34 @@ import { useCommandCenterRuntime } from "@/command-center/core/runtime-provider"
 import type { CommandCenterSectionId } from "@/command-center/core/types";
 import styles from "./CommandCenter.module.css";
 
+type ActivityFilter = "all" | "automatic" | "manual";
+
+function formatActivityTime(at: string, timezone: string) {
+  const date = new Date(at);
+  if (Number.isNaN(date.getTime())) return at;
+  return new Intl.DateTimeFormat("en-PH", {
+    timeZone: timezone,
+    dateStyle: "medium",
+    timeStyle: "short",
+    hour12: true,
+  }).format(date);
+}
+
+function humanizeAction(action: string) {
+  return action
+    .split("_")
+    .filter(Boolean)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+}
+
 export default function CommandCenterSectionView({
   section,
 }: {
   section: CommandCenterSectionId;
 }) {
   const { state, tasks, actOnTask } = useCommandCenterRuntime();
+  const [activityFilter, setActivityFilter] = useState<ActivityFilter>("all");
   const business = state.business;
   const activePurchases = state.purchases.filter((purchase) =>
     isPurchaseActive(purchase.status),
@@ -251,6 +273,130 @@ export default function CommandCenterSectionView({
             );
           })}
         </div>
+      </SectionFrame>
+    );
+  }
+
+  if (section === "activity") {
+    const automaticCount = state.activity.filter(
+      (entry) => entry.executionMode === "automatic",
+    ).length;
+    const manualCount = state.activity.filter(
+      (entry) => entry.executionMode === "manual",
+    ).length;
+    const visibleActivity = state.activity.filter((entry) =>
+      activityFilter === "all" ? true : entry.executionMode === activityFilter,
+    );
+
+    return (
+      <SectionFrame
+        eyebrow="ACTIVITY AUDIT"
+        title="Every action should be explainable later."
+        description="Review what Jourvis did automatically, what people did manually, why it happened, and the exact operating configuration captured when the action occurred."
+      >
+        <div className={styles.activitySummary}>
+          <article>
+            <span>AUTOMATIC</span>
+            <strong>{automaticCount}</strong>
+            <small>Jourvis and connected-system actions</small>
+          </article>
+          <article>
+            <span>MANUAL</span>
+            <strong>{manualCount}</strong>
+            <small>Owner-confirmed actions and configuration changes</small>
+          </article>
+          <article>
+            <span>TOTAL RECORDED</span>
+            <strong>{state.activity.length}</strong>
+            <small>Business-scoped audit entries</small>
+          </article>
+        </div>
+
+        <div className={styles.activityToolbar}>
+          <div>
+            {(["all", "automatic", "manual"] as ActivityFilter[]).map((filter) => (
+              <button
+                key={filter}
+                type="button"
+                data-active={activityFilter === filter}
+                onClick={() => setActivityFilter(filter)}
+              >
+                {filter === "all" ? "All activity" : filter.charAt(0).toUpperCase() + filter.slice(1)}
+              </button>
+            ))}
+          </div>
+          <span>{business.timezone}</span>
+        </div>
+
+        <div className={styles.activityList}>
+          {visibleActivity.map((entry) => (
+            <article
+              className={styles.activityEntry}
+              data-mode={entry.executionMode}
+              key={entry.id}
+            >
+              <header>
+                <div>
+                  <span className={styles.activityMode}>
+                    {entry.executionMode === "automatic"
+                      ? "AUTOMATIC"
+                      : entry.executionMode === "manual"
+                        ? "MANUAL"
+                        : "SYSTEM"}
+                  </span>
+                  <small>{entry.actor.toUpperCase()} · {entry.module.toUpperCase()}</small>
+                </div>
+                <time dateTime={entry.at}>
+                  {formatActivityTime(entry.at, business.timezone)}
+                </time>
+              </header>
+
+              <h3>{entry.message}</h3>
+
+              <div className={styles.activityReason}>
+                <span>
+                  {entry.actor === "jourvis" && entry.executionMode === "automatic"
+                    ? "WHY JOURVIS DID THIS"
+                    : "WHY THIS HAPPENED"}
+                </span>
+                <p>{entry.reason}</p>
+              </div>
+
+              {entry.configuration ? (
+                <details className={styles.activityConfig}>
+                  <summary>
+                    Configuration used at {formatActivityTime(entry.configuration.capturedAt, business.timezone)}
+                  </summary>
+                  <p>{entry.configuration.summary}</p>
+                  <div>
+                    {Object.entries(entry.configuration.values).map(([key, value]) => (
+                      <span key={key}>
+                        <small>{humanizeAction(key)}</small>
+                        <strong>{String(value)}</strong>
+                      </span>
+                    ))}
+                  </div>
+                </details>
+              ) : null}
+
+              <footer>
+                <span>{humanizeAction(entry.action)}</span>
+                {entry.relatedRequestId ? <small>Request {entry.relatedRequestId}</small> : null}
+                {entry.relatedEntityId ? <small>Entity {entry.relatedEntityId}</small> : null}
+              </footer>
+            </article>
+          ))}
+
+          {!visibleActivity.length ? (
+            <article className={styles.activityEmpty}>
+              No {activityFilter === "all" ? "" : activityFilter} activity has been recorded yet.
+            </article>
+          ) : null}
+        </div>
+
+        <p className={styles.demoNote}>
+          This branch stores the audit trail in business-scoped demo storage. The same activity schema is designed to move to persistent production storage so historical reasoning and configuration snapshots are not lost.
+        </p>
       </SectionFrame>
     );
   }
