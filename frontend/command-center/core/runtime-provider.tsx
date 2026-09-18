@@ -217,7 +217,8 @@ function advanceOneAutonomousStep(
     if (
       candidate.status === "quote_received" &&
       candidate.origin === "jourvis" &&
-      candidate.automationMode === "autobuy"
+      candidate.automationMode === "autobuy" &&
+      state.automationMasterOn
     ) {
       const quotedTotal = candidate.quotedTotal ?? candidate.estimatedTotal;
       const quotedPackPrice = candidate.quotedPackPrice ?? item.packPrice;
