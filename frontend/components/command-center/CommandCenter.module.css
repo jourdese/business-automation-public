@@ -1130,3 +1130,265 @@
     gap: 0.1rem;
   }
 }
+
+
+.activitySummary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.6rem;
+}
+
+.activitySummary article {
+  padding: 0.8rem;
+  border: 1px solid var(--cc-line);
+  background: var(--cc-panel);
+}
+
+.activitySummary span {
+  display: block;
+  color: var(--mint);
+  font: 0.55rem var(--font-mono);
+  letter-spacing: 0.08em;
+}
+
+.activitySummary strong {
+  display: block;
+  margin-top: 0.3rem;
+  font-size: 1.45rem;
+  letter-spacing: -0.04em;
+}
+
+.activitySummary small {
+  display: block;
+  margin-top: 0.2rem;
+  color: var(--cc-muted);
+  font-size: 0.58rem;
+  line-height: 1.4;
+}
+
+.activityToolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.55rem 0;
+  border-bottom: 1px solid var(--cc-line);
+}
+
+.activityToolbar > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.activityToolbar button {
+  min-height: 32px;
+  padding: 0.35rem 0.6rem;
+  border: 1px solid var(--cc-line);
+  background: #08161e;
+  color: var(--cc-muted);
+  font-size: 0.6rem;
+}
+
+.activityToolbar button[data-active="true"] {
+  border-color: var(--mint);
+  color: var(--ink);
+  background: var(--mint);
+}
+
+.activityToolbar > span {
+  color: var(--cc-muted);
+  font: 0.55rem var(--font-mono);
+}
+
+.activityList {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.activityEntry {
+  padding: 0.85rem;
+  border: 1px solid var(--cc-line);
+  border-left: 3px solid #536773;
+  background: var(--cc-panel);
+}
+
+.activityEntry[data-mode="automatic"] {
+  border-left-color: var(--mint);
+}
+
+.activityEntry[data-mode="manual"] {
+  border-left-color: var(--gold);
+}
+
+.activityEntry > header {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.8rem;
+  align-items: flex-start;
+}
+
+.activityEntry > header > div {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+}
+
+.activityEntry > header small,
+.activityEntry time {
+  color: var(--cc-muted);
+  font-size: 0.56rem;
+}
+
+.activityEntry time {
+  text-align: right;
+  font-family: var(--font-mono);
+}
+
+.activityMode {
+  width: fit-content;
+  padding: 0.18rem 0.4rem;
+  border: 1px solid #4c646f;
+  color: var(--cc-muted);
+  font: 0.52rem var(--font-mono);
+  letter-spacing: 0.05em;
+}
+
+.activityEntry[data-mode="automatic"] .activityMode {
+  border-color: #41725d;
+  color: var(--mint);
+}
+
+.activityEntry[data-mode="manual"] .activityMode {
+  border-color: #756643;
+  color: var(--gold);
+}
+
+.activityEntry h3 {
+  margin-top: 0.65rem;
+  font-size: 0.94rem;
+  letter-spacing: -0.025em;
+}
+
+.activityReason {
+  margin-top: 0.65rem;
+  padding: 0.65rem;
+  border: 1px solid rgba(48, 70, 80, 0.8);
+  background: #08161e;
+}
+
+.activityReason span {
+  display: block;
+  color: var(--mint);
+  font: 0.54rem var(--font-mono);
+  letter-spacing: 0.08em;
+}
+
+.activityReason p {
+  margin-top: 0.28rem;
+  color: var(--cc-muted);
+  font-size: 0.63rem;
+  line-height: 1.55;
+}
+
+.activityConfig {
+  margin-top: 0.55rem;
+  border: 1px solid var(--cc-line);
+  background: rgba(7, 19, 27, 0.55);
+}
+
+.activityConfig summary {
+  cursor: pointer;
+  padding: 0.58rem 0.65rem;
+  color: var(--ivory);
+  font-size: 0.61rem;
+}
+
+.activityConfig > p {
+  padding: 0 0.65rem 0.6rem;
+  color: var(--cc-muted);
+  font-size: 0.6rem;
+  line-height: 1.5;
+}
+
+.activityConfig > div {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1px;
+  border-top: 1px solid var(--cc-line);
+  background: var(--cc-line);
+}
+
+.activityConfig > div > span {
+  min-width: 0;
+  padding: 0.55rem;
+  background: #091720;
+}
+
+.activityConfig small,
+.activityConfig strong {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.activityConfig small {
+  color: var(--cc-muted);
+  font-size: 0.52rem;
+}
+
+.activityConfig strong {
+  margin-top: 0.18rem;
+  color: var(--ivory);
+  font-size: 0.6rem;
+}
+
+.activityEntry > footer {
+  display: flex;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+  margin-top: 0.55rem;
+}
+
+.activityEntry > footer span,
+.activityEntry > footer small {
+  padding: 0.18rem 0.4rem;
+  border: 1px solid rgba(50, 72, 82, 0.75);
+  color: #75868f;
+  font: 0.52rem var(--font-mono);
+}
+
+.activityEmpty {
+  padding: 1rem;
+  border: 1px dashed var(--cc-line);
+  color: var(--cc-muted);
+  font-size: 0.65rem;
+  text-align: center;
+}
+
+
+@media (max-width: 820px) {
+  .activitySummary {
+    grid-template-columns: 1fr;
+  }
+
+  .activityConfig > div {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 520px) {
+  .activityToolbar,
+  .activityEntry > header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .activityEntry time {
+    text-align: left;
+  }
+
+  .activityConfig > div {
+    grid-template-columns: 1fr;
+  }
+}
