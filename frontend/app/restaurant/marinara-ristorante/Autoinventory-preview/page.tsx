@@ -1545,7 +1545,7 @@ export default function MarinaraAutoinventoryPreviewPage() {
                   <div className={styles.summaryStats}>
                     <div><span>On hand</span><strong>{selected.current} {selected.unit}</strong></div>
                     <div><span>Full level</span><strong>{selected.fullLevel} {selected.unit}</strong></div>
-                    <div><span>Reorder at</span><strong>{selected.reorderAt} {selected.unit}</strong></div>
+                    <div><span>Low-stock warning</span><strong>{selected.reorderAt} {selected.unit}</strong></div>
                     <div><span>Days cover</span><strong>{round(daysRemaining)} days</strong></div>
                     <div><span>Confirmed incoming</span><strong>{selected.incoming} {selected.unit}</strong></div>
                     <div><span>Stock level</span><strong>{percent(selected)}%</strong></div>
@@ -1681,15 +1681,15 @@ export default function MarinaraAutoinventoryPreviewPage() {
 
                   <div className={styles.detailBattery}><i className={toneClassName(selectedTone, styles)} style={{ width: `${percent(selected)}%` }} /></div>
                   <div className={styles.detailBatteryLabels}><span>{selected.current} {selected.unit} current</span><strong>{percent(selected)}%</strong><span>{selected.fullLevel} {selected.unit} = 100%</span></div>
-                  <div className={styles.thresholdLine}><span style={{ left: `${Math.min(100, Math.round((selected.reorderAt / selected.fullLevel) * 100))}%` }} /><small>Reorder at {selected.reorderAt} {selected.unit}</small></div>
+                  <div className={styles.thresholdLine}><span style={{ left: `${Math.min(100, Math.round((selected.reorderAt / selected.fullLevel) * 100))}%` }} /><small>Low-stock warning at {selected.reorderAt} {selected.unit}</small></div>
 
                   <div className={styles.factGrid}>
                     <div><span>On hand</span><strong>{selected.current} {selected.unit}</strong></div>
                     <div><span>Full level</span><strong>{selected.fullLevel} {selected.unit}</strong></div>
-                    <div><span>Reorder at</span><strong>{selected.reorderAt} {selected.unit}</strong></div>
+                    <div><span>Low-stock warning</span><strong>{selected.reorderAt} {selected.unit}</strong></div>
                     <div><span>Days cover</span><strong>{round(daysRemaining)} days</strong></div>
                     <div><span>Confirmed incoming</span><strong>{selected.incoming} {selected.unit}</strong></div>
-                    <div><span>After delivery</span><strong>{projectedPercent(selected, selected.incoming)}%</strong></div>
+                    <div><span>After delivery</span><strong>{projectedPercent(selected)}%</strong></div>
                   </div>
 
                   <div className={styles.contactCard}>
@@ -1779,7 +1779,7 @@ export default function MarinaraAutoinventoryPreviewPage() {
                           <div className={styles.orderItem} key={item.id}>
                             <span className={styles.orderItemName}>
                               <StockIcon stockId={item.id} className={styles.stockIconSmall} size={18} />
-                              <span><strong>{item.name}</strong><small>{item.current}/{item.fullLevel} {item.unit} · reorder at {item.reorderAt}</small></span>
+                              <span><strong>{item.name}</strong><small>{item.current}/{item.fullLevel} {item.unit} · warning at {item.reorderAt}</small></span>
                             </span>
                             <b>{suggestedOrder(item)} {item.unit}</b>
                           </div>
