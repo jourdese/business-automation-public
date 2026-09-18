@@ -34,7 +34,7 @@ import {
   suppliers,
 } from "./inventory-config";
 import StockIcon from "./StockIcon";
-import JourvisPresence from "./JourvisPresence";
+import JourvisPresence from "@/components/jourvis/JourvisPresence";
 import styles from "./autoinventory-preview.module.css";
 
 type Tone = "good" | "watch" | "low" | "critical";
