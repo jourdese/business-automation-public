@@ -1648,7 +1648,10 @@ export default function MarinaraAutoinventoryPreviewPage() {
                         <Mail size={15} aria-hidden /> Contact supplier
                       </button>
                     )}
-                    <a className={styles.secondaryButton} href={`/restaurant/marinara-ristorante/Autoinventory-preview/configure?stock=${selected.id}`}>
+                    <button type="button" className={styles.secondaryButton} onClick={() => openStockAdjustment(selected)}>
+                      <PackageCheck size={15} aria-hidden /> Adjust stock
+                    </button>
+                    <a className={styles.textAction} href={`/restaurant/marinara-ristorante/Autoinventory-preview/configure?stock=${selected.id}`}>
                       <Settings2 size={15} aria-hidden /> Configure
                     </a>
                   </div>
