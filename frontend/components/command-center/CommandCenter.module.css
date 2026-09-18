@@ -2266,6 +2266,117 @@
   color: var(--ink);
 }
 
+.restockSuggestionPanel {
+  display: grid;
+  gap: 0.65rem;
+  padding: 0.75rem;
+  border: 1px solid #3b594c;
+  background: rgba(46, 107, 87, 0.05);
+}
+
+.restockSuggestionPanel > header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.8rem;
+}
+
+.restockSuggestionPanel > header span,
+.restockSuggestionCard header span {
+  color: var(--mint);
+  font: 0.53rem var(--font-mono);
+  letter-spacing: 0.08em;
+}
+
+.restockSuggestionPanel > header h3 {
+  margin-top: 0.18rem;
+  font-size: 0.83rem;
+}
+
+.restockSuggestionPanel > header p {
+  margin-top: 0.2rem;
+  max-width: 680px;
+  color: var(--cc-muted);
+  font-size: 0.56rem;
+  line-height: 1.45;
+}
+
+.restockSuggestionPanel > header > strong {
+  color: var(--mint);
+  font-size: 0.58rem;
+}
+
+.restockSuggestionGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.6rem;
+}
+
+.restockSuggestionCard {
+  display: grid;
+  gap: 0.55rem;
+  padding: 0.7rem;
+  border: 1px solid var(--cc-line);
+  background: var(--cc-panel);
+}
+
+.restockSuggestionCard > header {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.7rem;
+  align-items: flex-start;
+}
+
+.restockSuggestionCard header strong,
+.restockSuggestionCard header small {
+  display: block;
+}
+
+.restockSuggestionCard header strong {
+  margin-top: 0.15rem;
+  font-size: 0.7rem;
+}
+
+.restockSuggestionCard header small {
+  margin-top: 0.1rem;
+  color: var(--cc-muted);
+  font-size: 0.52rem;
+}
+
+.restockSuggestionCard > header > b {
+  color: var(--gold);
+  font-size: 0.6rem;
+}
+
+.restockSuggestionLine {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr) auto;
+  gap: 0.5rem;
+  align-items: center;
+  padding: 0.45rem 0;
+  border-top: 1px solid rgba(49, 71, 80, 0.7);
+}
+
+.restockSuggestionLine strong,
+.restockSuggestionLine small {
+  display: block;
+}
+
+.restockSuggestionLine strong {
+  font-size: 0.61rem;
+}
+
+.restockSuggestionLine small {
+  margin-top: 0.08rem;
+  color: var(--cc-muted);
+  font-size: 0.5rem;
+}
+
+.restockSuggestionLine > b {
+  color: var(--ivory);
+  font-size: 0.58rem;
+}
+
 .purchaseCardList {
   display: grid;
   gap: 0.65rem;
@@ -2961,7 +3072,8 @@
 
 
 @media (max-width: 980px) {
-  .menuGrid {
+  .menuGrid,
+  .restockSuggestionGrid {
     grid-template-columns: 1fr;
   }
 
@@ -2975,6 +3087,19 @@
 }
 
 @media (max-width: 620px) {
+  .restockSuggestionPanel > header,
+  .restockSuggestionCard > header {
+    flex-direction: column;
+  }
+
+  .restockSuggestionLine {
+    grid-template-columns: 38px minmax(0, 1fr);
+  }
+
+  .restockSuggestionLine > b {
+    grid-column: 2;
+  }
+
   .purchaseProgress {
     grid-template-columns: 1fr;
     gap: 0.32rem;
