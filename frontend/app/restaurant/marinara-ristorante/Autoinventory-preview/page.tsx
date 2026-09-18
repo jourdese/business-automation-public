@@ -1484,7 +1484,7 @@ export default function MarinaraAutoinventoryPreviewPage() {
           <div><span>Low</span><strong>{metrics.low}</strong></div>
           <div><span>Confirmed incoming</span><strong>{metrics.incoming}</strong></div>
           <div className={styles.headerActions}>
-            <a id="jourvis-global-configure" href="/restaurant/marinara-ristorante/Autoinventory-preview/configure"><Settings2 size={14} aria-hidden /> Configure stock</a>
+            <button id="jourvis-global-configure" type="button" onClick={() => openJourvisUpdate(selected)}><Settings2 size={14} aria-hidden /> Update with Jourvis</button>
             <a href="/restaurant/marinara-ristorante"><ArrowLeft size={14} aria-hidden /> Marinara</a>
             <button type="button" onClick={resetDemo}><RefreshCw size={14} aria-hidden /> Reset</button>
           </div>
@@ -1763,9 +1763,9 @@ export default function MarinaraAutoinventoryPreviewPage() {
                     <button type="button" className={styles.secondaryButton} onClick={() => openStockAdjustment(selected)}>
                       <PackageCheck size={15} aria-hidden /> Adjust stock
                     </button>
-                    <a className={styles.textAction} href={`/restaurant/marinara-ristorante/Autoinventory-preview/configure?stock=${selected.id}`}>
-                      <Settings2 size={15} aria-hidden /> Configure
-                    </a>
+                    <button type="button" className={styles.textAction} onClick={() => openJourvisUpdate(selected)}>
+                      <Settings2 size={15} aria-hidden /> Update
+                    </button>
                   </div>
                   ) : null}
 
@@ -1852,7 +1852,7 @@ export default function MarinaraAutoinventoryPreviewPage() {
                     ) : (
                       <button type="button" className={styles.primaryButton} disabled={orderAmount <= 0} onClick={() => openContact([selected], `Contact ${selectedSupplier.name}`)}><Mail size={16} aria-hidden /> Contact supplier</button>
                     )}
-                    <a className={styles.textAction} href={`/restaurant/marinara-ristorante/Autoinventory-preview/configure?stock=${selected.id}`}><Settings2 size={15} aria-hidden /> Configure stock</a>
+                    <button type="button" className={styles.textAction} onClick={() => openJourvisUpdate(selected)}><Settings2 size={15} aria-hidden /> Update</button>
                     <button type="button" className={styles.textAction} onClick={() => openStockAdjustment(selected)}><PackageCheck size={15} aria-hidden /> Adjust stock</button>
                     <button type="button" className={styles.textAction} onClick={() => recordWaste(selected)}><TriangleAlert size={15} aria-hidden /> Record demo waste</button>
                   </div>
