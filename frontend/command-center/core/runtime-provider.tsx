@@ -13,6 +13,7 @@ import { resolveCommandCenterBusiness } from "./business-registry";
 import {
   canAdvancePurchase,
   estimatedPurchaseTotal,
+  evaluateAutomaticPurchaseStart,
   evaluatePurchaseAuthority,
   isPurchaseActive,
   normalizeInventoryAuthorityConfiguration,
@@ -203,7 +204,8 @@ function nextAutonomousPurchase(
 
       const percent =
         (candidate.current / Math.max(candidate.fullLevel, 0.01)) * 100;
-      return percent <= candidate.automationTriggerPercent;
+      if (percent > candidate.automationTriggerPercent) return false;
+      return evaluateAutomaticPurchaseStart(candidate).allowed;
     })
     .sort((a, b) => {
       const aPercent = a.current / Math.max(a.fullLevel, 0.01);
@@ -256,7 +258,8 @@ function hasQueuedAutonomousPurchase(state: CommandCenterRuntimeState) {
     }
     const percent =
       (item.current / Math.max(item.fullLevel, 0.01)) * 100;
-    return percent <= item.automationTriggerPercent;
+    if (percent > item.automationTriggerPercent) return false;
+    return evaluateAutomaticPurchaseStart(item).allowed;
   });
 }
 
