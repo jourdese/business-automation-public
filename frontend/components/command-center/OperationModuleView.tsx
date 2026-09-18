@@ -17,11 +17,13 @@ import {
 } from "lucide-react";
 import { operationCatalog } from "@/command-center/core/business-registry";
 import {
+  estimatedPurchaseTotal,
   inventoryPercent,
   isPurchaseActive,
   projectedInventoryAtDelivery,
   purchaseProgressStage,
   projectedInventoryPercentAtDelivery,
+  suggestedPurchaseQuantity,
   type CommandCenterStockAdjustmentReason,
 } from "@/command-center/core/runtime";
 import { useCommandCenterRuntime } from "@/command-center/core/runtime-provider";
@@ -59,6 +61,7 @@ export default function OperationModuleView({
     adjustInventory,
     receivePurchase,
     updatePurchaseQuantity,
+    startOwnerPurchase,
     recordRecipeSale,
   } = useCommandCenterRuntime();
 
@@ -329,6 +332,29 @@ export default function OperationModuleView({
   }
 
   if (moduleId === "purchasing") {
+    const activePurchaseItemIds = new Set(
+      state.purchases
+        .filter((purchase) => isPurchaseActive(purchase.status))
+        .map((purchase) => purchase.itemId),
+    );
+    const supplierRestockGroups = Array.from(
+      state.inventory
+        .filter(
+          (item) =>
+            item.current <= item.reorderAt &&
+            suggestedPurchaseQuantity(item) > 0 &&
+            !state.pausedItemIds.includes(item.id) &&
+            !activePurchaseItemIds.has(item.id),
+        )
+        .reduce((groups, item) => {
+          const key = `${item.supplierId}::${item.purchasingMode}`;
+          const current = groups.get(key) ?? [];
+          current.push(item);
+          groups.set(key, current);
+          return groups;
+        }, new Map<string, typeof state.inventory>()),
+    ).map(([, items]) => items);
+
     const purchases = [...state.purchases]
       .filter((purchase) =>
         purchaseFilter === "all"
@@ -382,6 +408,92 @@ export default function OperationModuleView({
           </div>
           <span>{purchases.length} purchase{purchases.length === 1 ? "" : "s"}</span>
         </div>
+
+        {supplierRestockGroups.length ? (
+          <section className={styles.restockSuggestionPanel}>
+            <header>
+              <div>
+                <span>RESTOCK SUGGESTIONS</span>
+                <h3>Approve supplier work without merging item authority.</h3>
+                <p>
+                  Items are grouped here by supplier and purchase mode for owner review.
+                  Starting a group still creates one purchase workflow per item.
+                </p>
+              </div>
+              <strong>{supplierRestockGroups.length} supplier group{supplierRestockGroups.length === 1 ? "" : "s"}</strong>
+            </header>
+
+            <div className={styles.restockSuggestionGrid}>
+              {supplierRestockGroups.map((items) => {
+                const first = items[0];
+                const supplier = supplierById.get(first.supplierId);
+                const contact =
+                  supplier?.contacts.find((entry) => entry.id === first.contactId) ??
+                  supplier?.contacts[0];
+                const estimatedTotal = items.reduce(
+                  (sum, item) =>
+                    sum +
+                    estimatedPurchaseTotal(
+                      item,
+                      suggestedPurchaseQuantity(item),
+                    ),
+                  0,
+                );
+
+                return (
+                  <article
+                    className={styles.restockSuggestionCard}
+                    key={`${first.supplierId}-${first.purchasingMode}`}
+                  >
+                    <header>
+                      <div>
+                        <span>{first.purchasingMode === "quote" ? "QUOTE REQUIRED" : "FIXED PRICE"}</span>
+                        <strong>{supplier?.name ?? first.supplierId}</strong>
+                        <small>
+                          {contact
+                            ? `${contact.name} · ${contact.role} · ${contact.channel}`
+                            : "Configured supplier contact"}
+                        </small>
+                      </div>
+                      <b>
+                        {first.purchasingMode === "quote"
+                          ? `Est. ₱${Math.round(estimatedTotal).toLocaleString("en-PH")}`
+                          : `₱${Math.round(estimatedTotal).toLocaleString("en-PH")}`}
+                      </b>
+                    </header>
+
+                    <div>
+                      {items.map((item) => (
+                        <div className={styles.restockSuggestionLine} key={item.id}>
+                          <SupplyPhoto
+                            supplyId={item.id}
+                            className={styles.supplierSupplyPhoto}
+                            size={38}
+                          />
+                          <span>
+                            <strong>{item.name}</strong>
+                            <small>
+                              {item.current}/{item.fullLevel} {item.unit} · warning at {item.reorderAt}
+                            </small>
+                          </span>
+                          <b>{suggestedPurchaseQuantity(item)} {item.unit}</b>
+                        </div>
+                      ))}
+                    </div>
+
+                    <button
+                      type="button"
+                      className={styles.recipeSaleButton}
+                      onClick={() => items.forEach((item) => startOwnerPurchase(item.id))}
+                    >
+                      Start supplier flow
+                    </button>
+                  </article>
+                );
+              })}
+            </div>
+          </section>
+        ) : null}
 
         <div className={styles.purchaseCardList}>
           {purchases.map((purchase) => {
