@@ -52,5 +52,17 @@
     "typescript/no-require-imports": "error",
     "typescript/no-unnecessary-type-constraint": "error",
     "typescript/no-unsafe-function-type": "error"
-  }
+  },
+  "overrides": [
+    {
+      "files": [
+        "components/command-center/BusinessBrandMark.tsx",
+        "components/command-center/MenuPhoto.tsx",
+        "components/command-center/SupplyPhoto.tsx"
+      ],
+      "rules": {
+        "nextjs/no-img-element": "off"
+      }
+    }
+  ]
 }
