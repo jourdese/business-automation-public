@@ -35,10 +35,6 @@ type CommandCenterRuntimeContextValue = {
   tasks: JourvisRuntimeTask[];
   loading: boolean;
   actOnTask: (taskId: string, action: JourvisTaskAction) => void;
-  updateInventoryItem: (
-    itemId: string,
-    patch: Partial<CommandCenterInventoryItem>,
-  ) => void;
   applyInventoryConfiguration: (
     previous: CommandCenterInventoryItem,
     next: CommandCenterInventoryItem,
@@ -510,19 +506,6 @@ export function CommandCenterRuntimeProvider({
     [],
   );
 
-  const updateInventoryItem = useCallback(
-    (itemId: string, patch: Partial<CommandCenterInventoryItem>) => {
-      setState((current) => ({
-        ...current,
-        inventory: current.inventory.map((item) =>
-          item.id === itemId ? { ...item, ...patch } : item,
-        ),
-        pausedItemIds: current.pausedItemIds.filter((id) => id !== itemId),
-      }));
-    },
-    [],
-  );
-
   const applyInventoryConfiguration = useCallback(
     (
       previous: CommandCenterInventoryItem,
@@ -611,7 +594,6 @@ export function CommandCenterRuntimeProvider({
       tasks,
       loading,
       actOnTask,
-      updateInventoryItem,
       applyInventoryConfiguration,
       setAutomationMasterOn,
       resumeItem,
@@ -627,7 +609,6 @@ export function CommandCenterRuntimeProvider({
       setAutomationMasterOn,
       state,
       tasks,
-      updateInventoryItem,
     ],
   );
 
