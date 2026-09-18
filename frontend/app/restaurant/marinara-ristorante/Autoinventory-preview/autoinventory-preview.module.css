@@ -1665,3 +1665,447 @@
     bottom: 4px;
   }
 }
+
+
+/* Procurement agreement lifecycle */
+.summaryProcurementBadge {
+  position: absolute;
+  right: 8px;
+  bottom: 35px;
+  z-index: 6;
+  max-width: calc(100% - 16px);
+  padding: 0.18rem 0.32rem;
+  border: 1px solid #7c8ba0;
+  background: rgba(25, 38, 52, 0.9);
+  color: #e8eef7;
+  font: 0.5rem var(--font-mono);
+  letter-spacing: 0.025em;
+  text-transform: uppercase;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.28);
+}
+
+.summaryProcurementBadge[data-status="quote_received"],
+.summaryProcurementBadge[data-status="counter_sent"] {
+  border-color: #d5a75d;
+  background: rgba(83, 58, 27, 0.92);
+  color: #ffe0a5;
+}
+
+.summaryProcurementBadge[data-status="awaiting_confirmation"] {
+  border-color: #b59be3;
+  background: rgba(60, 45, 87, 0.92);
+  color: #eadcff;
+}
+
+.summaryProcurementBadge[data-status="confirmed"],
+.summaryProcurementBadge[data-status="in_transit"] {
+  border-color: var(--mint);
+  background: rgba(30, 83, 65, 0.94);
+  color: #dff8eb;
+}
+
+.procurementColumns {
+  display: grid;
+  grid-template-columns: minmax(290px, 0.42fr) minmax(0, 0.58fr);
+  min-height: 520px;
+}
+
+.procurementNeeds {
+  min-width: 0;
+  padding: 1rem;
+  border-right: 1px solid var(--border);
+  background: #091820;
+}
+
+.procurementFlow {
+  min-width: 0;
+  padding: 1rem;
+  background:
+    linear-gradient(rgba(167, 227, 197, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(167, 227, 197, 0.025) 1px, transparent 1px),
+    #0a1720;
+  background-size: 22px 22px;
+}
+
+.modeStack {
+  text-align: right;
+}
+
+.modeStack b,
+.modeStack small {
+  display: block;
+}
+
+.modeStack b {
+  font-size: 0.78rem;
+}
+
+.modeStack small {
+  margin-top: 0.14rem;
+  color: var(--mint);
+  font: 0.56rem var(--font-mono);
+  text-transform: uppercase;
+}
+
+.procurementCard {
+  margin-top: 0.75rem;
+  border: 1px solid #334852;
+  background: #0b1a24;
+  box-shadow:
+    inset 0 0 0 1px rgba(167, 227, 197, 0.025),
+    3px 3px 0 rgba(0, 0, 0, 0.18);
+}
+
+.procurementCard[data-status="confirmed"],
+.procurementCard[data-status="in_transit"] {
+  border-color: #477661;
+}
+
+.procurementCard[data-status="quote_received"],
+.procurementCard[data-status="counter_sent"] {
+  border-color: #755c34;
+}
+
+.procurementCard[data-status="declined"] {
+  opacity: 0.62;
+}
+
+.procurementCardHead {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.85rem;
+  border-bottom: 1px solid var(--border);
+  background: rgba(18, 35, 46, 0.48);
+}
+
+.procurementCardHead > div:first-child > span {
+  color: var(--mint);
+  font: 0.57rem var(--font-mono);
+  letter-spacing: 0.08em;
+}
+
+.procurementCardHead h3 {
+  margin-top: 0.18rem;
+  font-size: 1rem;
+}
+
+.procurementCardHead small {
+  display: block;
+  margin-top: 0.1rem;
+  color: var(--slate);
+  font-size: 0.62rem;
+}
+
+.procurementStatus {
+  flex: 0 0 auto;
+  text-align: right;
+}
+
+.procurementStatus b,
+.procurementStatus small {
+  display: block;
+}
+
+.procurementStatus b {
+  color: var(--ivory);
+  font: 0.6rem var(--font-mono);
+  text-transform: uppercase;
+}
+
+.procurementStatus small {
+  margin-top: 0.25rem;
+  color: var(--mint);
+}
+
+.procurementProgress {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0;
+  padding: 0.75rem 0.85rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.procurementProgress > span {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 0.28rem;
+  color: #60717a;
+  font: 0.52rem var(--font-mono);
+  text-transform: uppercase;
+  text-align: center;
+}
+
+.procurementProgress > span::before {
+  content: "";
+  position: absolute;
+  top: 5px;
+  left: 0;
+  width: 50%;
+  height: 1px;
+  background: #2e414a;
+}
+
+.procurementProgress > span::after {
+  content: "";
+  position: absolute;
+  top: 5px;
+  right: 0;
+  width: 50%;
+  height: 1px;
+  background: #2e414a;
+}
+
+.procurementProgress > span:first-child::before,
+.procurementProgress > span:last-child::after {
+  display: none;
+}
+
+.procurementProgress i {
+  position: relative;
+  z-index: 1;
+  width: 11px;
+  height: 11px;
+  border: 2px solid #43555e;
+  background: #0b1a24;
+}
+
+.procurementProgress > span[data-reached="true"] {
+  color: var(--mint);
+}
+
+.procurementProgress > span[data-reached="true"] i {
+  border-color: var(--mint);
+  background: var(--emerald);
+  box-shadow: 0 0 8px rgba(167, 227, 197, 0.16);
+}
+
+.procurementConfirmations {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  border-bottom: 1px solid var(--border);
+}
+
+.procurementConfirmations > span {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.55rem 0.8rem;
+  color: var(--slate);
+  font-size: 0.63rem;
+}
+
+.procurementConfirmations > span:first-child {
+  border-right: 1px solid var(--border);
+}
+
+.procurementConfirmations i {
+  width: 8px;
+  height: 8px;
+  border: 1px solid #55666f;
+  background: #1d2d35;
+}
+
+.procurementConfirmations i[data-confirmed="true"] {
+  border-color: var(--mint);
+  background: var(--emerald);
+}
+
+.procurementLines {
+  padding: 0.2rem 0.85rem 0.4rem;
+}
+
+.procurementLine {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(130px, auto);
+  gap: 1rem;
+  align-items: center;
+  padding: 0.65rem 0;
+  border-bottom: 1px solid rgba(42, 58, 68, 0.75);
+}
+
+.procurementLine:last-child {
+  border-bottom: 0;
+}
+
+.procurementLine > span:last-child {
+  text-align: right;
+}
+
+.procurementLine > span:last-child small,
+.procurementLine > span:last-child b {
+  display: block;
+}
+
+.procurementLine > span:last-child small {
+  color: var(--slate);
+  font-size: 0.57rem;
+}
+
+.procurementLine > span:last-child b {
+  margin-top: 0.12rem;
+  color: var(--ivory);
+  font-size: 0.68rem;
+}
+
+.quoteSummary {
+  margin: 0.35rem 0.85rem 0;
+  padding: 0.72rem;
+  border: 1px solid #705a36;
+  background: rgba(85, 60, 29, 0.28);
+}
+
+.quoteSummary span,
+.quoteSummary strong,
+.quoteSummary small {
+  display: block;
+}
+
+.quoteSummary span {
+  color: #f0bd78;
+  font: 0.56rem var(--font-mono);
+  letter-spacing: 0.08em;
+}
+
+.quoteSummary strong {
+  margin-top: 0.16rem;
+  font-size: 1.05rem;
+}
+
+.quoteSummary small {
+  margin-top: 0.12rem;
+  color: var(--slate);
+  font-size: 0.6rem;
+}
+
+.receivingEditor {
+  margin: 0.65rem 0.85rem 0;
+  padding: 0.72rem;
+  border: 1px solid #426c5b;
+  background: rgba(46, 107, 87, 0.13);
+}
+
+.receivingEditor > span {
+  color: var(--mint);
+  font: 0.56rem var(--font-mono);
+  letter-spacing: 0.08em;
+}
+
+.receivingEditor label {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 120px;
+  gap: 0.8rem;
+  align-items: center;
+  margin-top: 0.55rem;
+}
+
+.receivingEditor label > span {
+  font-size: 0.68rem;
+}
+
+.receivingEditor label > span small {
+  display: block;
+  margin-top: 0.08rem;
+  color: var(--slate);
+  font-size: 0.57rem;
+}
+
+.receivingEditor label > div {
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--border);
+  background: #07131b;
+}
+
+.receivingEditor input {
+  width: 100%;
+  min-width: 0;
+  min-height: 34px;
+  padding: 0.3rem 0.45rem;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--ivory);
+}
+
+.receivingEditor label b {
+  padding: 0 0.45rem;
+  color: var(--slate);
+  font-size: 0.62rem;
+}
+
+.procurementActions {
+  display: flex;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+  padding: 0.8rem 0.85rem;
+  border-top: 1px solid var(--border);
+  background: rgba(7, 19, 27, 0.5);
+}
+
+.procurementActions .textAction {
+  min-height: 40px;
+}
+
+.procurementClosed {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 38px;
+  color: var(--slate);
+  font-size: 0.68rem;
+}
+
+@media (max-width: 900px) {
+  .procurementColumns {
+    grid-template-columns: 1fr;
+  }
+
+  .procurementNeeds {
+    border-right: 0;
+    border-bottom: 1px solid var(--border);
+  }
+}
+
+@media (max-width: 600px) {
+  .procurementCardHead,
+  .procurementLine {
+    grid-template-columns: 1fr;
+  }
+
+  .procurementCardHead {
+    flex-direction: column;
+  }
+
+  .procurementStatus,
+  .procurementLine > span:last-child {
+    text-align: left;
+  }
+
+  .procurementProgress {
+    overflow-x: auto;
+    grid-template-columns: repeat(5, minmax(72px, 1fr));
+  }
+
+  .procurementConfirmations {
+    grid-template-columns: 1fr;
+  }
+
+  .procurementConfirmations > span:first-child {
+    border-right: 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .receivingEditor label {
+    grid-template-columns: 1fr;
+  }
+
+  .procurementActions .primaryButton,
+  .procurementActions .secondaryButton {
+    width: 100%;
+  }
+}
