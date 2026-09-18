@@ -2608,3 +2608,34 @@
   font-size: 0.58rem;
   line-height: 1.45;
 }
+
+
+.quoteWhy {
+  margin-top: 0.55rem;
+  padding: 0.65rem 0.7rem;
+  border: 1px solid #705d37;
+  border-left: 3px solid var(--gold);
+  background: rgba(104, 76, 30, 0.16);
+}
+
+.quoteWhy > span {
+  display: block;
+  color: #efc77e;
+  font: 0.55rem var(--font-mono);
+  letter-spacing: 0.08em;
+}
+
+.quoteWhy > strong {
+  display: block;
+  margin-top: 0.3rem;
+  color: var(--ivory);
+  font-size: 0.7rem;
+  line-height: 1.45;
+}
+
+.quoteWhy > p {
+  margin-top: 0.3rem;
+  color: var(--slate);
+  font-size: 0.62rem;
+  line-height: 1.5;
+}
