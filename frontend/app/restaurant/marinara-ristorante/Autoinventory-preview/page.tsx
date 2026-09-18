@@ -667,7 +667,17 @@ export default function MarinaraAutoinventoryPreviewPage() {
         const item = ingredients.find((candidate) => candidate.id === line.itemId);
         if (!item) return false;
         const price = line.quotedPackPrice ?? Number.POSITIVE_INFINITY;
-        return item.autoNegotiate && price <= item.hardMaxPackPrice && request.counteroffersUsed < item.maxCounteroffers;
+        const quantity = line.agreedQty ?? line.requestedQty;
+        const targetSpend =
+          Math.ceil(quantity / Math.max(item.packSize, 0.01)) * item.targetPackPrice;
+        return (
+          item.autoNegotiate &&
+          price <= item.hardMaxPackPrice &&
+          request.counteroffersUsed < item.maxCounteroffers &&
+          targetSpend <= item.maxAutoOrderSpend &&
+          quotedRequest.deliveryFee <= item.maxDeliveryFee &&
+          quotedRequest.etaDays <= item.maxLeadDays
+        );
       });
 
       if (canAutoCounter && items.length) {
