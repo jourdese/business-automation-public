@@ -963,7 +963,7 @@ export default function OperationModuleView({
     );
   }
 
-  if (moduleId === "menu" && state.menuItems.length) {
+  if (moduleId === "menu") {
     const categories = [
       "All",
       ...Array.from(new Set(state.menuItems.map((item) => item.category))),
@@ -979,6 +979,7 @@ export default function OperationModuleView({
           item.printedName,
           item.category,
           item.variant ?? "",
+          item.description ?? "",
         ]
           .join(" ")
           .toLowerCase()
@@ -986,9 +987,18 @@ export default function OperationModuleView({
       return matchesCategory && matchesSearch;
     });
     const mappedCount = state.menuItems.filter((item) => item.recipeId).length;
+    const pricedCount = state.menuItems.filter(
+      (item) => item.currentPrice !== undefined,
+    ).length;
+    const archivedReferenceCount = state.menuItems.filter(
+      (item) => item.referenceSource === "archived-menu-photo",
+    ).length;
     const referenceYear =
       state.menuItems.find((item) => item.referencePublicationDate)
         ?.referencePublicationDate?.slice(0, 4) ?? "archived";
+    const editingMenuItem = menuEditor?.id
+      ? state.menuItems.find((item) => item.id === menuEditor.id)
+      : undefined;
 
     return (
       <section className={styles.sectionPage}>
@@ -1000,33 +1010,51 @@ export default function OperationModuleView({
 
         <div className={styles.operationModuleHero}>
           <div>
-            <span>MENU ECONOMICS</span>
-            <h2>Separate what the menu says from what Jourvis can actually operate.</h2>
+            <span>MENU MANAGEMENT</span>
+            <h2>Manage live menu configuration without overwriting historical references.</h2>
             <p>
-              Marinara&apos;s archived menu references are visible here without being
-              presented as current pricing. Items with an inventory recipe mapping can
-              also expose ingredient cost, stock risk, possible servings, and simulated
-              POS deductions.
+              Add and edit menu items, current selling prices, availability, and recipe links.
+              Archived source prices remain immutable reference data.
             </p>
           </div>
           <ChefHat size={36} aria-hidden />
         </div>
 
+        <div className={styles.entityToolbar}>
+          <div>
+            <button type="button" data-primary onClick={openNewMenuItem}>
+              <PlusCircle size={15} aria-hidden /> Add menu item
+            </button>
+          </div>
+          <span>{state.menuItems.filter((item) => item.active).length} active · {state.menuItems.length} total</span>
+        </div>
+
+        {menuEditor ? (
+          <MenuEditorPanel
+            draft={menuEditor}
+            setDraft={setMenuEditor}
+            existing={editingMenuItem}
+            recipes={state.recipes}
+            onSave={submitMenuEditor}
+            onCancel={() => setMenuEditor(null)}
+          />
+        ) : null}
+
         <div className={styles.activitySummary}>
           <article>
             <span>ARCHIVED REFERENCES</span>
-            <strong>{state.menuItems.length}</strong>
-            <small>menu entries and variants from {referenceYear}</small>
+            <strong>{archivedReferenceCount}</strong>
+            <small>source-backed entries from {referenceYear}</small>
           </article>
           <article>
             <span>RECIPE MAPPED</span>
             <strong>{mappedCount}</strong>
-            <small>items currently connected to inventory usage</small>
+            <small>items connected to inventory usage</small>
           </article>
           <article>
-            <span>CURRENT PRICE VERIFIED</span>
-            <strong>0</strong>
-            <small>live POS/menu pricing is not connected yet</small>
+            <span>CURRENT PRICE SET</span>
+            <strong>{pricedCount}</strong>
+            <small>owner-managed live/demo selling prices</small>
           </article>
         </div>
 
@@ -1050,17 +1078,16 @@ export default function OperationModuleView({
               </button>
             ))}
           </div>
-          <span>{visibleMenuItems.length} of {state.menuItems.length} references</span>
+          <span>{visibleMenuItems.length} of {state.menuItems.length} items</span>
         </div>
 
         <article className={styles.migrationCard}>
           <div>
             <span>REFERENCE DATA</span>
-            <strong>Archived menu amounts are context, not current selling prices</strong>
+            <strong>Current price and archived price are intentionally separate</strong>
             <p>
-              Jourvis keeps the archived reference separate from the current-price field.
-              A real POS or owner-approved menu source can replace the current-price value
-              later without losing the historical reference.
+              Editing a menu item changes live Command Center configuration only. Historical
+              menu source, publication date, printed name, and archived reference price remain preserved.
             </p>
           </div>
         </article>
@@ -1093,9 +1120,19 @@ export default function OperationModuleView({
             const riskyIngredients = ingredients.filter(
               ({ item }) => item.current <= item.reorderAt,
             );
+            const foodCostPercent =
+              recipe &&
+              menuItem.currentPrice !== undefined &&
+              menuItem.currentPrice > 0
+                ? Math.round((ingredientCost / menuItem.currentPrice) * 1000) / 10
+                : null;
 
             return (
-              <article className={styles.menuCard} key={menuItem.id}>
+              <article
+                className={styles.menuCard}
+                data-inactive={!menuItem.active}
+                key={menuItem.id}
+              >
                 {recipe ? (
                   <MenuPhoto
                     menuId={recipe.id}
@@ -1114,32 +1151,63 @@ export default function OperationModuleView({
                         {menuItem.category}
                         {menuItem.variant ? " · " + menuItem.variant : ""}
                       </span>
-                      <h3>{menuItem.printedName}</h3>
+                      <h3>{menuItem.name}</h3>
                     </div>
-                    <b data-risk={Boolean(recipe) && riskyIngredients.length > 0}>
-                      {recipe
-                        ? riskyIngredients.length
-                          ? riskyIngredients.length + " stock risk"
-                          : "Recipe mapped"
-                        : "Reference only"}
+                    <b
+                      data-risk={
+                        menuItem.active &&
+                        menuItem.available &&
+                        Boolean(recipe?.active) &&
+                        riskyIngredients.length > 0
+                      }
+                    >
+                      {!menuItem.active
+                        ? "Archived"
+                        : !menuItem.available
+                          ? "Unavailable"
+                          : recipe?.active
+                            ? riskyIngredients.length
+                              ? riskyIngredients.length + " stock risk"
+                              : "Recipe mapped"
+                            : menuItem.recipeId
+                              ? "Recipe archived"
+                              : "No recipe"}
                     </b>
                   </div>
 
                   <p>
-                    {recipe
-                      ? recipe.description
-                      : "Archived menu reference only. Ingredient quantities and inventory recipe mapping are not connected for this item yet."}
+                    {menuItem.description ||
+                      recipe?.description ||
+                      "No live description has been configured for this item."}
                   </p>
+
+                  {menuItem.referenceSource === "archived-menu-photo" &&
+                  menuItem.printedName !== menuItem.name ? (
+                    <small className={styles.referenceLabel}>
+                      Archived printed name: {menuItem.printedName}
+                    </small>
+                  ) : null}
 
                   <div className={styles.menuEconomics}>
                     <div>
                       <ReceiptText size={15} aria-hidden />
                       <span>
-                        <small>Archived {referenceYear} reference</small>
+                        <small>Current selling price</small>
+                        <strong>
+                          {menuItem.currentPrice !== undefined
+                            ? "₱" + Math.round(menuItem.currentPrice).toLocaleString("en-PH")
+                            : "Not set"}
+                        </strong>
+                      </span>
+                    </div>
+                    <div>
+                      <ReceiptText size={15} aria-hidden />
+                      <span>
+                        <small>Archived reference</small>
                         <strong>
                           {menuItem.referencePrice !== undefined
                             ? "₱" + Math.round(menuItem.referencePrice).toLocaleString("en-PH")
-                            : "Not legible"}
+                            : "None"}
                         </strong>
                       </span>
                     </div>
@@ -1155,51 +1223,98 @@ export default function OperationModuleView({
                       </span>
                     </div>
                     <div>
+                      <CircleDollarSign size={15} aria-hidden />
+                      <span>
+                        <small>Food cost</small>
+                        <strong>{foodCostPercent !== null ? foodCostPercent + "%" : "—"}</strong>
+                      </span>
+                    </div>
+                    <div>
                       <ShoppingBasket size={15} aria-hidden />
                       <span>
-                        <small>{recipe ? "Possible servings" : "Current selling price"}</small>
-                        <strong>
-                          {recipe
-                            ? possibleServings ?? 0
-                            : menuItem.currentPriceVerified
-                              ? "Verified"
-                              : "Not connected"}
-                        </strong>
+                        <small>Possible servings</small>
+                        <strong>{recipe ? possibleServings ?? 0 : "—"}</strong>
                       </span>
                     </div>
                   </div>
 
                   {recipe ? (
-                    <>
-                      <div className={styles.menuIngredientStrip}>
-                        {ingredients.map(({ item, amount }) => (
-                          <div key={item.id} data-low={item.current <= item.reorderAt}>
-                            <SupplyPhoto
-                              supplyId={item.id}
-                              className={styles.recipeSupplyPhoto}
-                              size={38}
-                            />
-                            <span>
-                              <strong>{item.name}</strong>
-                              <small>{amount} {item.unit}</small>
-                            </span>
-                          </div>
-                        ))}
-                      </div>
+                    <div className={styles.menuIngredientStrip}>
+                      {ingredients.map(({ item, amount }) => (
+                        <div key={item.id} data-low={item.current <= item.reorderAt}>
+                          <SupplyPhoto
+                            supplyId={item.id}
+                            className={styles.recipeSupplyPhoto}
+                            size={38}
+                          />
+                          <span>
+                            <strong>{item.name}</strong>
+                            <small>{amount} {item.unit}</small>
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
 
+                  <div className={styles.entityActions}>
+                    {recipe?.active && menuItem.active && menuItem.available ? (
                       <button
                         type="button"
-                        className={styles.recipeSaleButton}
+                        data-primary
                         onClick={() => recordRecipeSale(recipe.id, 1)}
                       >
-                        Simulate mapped POS sale
+                        Simulate POS sale
                       </button>
-                    </>
-                  ) : null}
+                    ) : null}
+                    <button
+                      type="button"
+                      onClick={() => openMenuItemEditor(menuItem)}
+                    >
+                      <Pencil size={14} aria-hidden /> Edit
+                    </button>
+                    {menuItem.active ? (
+                      <button
+                        type="button"
+                        data-danger
+                        onClick={() => archiveMenuItem(menuItem.id)}
+                      >
+                        <Archive size={14} aria-hidden /> Archive
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          saveMenuItem({
+                            id: menuItem.id,
+                            name: menuItem.name,
+                            category: menuItem.category,
+                            variant: menuItem.variant,
+                            currentPrice: menuItem.currentPrice,
+                            description: menuItem.description,
+                            active: true,
+                            available: menuItem.available,
+                            recipeId: menuItem.recipeId,
+                          });
+                        }}
+                      >
+                        Restore
+                      </button>
+                    )}
+                  </div>
                 </div>
               </article>
             );
           })}
+
+          {!visibleMenuItems.length ? (
+            <article className={styles.panelCard}>
+              <PanelEmpty
+                icon={<ChefHat size={17} />}
+                title="No menu items in this view"
+                body="Add a menu item or change the current search/category filter."
+              />
+            </article>
+          ) : null}
         </div>
       </section>
     );
