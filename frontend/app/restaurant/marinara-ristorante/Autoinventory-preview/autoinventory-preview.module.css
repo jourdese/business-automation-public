@@ -2384,3 +2384,207 @@
   background: rgba(200, 169, 107, 0.2);
   color: var(--ivory);
 }
+
+
+/* In-chat Jourvis configuration */
+.jourvisUpdatePanel {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.jourvisUpdateTitle {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding-bottom: 0.7rem;
+  border-bottom: 1px solid #2d414b;
+}
+
+.jourvisUpdateTitle > div {
+  min-width: 0;
+}
+
+.jourvisUpdateTitle span,
+.jourvisUpdateSection > span {
+  display: block;
+  color: var(--mint);
+  font: 0.56rem var(--font-mono);
+  letter-spacing: 0.08em;
+}
+
+.jourvisUpdateTitle strong {
+  display: block;
+  margin-top: 0.15rem;
+  color: var(--ivory);
+  font-size: 0.74rem;
+}
+
+.jourvisPausedInline {
+  padding: 0.65rem;
+  border: 1px solid #7b643a;
+  border-left: 3px solid var(--gold);
+  background: rgba(92, 68, 28, 0.2);
+}
+
+.jourvisPausedInline strong {
+  color: #f2cf8f;
+  font-size: 0.7rem;
+}
+
+.jourvisPausedInline p {
+  margin-top: 0.25rem;
+  color: var(--slate);
+  font-size: 0.62rem;
+  line-height: 1.45;
+}
+
+.jourvisPausedInline button {
+  min-height: 34px;
+  margin-top: 0.5rem;
+  padding: 0.35rem 0.55rem;
+  border: 1px solid var(--gold);
+  background: rgba(200, 169, 107, 0.1);
+  color: #f4d9a0;
+  font-size: 0.62rem;
+}
+
+.jourvisUpdateSection {
+  padding: 0.7rem;
+  border: 1px solid #324851;
+  background: #091820;
+}
+
+.jourvisInlineToggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  margin-top: 0.55rem;
+  padding: 0.55rem 0;
+  border-top: 1px solid rgba(52, 73, 82, 0.65);
+}
+
+.jourvisInlineToggle > span {
+  min-width: 0;
+}
+
+.jourvisInlineToggle strong,
+.jourvisInlineToggle small {
+  display: block;
+}
+
+.jourvisInlineToggle strong {
+  color: var(--ivory);
+  font-size: 0.68rem;
+}
+
+.jourvisInlineToggle small {
+  margin-top: 0.15rem;
+  color: var(--slate);
+  font-size: 0.58rem;
+  line-height: 1.4;
+}
+
+.jourvisInlineToggle input {
+  width: 17px;
+  height: 17px;
+  flex: 0 0 auto;
+  accent-color: var(--mint);
+}
+
+.jourvisUpdateGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.55rem;
+  margin-top: 0.6rem;
+}
+
+.jourvisUpdateGrid label {
+  min-width: 0;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.jourvisUpdateGrid label > span {
+  color: var(--slate);
+  font-size: 0.6rem;
+}
+
+.jourvisUpdateGrid label > div {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.jourvisUpdateGrid input,
+.jourvisUpdateGrid select {
+  width: 100%;
+  min-width: 0;
+  min-height: 36px;
+  padding: 0.38rem 0.45rem;
+  border: 1px solid #344a54;
+  background: #07131b;
+  color: var(--ivory);
+  outline: 0;
+  font-size: 0.66rem;
+}
+
+.jourvisUpdateGrid input:focus,
+.jourvisUpdateGrid select:focus {
+  border-color: var(--mint);
+}
+
+.jourvisUpdateGrid b {
+  color: var(--slate);
+  font-size: 0.64rem;
+}
+
+.jourvisUpdateDetails {
+  border: 1px solid #30454e;
+  background: #081720;
+}
+
+.jourvisUpdateDetails > summary {
+  min-height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  padding: 0.5rem 0.65rem;
+  color: var(--ivory);
+  font-size: 0.65rem;
+  font-weight: 700;
+  list-style: none;
+}
+
+.jourvisUpdateDetails > summary::-webkit-details-marker {
+  display: none;
+}
+
+.jourvisUpdateDetails > summary::after {
+  content: "+";
+  color: var(--mint);
+  font: 0.75rem var(--font-mono);
+}
+
+.jourvisUpdateDetails[open] > summary::after {
+  content: "−";
+}
+
+.jourvisUpdateDetails .jourvisUpdateGrid {
+  margin: 0;
+  padding: 0.65rem;
+  border-top: 1px solid #30454e;
+}
+
+.jourvisUpdateSaved {
+  color: #74868e;
+  font-size: 0.56rem;
+  text-align: center;
+}
+
+@media (max-width: 520px) {
+  .jourvisUpdateGrid {
+    grid-template-columns: 1fr;
+  }
+}
