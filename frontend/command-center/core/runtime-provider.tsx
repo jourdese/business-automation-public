@@ -165,11 +165,19 @@ function planAutonomousPurchases(
     next = {
       ...next,
       purchases: [purchase, ...next.purchases],
-      activity: addActivity(
-        next,
-        "purchasing",
-        `Jourvis automatically started ${purchase.id} for ${item.name}.`,
-      ),
+      activity: addActivity(next, {
+        module: "purchasing",
+        action: "purchase_started",
+        message: `Jourvis automatically started ${purchase.id} for ${item.name}.`,
+        actor: "jourvis",
+        executionMode: "automatic",
+        reason:
+          `${item.name} was at ${Math.round(percent)}% stock, at or below its ` +
+          `${item.automationTriggerPercent}% Jourvis action trigger. Global autonomy and item automation were enabled, and the configured mode was ${item.automationMode}.`,
+        configuration: inventoryRuleSnapshot(item, next.automationMasterOn),
+        relatedEntityId: item.id,
+        relatedRequestId: purchase.id,
+      }),
     };
     activeItemIds.add(item.id);
   }
@@ -262,7 +270,34 @@ function advanceOneAutonomousStep(
           )
         : state.inventory,
     activity: message
-      ? addActivity(state, "purchasing", message)
+      ? addActivity(state, {
+          module: "purchasing",
+          action:
+            purchase.status === "requested"
+              ? "supplier_confirmed"
+              : purchase.status === "quote_requested"
+                ? "quote_received"
+                : purchase.status === "quote_received"
+                  ? "quote_auto_approved"
+                  : purchase.status === "approved"
+                    ? "supplier_confirmed"
+                    : "shipment_in_transit",
+          message,
+          actor:
+            purchase.status === "quote_received" ? "jourvis" : "external",
+          executionMode: "automatic",
+          reason:
+            purchase.status === "quote_received"
+              ? `Jourvis accepted the quote automatically because the quoted total ₱${Math.round(purchase.quotedTotal ?? purchase.estimatedTotal).toLocaleString("en-PH")} was within the configured ₱${Math.round(item.maxAutoOrderSpend).toLocaleString("en-PH")} order limit and the quoted pack price ₱${Math.round(purchase.quotedPackPrice ?? item.packPrice).toLocaleString("en-PH")} was within the ₱${Math.round(item.autoAcceptPackPrice).toLocaleString("en-PH")} pack-price limit.`
+              : purchase.status === "quote_requested"
+                ? "The supplier returned a quote in response to the purchase request. This was recorded automatically because no owner action created the supplier response."
+                : purchase.status === "confirmed"
+                  ? "The supplier changed the purchase to in transit. Jourvis recorded the external status update automatically."
+                  : "The supplier confirmed the purchase after the previous authorized step. Jourvis recorded the supplier response automatically.",
+          configuration: inventoryRuleSnapshot(item, state.automationMasterOn),
+          relatedEntityId: item.id,
+          relatedRequestId: purchase.id,
+        })
       : state.activity,
   };
 }
@@ -284,7 +319,7 @@ export function CommandCenterRuntimeProvider({
     try {
       const stored = window.localStorage.getItem(storageKey(resolved));
       if (stored) {
-        setState(JSON.parse(stored) as CommandCenterRuntimeState);
+        setState(normalizeStoredState(JSON.parse(stored) as CommandCenterRuntimeState));
       } else {
         setState(createSeed(resolved));
       }
@@ -359,11 +394,19 @@ export function CommandCenterRuntimeProvider({
               pausedItemIds: item
                 ? current.pausedItemIds.filter((id) => id !== item.id)
                 : current.pausedItemIds,
-              activity: addActivity(
-                current,
-                task.module,
-                `${task.title}: owner approved. Jourvis continued the workflow.`,
-              ),
+              activity: addActivity(current, {
+                module: task.module,
+                action: "owner_approved",
+                message: `${task.title}: owner approved. Jourvis continued the workflow.`,
+                actor: "owner",
+                executionMode: "manual",
+                reason: `The owner approved an exception after Jourvis escalated it. Jourvis' reason for stopping was: ${task.why}`,
+                configuration: item
+                  ? inventoryRuleSnapshot(item, current.automationMasterOn)
+                  : undefined,
+                relatedEntityId: item?.id,
+                relatedRequestId: purchase.id,
+              }),
             };
           }
           if (item) {
@@ -372,11 +415,17 @@ export function CommandCenterRuntimeProvider({
               ...current,
               purchases: [nextPurchase, ...current.purchases],
               pausedItemIds: current.pausedItemIds.filter((id) => id !== item.id),
-              activity: addActivity(
-                current,
-                task.module,
-                `${task.title}: owner approved. Jourvis started ${nextPurchase.id}.`,
-              ),
+              activity: addActivity(current, {
+                module: task.module,
+                action: "owner_approved_restock",
+                message: `${task.title}: owner approved. Jourvis started ${nextPurchase.id}.`,
+                actor: "owner",
+                executionMode: "manual",
+                reason: `The owner manually approved Jourvis' suggested restock. Jourvis had escalated because: ${task.why}`,
+                configuration: inventoryRuleSnapshot(item, current.automationMasterOn),
+                relatedEntityId: item.id,
+                relatedRequestId: nextPurchase.id,
+              }),
             };
           }
         }
@@ -395,11 +444,19 @@ export function CommandCenterRuntimeProvider({
               item && !current.pausedItemIds.includes(item.id)
                 ? [...current.pausedItemIds, item.id]
                 : current.pausedItemIds,
-            activity: addActivity(
-              current,
-              task.module,
-              `${task.title}: owner rejected. Jourvis paused this item until its rule is updated or resumed.`,
-            ),
+            activity: addActivity(current, {
+              module: task.module,
+              action: "owner_rejected",
+              message: `${task.title}: owner rejected. Jourvis paused this item until its rule is updated or resumed.`,
+              actor: "owner",
+              executionMode: "manual",
+              reason: `The owner manually rejected a Jourvis exception. The condition Jourvis presented was: ${task.why}`,
+              configuration: item
+                ? inventoryRuleSnapshot(item, current.automationMasterOn)
+                : undefined,
+              relatedEntityId: item?.id,
+              relatedRequestId: purchase?.id,
+            }),
           };
         }
 
@@ -427,11 +484,17 @@ export function CommandCenterRuntimeProvider({
                   }
                 : entry,
             ),
-            activity: addActivity(
-              current,
-              "inventory",
-              `${purchase.id}: received ${remaining} ${item.unit} of ${item.name}.`,
-            ),
+            activity: addActivity(current, {
+              module: "inventory",
+              action: "delivery_received",
+              message: `${purchase.id}: received ${remaining} ${item.unit} of ${item.name}.`,
+              actor: "owner",
+              executionMode: "manual",
+              reason: "A person manually confirmed the physical quantity delivered. Jourvis does not assume physical receipt from a supplier status alone.",
+              configuration: inventoryRuleSnapshot(item, current.automationMasterOn),
+              relatedEntityId: item.id,
+              relatedRequestId: purchase.id,
+            }),
           };
         }
 
@@ -439,11 +502,16 @@ export function CommandCenterRuntimeProvider({
           return {
             ...current,
             pausedItemIds: current.pausedItemIds.filter((id) => id !== item.id),
-            activity: addActivity(
-              current,
-              task.module,
-              `Jourvis resumed automation for ${item.name}.`,
-            ),
+            activity: addActivity(current, {
+              module: task.module,
+              action: "automation_resumed",
+              message: `Owner resumed Jourvis automation for ${item.name}.`,
+              actor: "owner",
+              executionMode: "manual",
+              reason: "The owner manually resumed an item that had previously been paused.",
+              configuration: inventoryRuleSnapshot(item, current.automationMasterOn),
+              relatedEntityId: item.id,
+            }),
           };
         }
 
@@ -461,12 +529,37 @@ export function CommandCenterRuntimeProvider({
           item.id === itemId ? { ...item, ...patch } : item,
         ),
         pausedItemIds: current.pausedItemIds.filter((id) => id !== itemId),
-        activity: addActivity(
-          current,
-          "inventory",
-          `Jourvis rule updated for ${current.inventory.find((item) => item.id === itemId)?.name ?? itemId}.`,
-        ),
       }));
+    },
+    [],
+  );
+
+  const recordConfigurationUpdate = useCallback(
+    (itemId: string, previous: CommandCenterInventoryItem) => {
+      setState((current) => {
+        const item = current.inventory.find((entry) => entry.id === itemId);
+        if (!item) return current;
+
+        const changed = (Object.keys(item) as Array<keyof CommandCenterInventoryItem>)
+          .filter((key) => item[key] !== previous[key])
+          .map((key) => `${String(key)}: ${String(previous[key])} → ${String(item[key])}`);
+
+        if (!changed.length) return current;
+
+        return {
+          ...current,
+          activity: addActivity(current, {
+            module: "inventory",
+            action: "configuration_updated",
+            message: `Owner updated Jourvis configuration for ${item.name}.`,
+            actor: "owner",
+            executionMode: "manual",
+            reason: `The owner changed the operating rule through Jourvis Update. Changed settings: ${changed.join("; ")}.`,
+            configuration: inventoryRuleSnapshot(item, current.automationMasterOn),
+            relatedEntityId: item.id,
+          }),
+        };
+      });
     },
     [],
   );
@@ -475,20 +568,42 @@ export function CommandCenterRuntimeProvider({
     setState((current) => ({
       ...current,
       automationMasterOn: enabled,
-      activity: addActivity(
-        current,
-        "system",
-        `Jourvis autonomous operations switched ${enabled ? "ON" : "OFF"}.`,
-      ),
+      activity: addActivity(current, {
+        module: "system",
+        action: "global_autonomy_changed",
+        message: `Owner switched Jourvis autonomous operations ${enabled ? "ON" : "OFF"}.`,
+        actor: "owner",
+        executionMode: "manual",
+        reason: "The owner manually changed the global Command Center autonomy setting.",
+        configuration: {
+          capturedAt: new Date().toISOString(),
+          summary: `Global autonomy ${enabled ? "ON" : "OFF"}`,
+          values: { automationMasterOn: enabled },
+        },
+      }),
     }));
   }, []);
 
   const resumeItem = useCallback((itemId: string) => {
-    setState((current) => ({
-      ...current,
-      pausedItemIds: current.pausedItemIds.filter((id) => id !== itemId),
-      activity: addActivity(current, "inventory", `Jourvis resumed ${itemId}.`),
-    }));
+    setState((current) => {
+      const item = current.inventory.find((entry) => entry.id === itemId);
+      return {
+        ...current,
+        pausedItemIds: current.pausedItemIds.filter((id) => id !== itemId),
+        activity: addActivity(current, {
+          module: "inventory",
+          action: "automation_resumed",
+          message: `Owner resumed Jourvis for ${item?.name ?? itemId}.`,
+          actor: "owner",
+          executionMode: "manual",
+          reason: "The owner manually resumed this item's automation.",
+          configuration: item
+            ? inventoryRuleSnapshot(item, current.automationMasterOn)
+            : undefined,
+          relatedEntityId: itemId,
+        }),
+      };
+    });
   }, []);
 
   const resetDemo = useCallback(() => {
@@ -506,6 +621,7 @@ export function CommandCenterRuntimeProvider({
       updateInventoryItem,
       setAutomationMasterOn,
       resumeItem,
+      recordConfigurationUpdate,
       resetDemo,
     }),
     [
@@ -514,6 +630,7 @@ export function CommandCenterRuntimeProvider({
       loading,
       resetDemo,
       resumeItem,
+      recordConfigurationUpdate,
       setAutomationMasterOn,
       state,
       tasks,
