@@ -1367,8 +1367,24 @@ export default function MarinaraAutoinventoryPreviewPage() {
             <CompanionMark className={styles.ownerCompanion} />
             <div>
               <span>JOURVIS</span>
-              <strong>{urgent.length ? `${urgent.length} supplies need attention.` : "Inventory is inside the safe range."}</strong>
-              <small>{urgent[0] ? `${urgent[0].name} is the highest-risk ingredient right now.` : "No supplier action is waiting."}</small>
+              <strong>
+                {jourvisTasks.length
+                  ? `${jourvisTasks.length} decision${jourvisTasks.length === 1 ? "" : "s"} need you.`
+                  : activeProcurements.length
+                    ? `I’m handling ${activeProcurements.length} supplier flow${activeProcurements.length === 1 ? "" : "s"}.`
+                    : urgent.length
+                      ? `${urgent.length} supplies are low, but no approval is waiting.`
+                      : "Inventory is inside the safe range."}
+              </strong>
+              <small>
+                {jourvisTasks.length
+                  ? jourvisMessage
+                  : activeProcurements.length
+                    ? "Supplier-side demo updates move automatically. I’ll interrupt only when you need to decide."
+                    : urgent[0]
+                      ? `${urgent[0].name} is the lowest-stock ingredient right now.`
+                      : "Nothing needs your attention."}
+              </small>
             </div>
           </div>
         </header>
@@ -1768,13 +1784,13 @@ export default function MarinaraAutoinventoryPreviewPage() {
           {activeTab === "orders" ? (
             <section id="autoinventory-panel-orders" role="tabpanel" aria-labelledby="autoinventory-tab-orders" className={styles.panel}>
               <div className={styles.sectionHeading}>
-                <div><span>PROCUREMENT FLOW</span><h2>Request, agree, confirm, receive.</h2></div>
+                <div><span>PROCUREMENT FLOW</span><h2>Jourvis handles the back-and-forth. You handle decisions and receiving.</h2></div>
                 {suggested.length ? <button type="button" className={styles.primaryButton} onClick={() => openContact(suggested, "Group restock")}>Group restock · {suggested.length}</button> : null}
               </div>
 
               <div className={styles.procurementColumns}>
                 <div className={styles.procurementNeeds}>
-                  <div className={styles.orderColumnTitle}><span>NEEDS ACTION</span><strong>{suggested.length}</strong></div>
+                  <div className={styles.orderColumnTitle}><span>RESTOCK SUGGESTIONS</span><strong>{suggested.length}</strong></div>
                   {supplierGroups.length ? supplierGroups.map((items) => {
                     const first = items[0];
                     const supplier = getSupplier(first);
@@ -2001,7 +2017,7 @@ export default function MarinaraAutoinventoryPreviewPage() {
           ) : null}
         </main>
 
-        <div className={styles.previewNotice}><TriangleAlert size={16} aria-hidden /><p><strong>Preview only.</strong> Supplier names, contacts, prices, stock levels and recipes are demo data. Jourvis Automation can create simulated supplier requests from low-stock rules, auto-accept or counter quotes inside configured limits, and pause for owner approval when a rule is exceeded. No real email, SMS, database, purchasing or accounting action occurs.</p></div>
+        <div className={styles.previewNotice}><TriangleAlert size={16} aria-hidden /><p><strong>Preview only.</strong> Live stock, purchase flows and approvals persist in this browser so Summary and Configure stay consistent. Supplier replies are simulated automatically; Jourvis brings only owner decisions forward. No real email, SMS, database, purchasing or accounting action occurs.</p></div>
       </div>
 
       {stockAdjustment ? (() => {
