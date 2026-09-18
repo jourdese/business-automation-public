@@ -233,19 +233,10 @@ function supplierGroupsForItems(items: Ingredient[]) {
 }
 
 function automationGroupsForItems(items: Ingredient[]) {
-  const grouped = new Map<string, Ingredient[]>();
-  items.forEach((item) => {
-    const key = [
-      item.supplierId,
-      item.purchasingMode,
-      item.automationMode,
-      item.automationPreview ? "preview" : "active",
-    ].join("::");
-    const list = grouped.get(key) ?? [];
-    list.push(item);
-    grouped.set(key, list);
-  });
-  return [...grouped.values()];
+  // Keep automated rules item-scoped. Manual Group Restock can still consolidate
+  // suppliers, but Jourvis should not silently combine products with different
+  // owner limits into one autonomous approval decision.
+  return items.map((item) => [item]);
 }
 
 function procurementStatusLabel(status: ProcurementStatus) {
