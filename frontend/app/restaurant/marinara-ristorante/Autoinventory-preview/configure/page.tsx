@@ -37,6 +37,26 @@ export default function AutoinventoryConfigurePage() {
   const selected = items.find((item) => item.id === selectedId) ?? items[0];
   const supplier = getSupplier(selected);
   const contact = getContact(selected);
+  const guideFocusLabels = [
+    "Set my trigger",
+    "Choose my authority",
+    "Set my price limits",
+    "Set my spending limits",
+    "Set my negotiation rule",
+    "Review and enable",
+  ];
+  const jourvisConfigureFocusTarget =
+    guideStep !== null
+      ? `#jourvis-guide-step-${guideStep}`
+      : !selected.automationEnabled
+        ? "#jourvis-guide-start"
+        : undefined;
+  const jourvisConfigureFocusLabel =
+    guideStep !== null
+      ? guideFocusLabels[guideStep]
+      : !selected.automationEnabled
+        ? "Start with me"
+        : undefined;
 
   const filtered = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -190,7 +210,7 @@ export default function AutoinventoryConfigurePage() {
                   >
                     <i><b /></i><strong>{selected.automationEnabled ? "ON" : "OFF"}</strong>
                   </button>
-                  <button type="button" className={styles.guideButton} onClick={() => setGuideStep(0)}>
+                  <button id="jourvis-guide-start" type="button" className={styles.guideButton} onClick={() => setGuideStep(0)}>
                     <Sparkles size={14} aria-hidden /> Let Jourvis guide me
                   </button>
                 </div>
@@ -203,7 +223,7 @@ export default function AutoinventoryConfigurePage() {
                   </div>
 
                   {guideStep === 0 ? (
-                    <div className={styles.guideQuestion}>
+                    <div id="jourvis-guide-step-0" className={styles.guideQuestion}>
                       <span>1 / WHEN SHOULD I ACT?</span>
                       <h4>Choose the stock percentage that should wake me up.</h4>
                       <p>
@@ -240,7 +260,7 @@ export default function AutoinventoryConfigurePage() {
                   ) : null}
 
                   {guideStep === 1 ? (
-                    <div className={styles.guideQuestion}>
+                    <div id="jourvis-guide-step-1" className={styles.guideQuestion}>
                       <span>2 / WHAT MAY I DO?</span>
                       <h4>How much control do you want me to have?</h4>
                       <div className={styles.modeChoices}>
@@ -258,7 +278,7 @@ export default function AutoinventoryConfigurePage() {
                   ) : null}
 
                   {guideStep === 2 ? (
-                    <div className={styles.guideQuestion}>
+                    <div id="jourvis-guide-step-2" className={styles.guideQuestion}>
                       <span>3 / WHAT PRICE IS SAFE?</span>
                       <h4>Give me a target, an auto-accept ceiling, and a hard stop.</h4>
                       <div className={styles.guideFields}>
@@ -271,7 +291,7 @@ export default function AutoinventoryConfigurePage() {
                   ) : null}
 
                   {guideStep === 3 ? (
-                    <div className={styles.guideQuestion}>
+                    <div id="jourvis-guide-step-3" className={styles.guideQuestion}>
                       <span>4 / HOW MUCH MAY I SPEND?</span>
                       <h4>Set quantity and spend guardrails.</h4>
                       <div className={styles.guideFields}>
@@ -284,7 +304,7 @@ export default function AutoinventoryConfigurePage() {
                   ) : null}
 
                   {guideStep === 4 ? (
-                    <div className={styles.guideQuestion}>
+                    <div id="jourvis-guide-step-4" className={styles.guideQuestion}>
                       <span>5 / MAY I NEGOTIATE?</span>
                       <h4>Tell me what to do when a quote is above the auto-accept price.</h4>
                       <div className={styles.negotiationRow}>
@@ -298,7 +318,7 @@ export default function AutoinventoryConfigurePage() {
                   ) : null}
 
                   {guideStep === 5 ? (
-                    <div className={styles.guideQuestion}>
+                    <div id="jourvis-guide-step-5" className={styles.guideQuestion}>
                       <span>6 / READY</span>
                       <h4>Here&apos;s what I&apos;ll do for {selected.name}.</h4>
                       <div className={styles.ruleSummary}>
@@ -377,7 +397,9 @@ export default function AutoinventoryConfigurePage() {
               ? `Trigger ≤ ${selected.automationTriggerPercent}% · target ₱${selected.targetPackPrice} · auto-accept ≤ ₱${selected.autoAcceptPackPrice} · hard stop ₱${selected.hardMaxPackPrice}.`
               : "I can walk you through the trigger, authority, price range, spend limits and negotiation rules."
         }
-        attention={!selected.automationEnabled}
+        attention={guideStep !== null || !selected.automationEnabled}
+        focusTarget={jourvisConfigureFocusTarget}
+        focusLabel={jourvisConfigureFocusLabel}
         actions={
           guideStep === null
             ? [
