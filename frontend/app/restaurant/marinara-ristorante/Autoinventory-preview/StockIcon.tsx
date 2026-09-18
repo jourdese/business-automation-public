@@ -1,43 +1,31 @@
-import {
-  Cherry,
-  CookingPot,
-  Droplets,
-  Fish,
-  Leaf,
-  Milk,
-  Sprout,
-  Wheat,
-  type LucideIcon,
-} from "lucide-react";
+/// <reference types="vite/client" />
 
-const icons: Record<string, LucideIcon> = {
-  pasta: CookingPot,
-  tomato: Cherry,
-  "olive-oil": Droplets,
-  flour: Wheat,
-  parmesan: Milk,
-  mozzarella: Milk,
-  cream: Milk,
-  shrimp: Fish,
-  salmon: Fish,
-  squid: Fish,
-  basil: Leaf,
-  mushroom: Sprout,
-};
+import basil from "@/src/assets/businesses/sharedicon/basil.png?url";
+import cookingCream from "@/src/assets/businesses/sharedicon/cooking cream.png?url";
+import mozzarella from "@/src/assets/businesses/sharedicon/mozzarella.png?url";
+import mushrooms from "@/src/assets/businesses/sharedicon/mushrooms.png?url";
+import oliveOil from "@/src/assets/businesses/sharedicon/olive oil.png?url";
+import parmigiano from "@/src/assets/businesses/sharedicon/parmigiano cheese.png?url";
+import pasta from "@/src/assets/businesses/sharedicon/pasta.png?url";
+import pizzaFlour from "@/src/assets/businesses/sharedicon/pizza flour.png?url";
+import salmon from "@/src/assets/businesses/sharedicon/salmon.png?url";
+import shrimp from "@/src/assets/businesses/sharedicon/shrimp.png?url";
+import squid from "@/src/assets/businesses/sharedicon/squid.png?url";
+import tomatoSauce from "@/src/assets/businesses/sharedicon/tomato sauce.png?url";
 
-const ingredientColors: Record<string, string> = {
-  pasta: "#E9B94E",
-  tomato: "#F05A47",
-  "olive-oil": "#B6B94A",
-  flour: "#E8D6A4",
-  parmesan: "#F0C85C",
-  mozzarella: "#F5F0D8",
-  cream: "#DCEAF0",
-  shrimp: "#F18468",
-  salmon: "#F17870",
-  squid: "#79C5C9",
-  basil: "#78C879",
-  mushroom: "#C49A72",
+const images: Record<string, string> = {
+  pasta,
+  tomato: tomatoSauce,
+  "olive-oil": oliveOil,
+  flour: pizzaFlour,
+  parmesan: parmigiano,
+  mozzarella,
+  cream: cookingCream,
+  shrimp,
+  salmon,
+  squid,
+  basil,
+  mushroom: mushrooms,
 };
 
 export default function StockIcon({
@@ -49,12 +37,18 @@ export default function StockIcon({
   className?: string;
   size?: number;
 }) {
-  const Icon = icons[stockId] ?? CookingPot;
-  const color = ingredientColors[stockId] ?? "#A7E3C5";
+  const src = images[stockId] ?? pasta;
 
   return (
-    <span className={className} aria-hidden="true" style={{ color }}>
-      <Icon size={size} strokeWidth={1.9} />
+    <span className={className} aria-hidden="true">
+      <img
+        src={src}
+        alt=""
+        width={size}
+        height={size}
+        draggable={false}
+        decoding="async"
+      />
     </span>
   );
 }
