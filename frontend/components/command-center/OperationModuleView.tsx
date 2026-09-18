@@ -48,6 +48,8 @@ export default function OperationModuleView({
   const [quantityDrafts, setQuantityDrafts] = useState<Record<string, string>>({});
   const [inventorySearch, setInventorySearch] = useState("");
   const [inventoryZone, setInventoryZone] = useState("All");
+  const [menuSearch, setMenuSearch] = useState("");
+  const [menuCategory, setMenuCategory] = useState("All");
   const [purchaseFilter, setPurchaseFilter] = useState<"active" | "history" | "all">("active");
 
   const {
@@ -620,7 +622,33 @@ export default function OperationModuleView({
     );
   }
 
-  if (moduleId === "menu" && state.recipes.length) {
+  if (moduleId === "menu" && state.menuItems.length) {
+    const categories = [
+      "All",
+      ...Array.from(new Set(state.menuItems.map((item) => item.category))),
+    ];
+    const normalizedSearch = menuSearch.trim().toLowerCase();
+    const visibleMenuItems = state.menuItems.filter((item) => {
+      const matchesCategory =
+        menuCategory === "All" || item.category === menuCategory;
+      const matchesSearch =
+        !normalizedSearch ||
+        [
+          item.name,
+          item.printedName,
+          item.category,
+          item.variant ?? "",
+        ]
+          .join(" ")
+          .toLowerCase()
+          .includes(normalizedSearch);
+      return matchesCategory && matchesSearch;
+    });
+    const mappedCount = state.menuItems.filter((item) => item.recipeId).length;
+    const referenceYear =
+      state.menuItems.find((item) => item.referencePublicationDate)
+        ?.referencePublicationDate?.slice(0, 4) ?? "archived";
+
     return (
       <section className={styles.sectionPage}>
         <OperationHeader
@@ -632,108 +660,201 @@ export default function OperationModuleView({
         <div className={styles.operationModuleHero}>
           <div>
             <span>MENU ECONOMICS</span>
-            <h2>Connect what guests order to the inventory Jourvis operates.</h2>
+            <h2>Separate what the menu says from what Jourvis can actually operate.</h2>
             <p>
-              These menu items use Marinara&apos;s supplied food photos and the migrated recipe
-              mappings. Ingredient cost is estimated from the current configured pack prices;
-              selling prices are intentionally left unverified until a real menu/POS source is connected.
+              Marinara&apos;s archived menu references are visible here without being
+              presented as current pricing. Items with an inventory recipe mapping can
+              also expose ingredient cost, stock risk, possible servings, and simulated
+              POS deductions.
             </p>
           </div>
           <ChefHat size={36} aria-hidden />
         </div>
 
-        <div className={styles.menuGrid}>
-          {state.recipes.map((recipe) => {
-            const ingredients = Object.entries(recipe.ingredients)
-              .flatMap(([itemId, amount]) => {
-                const item = state.inventory.find((entry) => entry.id === itemId);
-                if (!item) return [];
-                const unitCost = item.packPrice / Math.max(item.packSize, 0.01);
-                return [{
-                  item,
-                  amount,
-                  cost: unitCost * amount,
-                  servings: amount > 0 ? Math.floor(item.current / amount) : 999,
-                }];
-              });
+        <div className={styles.activitySummary}>
+          <article>
+            <span>ARCHIVED REFERENCES</span>
+            <strong>{state.menuItems.length}</strong>
+            <small>menu entries and variants from {referenceYear}</small>
+          </article>
+          <article>
+            <span>RECIPE MAPPED</span>
+            <strong>{mappedCount}</strong>
+            <small>items currently connected to inventory usage</small>
+          </article>
+          <article>
+            <span>CURRENT PRICE VERIFIED</span>
+            <strong>0</strong>
+            <small>live POS/menu pricing is not connected yet</small>
+          </article>
+        </div>
 
-            const ingredientCost = ingredients.reduce((sum, entry) => sum + entry.cost, 0);
+        <div className={styles.inventoryToolbar}>
+          <input
+            type="search"
+            value={menuSearch}
+            onChange={(event) => setMenuSearch(event.target.value)}
+            placeholder="Search menu item or category"
+            aria-label="Search menu"
+          />
+          <div className={styles.inventoryZoneFilters}>
+            {categories.map((category) => (
+              <button
+                key={category}
+                type="button"
+                data-active={menuCategory === category}
+                onClick={() => setMenuCategory(category)}
+              >
+                {category}
+              </button>
+            ))}
+          </div>
+          <span>{visibleMenuItems.length} of {state.menuItems.length} references</span>
+        </div>
+
+        <article className={styles.migrationCard}>
+          <div>
+            <span>REFERENCE DATA</span>
+            <strong>Archived menu amounts are context, not current selling prices</strong>
+            <p>
+              Jourvis keeps the archived reference separate from the current-price field.
+              A real POS or owner-approved menu source can replace the current-price value
+              later without losing the historical reference.
+            </p>
+          </div>
+        </article>
+
+        <div className={styles.menuGrid}>
+          {visibleMenuItems.map((menuItem) => {
+            const recipe = menuItem.recipeId
+              ? state.recipes.find((entry) => entry.id === menuItem.recipeId)
+              : undefined;
+            const ingredients = recipe
+              ? Object.entries(recipe.ingredients).flatMap(([itemId, amount]) => {
+                  const item = state.inventory.find((entry) => entry.id === itemId);
+                  if (!item) return [];
+                  const unitCost = item.packPrice / Math.max(item.packSize, 0.01);
+                  return [{
+                    item,
+                    amount,
+                    cost: unitCost * amount,
+                    servings: amount > 0 ? Math.floor(item.current / amount) : 999,
+                  }];
+                })
+              : [];
+            const ingredientCost = ingredients.reduce(
+              (sum, entry) => sum + entry.cost,
+              0,
+            );
             const possibleServings = ingredients.length
               ? Math.min(...ingredients.map((entry) => entry.servings))
-              : 0;
+              : null;
             const riskyIngredients = ingredients.filter(
               ({ item }) => item.current <= item.reorderAt,
             );
 
             return (
-              <article className={styles.menuCard} key={recipe.id}>
-                <MenuPhoto
-                  menuId={recipe.id}
-                  className={styles.menuDishPhoto}
-                />
+              <article className={styles.menuCard} key={menuItem.id}>
+                {recipe ? (
+                  <MenuPhoto
+                    menuId={recipe.id}
+                    className={styles.menuDishPhoto}
+                  />
+                ) : (
+                  <span className={styles.menuDishPlaceholder} aria-hidden>
+                    <ChefHat size={30} />
+                  </span>
+                )}
 
                 <div className={styles.menuCardBody}>
                   <div className={styles.menuCardTitle}>
                     <div>
-                      <span>MENU ITEM</span>
-                      <h3>{recipe.name}</h3>
+                      <span>
+                        {menuItem.category}
+                        {menuItem.variant ? " · " + menuItem.variant : ""}
+                      </span>
+                      <h3>{menuItem.printedName}</h3>
                     </div>
-                    <b data-risk={riskyIngredients.length > 0}>
-                      {riskyIngredients.length
-                        ? `${riskyIngredients.length} stock risk`
-                        : "Ready"}
+                    <b data-risk={Boolean(recipe) && riskyIngredients.length > 0}>
+                      {recipe
+                        ? riskyIngredients.length
+                          ? riskyIngredients.length + " stock risk"
+                          : "Recipe mapped"
+                        : "Reference only"}
                     </b>
                   </div>
 
-                  <p>{recipe.description}</p>
+                  <p>
+                    {recipe
+                      ? recipe.description
+                      : "Archived menu reference only. Ingredient quantities and inventory recipe mapping are not connected for this item yet."}
+                  </p>
 
                   <div className={styles.menuEconomics}>
+                    <div>
+                      <ReceiptText size={15} aria-hidden />
+                      <span>
+                        <small>Archived {referenceYear} reference</small>
+                        <strong>
+                          {menuItem.referencePrice !== undefined
+                            ? "₱" + Math.round(menuItem.referencePrice).toLocaleString("en-PH")
+                            : "Not legible"}
+                        </strong>
+                      </span>
+                    </div>
                     <div>
                       <CircleDollarSign size={15} aria-hidden />
                       <span>
                         <small>Est. ingredient cost</small>
-                        <strong>₱{Math.round(ingredientCost).toLocaleString("en-PH")}</strong>
+                        <strong>
+                          {recipe
+                            ? "₱" + Math.round(ingredientCost).toLocaleString("en-PH")
+                            : "Recipe not mapped"}
+                        </strong>
                       </span>
                     </div>
                     <div>
                       <ShoppingBasket size={15} aria-hidden />
                       <span>
-                        <small>Possible servings</small>
-                        <strong>{possibleServings}</strong>
-                      </span>
-                    </div>
-                    <div>
-                      <ReceiptText size={15} aria-hidden />
-                      <span>
-                        <small>Selling price</small>
-                        <strong>Not connected</strong>
+                        <small>{recipe ? "Possible servings" : "Current selling price"}</small>
+                        <strong>
+                          {recipe
+                            ? possibleServings ?? 0
+                            : menuItem.currentPriceVerified
+                              ? "Verified"
+                              : "Not connected"}
+                        </strong>
                       </span>
                     </div>
                   </div>
 
-                  <div className={styles.menuIngredientStrip}>
-                    {ingredients.map(({ item, amount }) => (
-                      <div key={item.id} data-low={item.current <= item.reorderAt}>
-                        <SupplyPhoto
-                          supplyId={item.id}
-                          className={styles.recipeSupplyPhoto}
-                          size={38}
-                        />
-                        <span>
-                          <strong>{item.name}</strong>
-                          <small>{amount} {item.unit}</small>
-                        </span>
+                  {recipe ? (
+                    <>
+                      <div className={styles.menuIngredientStrip}>
+                        {ingredients.map(({ item, amount }) => (
+                          <div key={item.id} data-low={item.current <= item.reorderAt}>
+                            <SupplyPhoto
+                              supplyId={item.id}
+                              className={styles.recipeSupplyPhoto}
+                              size={38}
+                            />
+                            <span>
+                              <strong>{item.name}</strong>
+                              <small>{amount} {item.unit}</small>
+                            </span>
+                          </div>
+                        ))}
                       </div>
-                    ))}
-                  </div>
 
-                  <button
-                    type="button"
-                    className={styles.recipeSaleButton}
-                    onClick={() => recordRecipeSale(recipe.id, 1)}
-                  >
-                    Simulate POS sale
-                  </button>
+                      <button
+                        type="button"
+                        className={styles.recipeSaleButton}
+                        onClick={() => recordRecipeSale(recipe.id, 1)}
+                      >
+                        Simulate mapped POS sale
+                      </button>
+                    </>
+                  ) : null}
                 </div>
               </article>
             );
