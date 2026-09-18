@@ -940,3 +940,68 @@
     width: 100%;
   }
 }
+
+
+.triggerControl {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(180px, 0.6fr);
+  gap: 0.8rem;
+  align-items: center;
+  margin-top: 0.9rem;
+}
+
+.triggerControl > input[type="range"] {
+  width: 100%;
+  accent-color: var(--mint);
+}
+
+.triggerControl > label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.75rem;
+  border: 1px solid #324751;
+  background: #0a1821;
+}
+
+.triggerControl > label > span {
+  color: var(--slate);
+  font-size: 0.66rem;
+}
+
+.triggerControl > label > div {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.triggerControl input[type="number"] {
+  width: 100%;
+  min-height: 38px;
+  padding: 0.45rem 0.55rem;
+  border: 1px solid #344650;
+  background: #07131b;
+  color: var(--ivory);
+  outline: 0;
+}
+
+.triggerControl input[type="number"]:focus {
+  border-color: var(--mint);
+}
+
+.triggerControl b {
+  color: var(--mint);
+  font-size: 0.72rem;
+}
+
+.triggerControl small {
+  color: var(--slate);
+  font-size: 0.63rem;
+  line-height: 1.45;
+}
+
+@media (max-width: 720px) {
+  .triggerControl {
+    grid-template-columns: 1fr;
+  }
+}
