@@ -57,6 +57,12 @@ type ContactDraft = {
   title: string;
 };
 
+type StockAdjustment = {
+  itemId: string;
+  change: number;
+  reason: "external_delivery" | "physical_count" | "waste" | "transfer" | "other";
+};
+
 type ProcurementStatus =
   | "requested"
   | "supplier_viewed"
@@ -270,6 +276,7 @@ export default function MarinaraAutoinventoryPreviewPage() {
   const [automationAlerts, setAutomationAlerts] = useState<Record<string, string>>({});
   const [automationRejected, setAutomationRejected] = useState<Record<string, string>>({});
   const [contactDraft, setContactDraft] = useState<ContactDraft | null>(null);
+  const [stockAdjustment, setStockAdjustment] = useState<StockAdjustment | null>(null);
   const [procurements, setProcurements] = useState<ProcurementRequest[]>([]);
   const [activity, setActivity] = useState([
     "Jourvis finished the morning inventory scan.",
@@ -648,6 +655,43 @@ export default function MarinaraAutoinventoryPreviewPage() {
     log(`Recorded ${round(amount)} ${item.unit} of ${item.name} as demo waste/spoilage.`);
   }
 
+  function openStockAdjustment(item: Ingredient) {
+    setStockAdjustment({
+      itemId: item.id,
+      change: item.packSize,
+      reason: "external_delivery",
+    });
+  }
+
+  function applyStockAdjustment() {
+    if (!stockAdjustment) return;
+    const item = ingredients.find((candidate) => candidate.id === stockAdjustment.itemId);
+    if (!item) return;
+    const change = round(stockAdjustment.change);
+    if (!change) {
+      setStockAdjustment(null);
+      return;
+    }
+
+    updateIngredient(item.id, (current) => ({
+      ...current,
+      current: round(Math.max(0, current.current + change)),
+    }));
+
+    const labels: Record<StockAdjustment["reason"], string> = {
+      external_delivery: "external delivery",
+      physical_count: "physical count correction",
+      waste: "waste/spoilage adjustment",
+      transfer: "stock transfer",
+      other: "manual adjustment",
+    };
+
+    log(
+      `Stock adjusted: ${item.name} ${change > 0 ? "+" : ""}${change} ${item.unit} · ${labels[stockAdjustment.reason]}.`,
+    );
+    setStockAdjustment(null);
+  }
+
   function sellRecipe(recipe: Recipe) {
     const shortages = Object.entries(recipe.ingredients).filter(([id, amount]) => {
       const ingredient = ingredients.find((item) => item.id === id);
@@ -678,6 +722,7 @@ export default function MarinaraAutoinventoryPreviewPage() {
     setAutomationAlerts({});
     setAutomationRejected({});
     setContactDraft(null);
+    setStockAdjustment(null);
     setProcurements([]);
     setActivity([
       "Jourvis finished the morning inventory scan.",
@@ -1511,6 +1556,7 @@ export default function MarinaraAutoinventoryPreviewPage() {
                       <button type="button" className={styles.primaryButton} disabled={orderAmount <= 0} onClick={() => openContact([selected], `Contact ${selectedSupplier.name}`)}><Mail size={16} aria-hidden /> Contact supplier</button>
                     )}
                     <a className={styles.textAction} href={`/restaurant/marinara-ristorante/Autoinventory-preview/configure?stock=${selected.id}`}><Settings2 size={15} aria-hidden /> Configure stock</a>
+                    <button type="button" className={styles.textAction} onClick={() => openStockAdjustment(selected)}><PackageCheck size={15} aria-hidden /> Adjust stock</button>
                     <button type="button" className={styles.textAction} onClick={() => recordWaste(selected)}><TriangleAlert size={15} aria-hidden /> Record demo waste</button>
                   </div>
 
@@ -1777,6 +1823,68 @@ export default function MarinaraAutoinventoryPreviewPage() {
 
         <div className={styles.previewNotice}><TriangleAlert size={16} aria-hidden /><p><strong>Preview only.</strong> Supplier names, contacts, prices, stock levels and recipes are demo data. Jourvis Automation can create simulated supplier requests from low-stock rules, auto-accept or counter quotes inside configured limits, and pause for owner approval when a rule is exceeded. No real email, SMS, database, purchasing or accounting action occurs.</p></div>
       </div>
+
+      {stockAdjustment ? (() => {
+        const item = ingredients.find((candidate) => candidate.id === stockAdjustment.itemId) ?? selected;
+        const after = round(Math.max(0, item.current + stockAdjustment.change));
+        return (
+          <div className={styles.modalBackdrop} role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setStockAdjustment(null); }}>
+            <section className={styles.contactModal} role="dialog" aria-modal="true" aria-labelledby="stock-adjustment-title">
+              <div className={styles.modalHeader}>
+                <div>
+                  <span>STOCK ADJUSTMENT</span>
+                  <h2 id="stock-adjustment-title">{item.name}</h2>
+                  <p>Use this when stock changes outside a Jourvis purchase, such as a walk-in purchase, physical count correction, transfer, or waste.</p>
+                </div>
+                <button type="button" onClick={() => setStockAdjustment(null)} aria-label="Close stock adjustment"><X size={19} aria-hidden /></button>
+              </div>
+              <div className={styles.modalBody}>
+                <div className={styles.requestItem}>
+                  <div className={styles.requestItemTitle}>
+                    <div className={styles.requestItemName}>
+                      <StockIcon stockId={item.id} className={styles.stockIconSmall} size={18} />
+                      <div><strong>{item.name}</strong><small>Current {item.current} {item.unit}</small></div>
+                    </div>
+                    <span>After adjustment {after} {item.unit}</span>
+                  </div>
+                  <div className={styles.quantityEditor}>
+                    <label>
+                      <span>Change by</span>
+                      <div>
+                        <input
+                          type="number"
+                          step="0.1"
+                          value={stockAdjustment.change}
+                          onChange={(event) => setStockAdjustment({ ...stockAdjustment, change: Number(event.target.value) || 0 })}
+                        />
+                        <b>{item.unit}</b>
+                      </div>
+                    </label>
+                  </div>
+                  <label style={{ display: "grid", gap: 6, marginTop: 12 }}>
+                    <span style={{ color: "#aab8c2", fontSize: 12 }}>Reason</span>
+                    <select
+                      value={stockAdjustment.reason}
+                      onChange={(event) => setStockAdjustment({ ...stockAdjustment, reason: event.target.value as StockAdjustment["reason"] })}
+                      style={{ minHeight: 40, padding: "6px 9px", background: "#08141f", color: "#f7f4ee", border: "1px solid #2a3a44" }}
+                    >
+                      <option value="external_delivery">Bought / received outside Jourvis</option>
+                      <option value="physical_count">Physical count correction</option>
+                      <option value="waste">Waste / spoilage</option>
+                      <option value="transfer">Stock transfer</option>
+                      <option value="other">Other adjustment</option>
+                    </select>
+                  </label>
+                </div>
+              </div>
+              <div className={styles.modalFooter}>
+                <button type="button" className={styles.secondaryButton} onClick={() => setStockAdjustment(null)}>Cancel</button>
+                <button type="button" className={styles.primaryButton} onClick={applyStockAdjustment}>Apply adjustment</button>
+              </div>
+            </section>
+          </div>
+        );
+      })() : null}
 
       {contactDraft ? (
         <div className={styles.modalBackdrop} role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setContactDraft(null); }}>
