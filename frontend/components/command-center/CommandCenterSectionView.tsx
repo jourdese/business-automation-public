@@ -112,8 +112,12 @@ export default function CommandCenterSectionView({
     return (
       <SectionFrame
         eyebrow="OWNER OVERVIEW"
-        title="Jourvis is operating the business."
-        description="You supervise the business. Jourvis handles normal work automatically, explains what it is doing, and escalates only when a human decision is genuinely required."
+        title={state.automationMasterOn ? "Jourvis is operating the business." : "Review the work before Jourvis starts."}
+        description={
+          state.automationMasterOn
+            ? "You supervise the business while Jourvis works through approved automatic tasks and escalates only genuine exceptions."
+            : "After a reset, Jourvis stays asleep. Review the queue, choose Manual or Jourvis per task, then switch automation on when you are ready."
+        }
       >
         <section className={styles.jourvisAutomationBoard} data-running={state.automationMasterOn}>
           <div className={styles.jourvisAutomationCharacter} data-state={state.automationMasterOn ? "active" : "sleeping"}>
