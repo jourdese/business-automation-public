@@ -11,9 +11,11 @@ import {
 } from "react";
 import { resolveCommandCenterBusiness } from "./business-registry";
 import {
+  canAdvancePurchase,
   estimatedPurchaseTotal,
   evaluatePurchaseAuthority,
   isPurchaseActive,
+  normalizeInventoryAuthorityConfiguration,
   suggestedPurchaseQuantity,
   type CommandCenterInventoryItem,
   type CommandCenterPurchase,
@@ -229,30 +231,9 @@ function hasQueuedAutonomousPurchase(state: CommandCenterRuntimeState) {
 function advanceOneAutonomousStep(
   state: CommandCenterRuntimeState,
 ): CommandCenterRuntimeState {
-  const purchase = state.purchases.find((candidate) => {
-    const item = state.inventory.find((entry) => entry.id === candidate.itemId);
-    if (!item) return false;
-
-    if (candidate.status === "requested") {
-      if (candidate.origin === "owner") return true;
-      if (candidate.automationMode !== "autobuy" || !state.automationMasterOn) return false;
-      return evaluatePurchaseAuthority(item, candidate).withinAutoAccept;
-    }
-    if (candidate.status === "quote_requested") return true;
-    if (candidate.status === "counter_sent") return true;
-    if (candidate.status === "approved") return true;
-    if (candidate.status === "confirmed") return true;
-    if (
-      candidate.status === "quote_received" &&
-      candidate.origin === "jourvis" &&
-      candidate.automationMode === "autobuy" &&
-      state.automationMasterOn
-    ) {
-      const authority = evaluatePurchaseAuthority(item, candidate);
-      return authority.withinAutoAccept || authority.canNegotiate;
-    }
-    return false;
-  });
+  const purchase = state.purchases.find((candidate) =>
+    canAdvancePurchase(state, candidate),
+  );
 
   if (!purchase) return state;
   const item = state.inventory.find((candidate) => candidate.id === purchase.itemId);
@@ -428,19 +409,7 @@ export function CommandCenterRuntimeProvider({
   useEffect(() => {
     if (loading) return;
     const hasWork = state.purchases.some((purchase) =>
-      ["requested", "quote_requested", "approved", "confirmed"].includes(
-        purchase.status,
-      ) ||
-      (
-        purchase.status === "quote_received" &&
-        purchase.origin === "jourvis" &&
-        state.inventory.some((item) =>
-          item.id === purchase.itemId &&
-          item.automationMode === "autobuy" &&
-          (purchase.quotedTotal ?? purchase.estimatedTotal) <= item.maxAutoOrderSpend &&
-          (purchase.quotedPackPrice ?? item.packPrice) <= item.autoAcceptPackPrice
-        )
-      ),
+      canAdvancePurchase(state, purchase),
     );
     if (!hasWork) return;
 
@@ -612,6 +581,8 @@ export function CommandCenterRuntimeProvider({
         const live = current.inventory.find((item) => item.id === next.id);
         if (!live) return current;
 
+        const validated = normalizeInventoryAuthorityConfiguration(next);
+
         const configurableKeys: Array<keyof CommandCenterInventoryItem> = [
           "fullLevel",
           "reorderAt",
@@ -636,34 +607,34 @@ export function CommandCenterRuntimeProvider({
           "maxLeadDays",
         ];
         const changed = configurableKeys
-          .filter((key) => next[key] !== previous[key])
-          .map((key) => `${String(key)}: ${String(previous[key])} → ${String(next[key])}`);
+          .filter((key) => validated[key] !== previous[key])
+          .map((key) => `${String(key)}: ${String(previous[key])} → ${String(validated[key])}`);
 
         if (!changed.length) return current;
 
         const applied: CommandCenterInventoryItem = {
           ...live,
-          fullLevel: next.fullLevel,
-          reorderAt: next.reorderAt,
-          supplierId: next.supplierId,
-          contactId: next.contactId,
-          packSize: next.packSize,
-          packPrice: next.packPrice,
-          purchaseUnit: next.purchaseUnit,
-          leadDays: next.leadDays,
-          purchasingMode: next.purchasingMode,
-          automationEnabled: next.automationEnabled,
-          automationMode: next.automationMode,
-          automationTriggerPercent: next.automationTriggerPercent,
-          targetPackPrice: next.targetPackPrice,
-          autoAcceptPackPrice: next.autoAcceptPackPrice,
-          hardMaxPackPrice: next.hardMaxPackPrice,
-          maxAutoOrderQty: next.maxAutoOrderQty,
-          maxAutoOrderSpend: next.maxAutoOrderSpend,
-          autoNegotiate: next.autoNegotiate,
-          maxCounteroffers: next.maxCounteroffers,
-          maxDeliveryFee: next.maxDeliveryFee,
-          maxLeadDays: next.maxLeadDays,
+          fullLevel: validated.fullLevel,
+          reorderAt: validated.reorderAt,
+          supplierId: validated.supplierId,
+          contactId: validated.contactId,
+          packSize: validated.packSize,
+          packPrice: validated.packPrice,
+          purchaseUnit: validated.purchaseUnit,
+          leadDays: validated.leadDays,
+          purchasingMode: validated.purchasingMode,
+          automationEnabled: validated.automationEnabled,
+          automationMode: validated.automationMode,
+          automationTriggerPercent: validated.automationTriggerPercent,
+          targetPackPrice: validated.targetPackPrice,
+          autoAcceptPackPrice: validated.autoAcceptPackPrice,
+          hardMaxPackPrice: validated.hardMaxPackPrice,
+          maxAutoOrderQty: validated.maxAutoOrderQty,
+          maxAutoOrderSpend: validated.maxAutoOrderSpend,
+          autoNegotiate: validated.autoNegotiate,
+          maxCounteroffers: validated.maxCounteroffers,
+          maxDeliveryFee: validated.maxDeliveryFee,
+          maxLeadDays: validated.maxLeadDays,
         };
 
         return {
