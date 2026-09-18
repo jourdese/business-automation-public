@@ -964,12 +964,12 @@ export default function MarinaraAutoinventoryPreviewPage() {
           {activeTab === "orders" ? (
             <section id="autoinventory-panel-orders" role="tabpanel" aria-labelledby="autoinventory-tab-orders" className={styles.panel}>
               <div className={styles.sectionHeading}>
-                <div><span>SUPPLIER FLOW</span><h2>Contact, confirm, receive.</h2></div>
+                <div><span>PROCUREMENT FLOW</span><h2>Request, agree, confirm, receive.</h2></div>
                 {suggested.length ? <button type="button" className={styles.primaryButton} onClick={() => openContact(suggested, "Group restock")}>Group restock · {suggested.length}</button> : null}
               </div>
 
-              <div className={styles.orderColumns}>
-                <div>
+              <div className={styles.procurementColumns}>
+                <div className={styles.procurementNeeds}>
                   <div className={styles.orderColumnTitle}><span>NEEDS ACTION</span><strong>{suggested.length}</strong></div>
                   {supplierGroups.length ? supplierGroups.map((items) => {
                     const first = items[0];
@@ -977,28 +977,202 @@ export default function MarinaraAutoinventoryPreviewPage() {
                     const contact = getContact(first);
                     const total = items.reduce((sum, item) => sum + Math.ceil(suggestedOrder(item) / item.packSize) * item.packPrice, 0);
                     return (
-                      <article className={styles.supplierGroup} key={supplier.id}>
-                        <div className={styles.supplierGroupHead}><div><span>{supplier.name}</span><strong>{contact.name}</strong><small>{contact.role} · {contact.channel}</small></div><b>{formatMoney(total)}</b></div>
-                        {items.map((item) => <div className={styles.orderItem} key={item.id}><span className={styles.orderItemName}><StockIcon stockId={item.id} className={styles.stockIconSmall} size={18} /><span><strong>{item.name}</strong><small>{item.current}/{item.fullLevel} {item.unit} · reorder at {item.reorderAt}</small></span></span><b>{suggestedOrder(item)} {item.unit}</b></div>)}
-                        <button type="button" className={styles.secondaryButton} onClick={() => openContact(items, `Contact ${supplier.name}`)}><Mail size={15} aria-hidden /> Contact supplier</button>
+                      <article className={styles.supplierGroup} key={`${supplier.id}-${first.purchasingMode}`}>
+                        <div className={styles.supplierGroupHead}>
+                          <div>
+                            <span>{supplier.name}</span>
+                            <strong>{contact.name}</strong>
+                            <small>{contact.role} · {contact.channel}</small>
+                          </div>
+                          <div className={styles.modeStack}>
+                            <b>{formatMoney(total)}</b>
+                            <small>{first.purchasingMode === "quote" ? "Quote required" : "Fixed-price PO"}</small>
+                          </div>
+                        </div>
+                        {items.map((item) => (
+                          <div className={styles.orderItem} key={item.id}>
+                            <span className={styles.orderItemName}>
+                              <StockIcon stockId={item.id} className={styles.stockIconSmall} size={18} />
+                              <span><strong>{item.name}</strong><small>{item.current}/{item.fullLevel} {item.unit} · reorder at {item.reorderAt}</small></span>
+                            </span>
+                            <b>{suggestedOrder(item)} {item.unit}</b>
+                          </div>
+                        ))}
+                        <button type="button" className={styles.secondaryButton} onClick={() => openContact(items, `Contact ${supplier.name}`)}>
+                          <Mail size={15} aria-hidden /> {first.purchasingMode === "quote" ? "Request quote" : "Send purchase order"}
+                        </button>
                       </article>
                     );
-                  }) : <div className={styles.emptyState}><Check size={18} aria-hidden /> No supplier contact is needed.</div>}
+                  }) : <div className={styles.emptyState}><Check size={18} aria-hidden /> No new supplier contact is needed.</div>}
                 </div>
 
-                <div>
-                  <div className={styles.orderColumnTitle}><span>INCOMING</span><strong>{incoming.length}</strong></div>
-                  {incoming.length ? incoming.map((item) => {
-                    const supplier = getSupplier(item);
-                    const contact = getContact(item);
+                <div className={styles.procurementFlow}>
+                  <div className={styles.orderColumnTitle}><span>PURCHASE FLOW</span><strong>{procurements.length}</strong></div>
+
+                  {procurements.length ? procurements.map((request) => {
+                    const supplier = suppliers.find((candidate) => candidate.id === request.supplierId) ?? suppliers[0];
+                    const contact = supplier.contacts.find((candidate) => candidate.id === request.contactId) ?? supplier.contacts[0];
+                    const total = procurementTotal(request, ingredients);
+
                     return (
-                      <article className={styles.incomingCard} key={item.id}>
-                        <div><span>{supplier.name}</span><h3>{item.name}</h3><p>{item.incoming} {item.unit} incoming · contact {contact.name}</p></div>
-                        <div className={styles.projectedRow}><span>Current {percent(item)}%</span><ChevronRight size={14} aria-hidden /><strong>After delivery {Math.min(100, Math.round(((item.current + item.incoming) / item.fullLevel) * 100))}%</strong></div>
-                        <button type="button" className={styles.primaryButton} onClick={() => receive(item)}><PackageCheck size={15} aria-hidden /> Receive delivery</button>
+                      <article className={styles.procurementCard} key={request.id} data-status={request.status}>
+                        <div className={styles.procurementCardHead}>
+                          <div>
+                            <span>{request.id} · {request.mode === "quote" ? "QUOTE REQUIRED" : "FIXED PRICE PO"}</span>
+                            <h3>{supplier.name}</h3>
+                            <small>{contact.name} · {contact.role}</small>
+                          </div>
+                          <div className={styles.procurementStatus}>
+                            <b>{procurementStatusLabel(request.status)}</b>
+                            <small>{formatMoney(total)}</small>
+                          </div>
+                        </div>
+
+                        <div className={styles.procurementProgress} aria-label={`${request.id} progress`}>
+                          {[
+                            ["requested", "Request"],
+                            ["supplier", "Supplier"],
+                            ["agreement", "Agreement"],
+                            ["confirmed", "Confirmed"],
+                            ["receive", "Receive"],
+                          ].map(([key, label]) => {
+                            const reached =
+                              key === "requested" ||
+                              (key === "supplier" && request.status !== "requested") ||
+                              (key === "agreement" && ["quote_received", "counter_sent", "awaiting_confirmation", "confirmed", "in_transit", "received"].includes(request.status)) ||
+                              (key === "confirmed" && ["confirmed", "in_transit", "received"].includes(request.status)) ||
+                              (key === "receive" && request.status === "received");
+                            return <span key={key} data-reached={reached}><i />{label}</span>;
+                          })}
+                        </div>
+
+                        <div className={styles.procurementConfirmations}>
+                          <span><i data-confirmed={request.buyerConfirmed} /> Buyer {request.buyerConfirmed ? "confirmed" : "pending"}</span>
+                          <span><i data-confirmed={request.supplierConfirmed} /> Supplier {request.supplierConfirmed ? "confirmed" : "pending"}</span>
+                        </div>
+
+                        <div className={styles.procurementLines}>
+                          {request.lines.map((line) => {
+                            const item = ingredients.find((candidate) => candidate.id === line.itemId);
+                            if (!item) return null;
+                            const quantity = line.agreedQty ?? line.requestedQty;
+                            return (
+                              <div className={styles.procurementLine} key={line.itemId}>
+                                <span className={styles.orderItemName}>
+                                  <StockIcon stockId={item.id} className={styles.stockIconSmall} size={18} />
+                                  <span>
+                                    <strong>{item.name}</strong>
+                                    <small>Requested {line.requestedQty} {item.unit}{line.agreedQty !== undefined ? ` · agreed ${line.agreedQty} ${item.unit}` : ""}</small>
+                                  </span>
+                                </span>
+                                <span>
+                                  {line.quotedPackPrice !== undefined ? (
+                                    <>
+                                      <small>Previous {formatMoney(item.packPrice)} / {item.purchaseUnit}</small>
+                                      <b>Quote {formatMoney(line.quotedPackPrice)}</b>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <small>{request.mode === "fixed" ? "Configured price" : "Awaiting quote"}</small>
+                                      <b>{request.mode === "fixed" ? formatMoney(item.packPrice) : "—"}</b>
+                                    </>
+                                  )}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+
+                        {request.status === "quote_received" ? (
+                          <div className={styles.quoteSummary}>
+                            <span>SUPPLIER QUOTE</span>
+                            <strong>{formatMoney(total)}</strong>
+                            <small>Includes {formatMoney(request.deliveryFee)} demo delivery fee · ETA {request.etaDays} day{request.etaDays === 1 ? "" : "s"}</small>
+                          </div>
+                        ) : null}
+
+                        {request.status === "in_transit" ? (
+                          <div className={styles.receivingEditor}>
+                            <span>ACTUAL DELIVERY COUNT</span>
+                            {request.lines.map((line) => {
+                              const item = ingredients.find((candidate) => candidate.id === line.itemId);
+                              if (!item) return null;
+                              const agreed = line.agreedQty ?? line.requestedQty;
+                              return (
+                                <label key={line.itemId}>
+                                  <span>{item.name}<small>Agreed {agreed} {item.unit}</small></span>
+                                  <div>
+                                    <input
+                                      type="number"
+                                      min="0"
+                                      step="0.1"
+                                      value={line.receivedQty ?? agreed}
+                                      onChange={(event) => changeReceivedQuantity(request.id, line.itemId, Number(event.target.value) || 0)}
+                                    />
+                                    <b>{item.unit}</b>
+                                  </div>
+                                </label>
+                              );
+                            })}
+                          </div>
+                        ) : null}
+
+                        <div className={styles.procurementActions}>
+                          {request.status === "requested" ? (
+                            <button type="button" className={styles.primaryButton} onClick={() => supplierViewsRequest(request)}>
+                              Simulate supplier view
+                            </button>
+                          ) : null}
+
+                          {request.status === "supplier_viewed" && request.mode === "quote" ? (
+                            <>
+                              <button type="button" className={styles.primaryButton} onClick={() => supplierSubmitsQuote(request)}>Simulate supplier quote</button>
+                              <button type="button" className={styles.textAction} onClick={() => declineProcurement(request)}>Supplier declines</button>
+                            </>
+                          ) : null}
+
+                          {request.status === "supplier_viewed" && request.mode === "fixed" ? (
+                            <>
+                              <button type="button" className={styles.primaryButton} onClick={() => confirmProcurement(request, "acknowledgment")}>Supplier acknowledges PO</button>
+                              <button type="button" className={styles.textAction} onClick={() => declineProcurement(request)}>Supplier rejects</button>
+                            </>
+                          ) : null}
+
+                          {request.status === "quote_received" ? (
+                            <>
+                              <button type="button" className={styles.primaryButton} onClick={() => buyerAcceptsQuote(request)}>Buyer accepts quote</button>
+                              <button type="button" className={styles.secondaryButton} onClick={() => buyerCountersQuote(request)}>Counter at previous price</button>
+                              <button type="button" className={styles.textAction} onClick={() => declineProcurement(request)}>Reject quote</button>
+                            </>
+                          ) : null}
+
+                          {request.status === "counter_sent" ? (
+                            <>
+                              <button type="button" className={styles.primaryButton} onClick={() => confirmProcurement(request, "counter")}>Supplier accepts counter</button>
+                              <button type="button" className={styles.textAction} onClick={() => declineProcurement(request)}>Supplier rejects counter</button>
+                            </>
+                          ) : null}
+
+                          {request.status === "awaiting_confirmation" ? (
+                            <button type="button" className={styles.primaryButton} onClick={() => confirmProcurement(request, "quote")}>Supplier final confirmation</button>
+                          ) : null}
+
+                          {request.status === "confirmed" ? (
+                            <button type="button" className={styles.primaryButton} onClick={() => markProcurementInTransit(request)}><Truck size={15} aria-hidden /> Mark in transit</button>
+                          ) : null}
+
+                          {request.status === "in_transit" ? (
+                            <button type="button" className={styles.primaryButton} onClick={() => receiveProcurement(request)}><PackageCheck size={15} aria-hidden /> Receive actual delivery</button>
+                          ) : null}
+
+                          {request.status === "received" ? <span className={styles.procurementClosed}><Check size={15} aria-hidden /> Received and closed</span> : null}
+                          {request.status === "declined" ? <span className={styles.procurementClosed}><X size={15} aria-hidden /> Declined / cancelled</span> : null}
+                        </div>
                       </article>
                     );
-                  }) : <div className={styles.emptyState}><Truck size={18} aria-hidden /> No deliveries are waiting.</div>}
+                  }) : (
+                    <div className={styles.emptyState}><Clock3 size={18} aria-hidden /> No purchase requests yet. Contact a supplier to start the flow.</div>
+                  )}
                 </div>
               </div>
             </section>
