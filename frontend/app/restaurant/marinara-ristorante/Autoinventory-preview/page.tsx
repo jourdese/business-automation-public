@@ -143,6 +143,23 @@ function automationTriggered(item: Ingredient) {
   return percent(item) <= Math.max(0, Math.min(100, item.automationTriggerPercent));
 }
 
+function automationExceptionSignature(item: Ingredient) {
+  const quantity = suggestedOrder(item);
+  const packPrice = item.purchasingMode === "fixed" ? item.packPrice : item.targetPackPrice;
+  const estimatedSpend =
+    Math.ceil(quantity / Math.max(item.packSize, 0.01)) * packPrice;
+  return [
+    round(item.current),
+    quantity,
+    estimatedSpend,
+    item.maxAutoOrderQty,
+    item.maxAutoOrderSpend,
+    item.hardMaxPackPrice,
+    item.leadDays,
+    item.maxLeadDays,
+  ].join("|");
+}
+
 function projectedAtDelivery(item: Ingredient) {
   return Math.max(0, item.current + item.incoming - item.dailyUse * item.leadDays);
 }
@@ -243,6 +260,7 @@ export default function MarinaraAutoinventoryPreviewPage() {
   const [showSummaryLabels, setShowSummaryLabels] = useState(true);
   const [automationMasterOn, setAutomationMasterOn] = useState(false);
   const [automationAlerts, setAutomationAlerts] = useState<Record<string, string>>({});
+  const [automationRejected, setAutomationRejected] = useState<Record<string, string>>({});
   const [contactDraft, setContactDraft] = useState<ContactDraft | null>(null);
   const [procurements, setProcurements] = useState<ProcurementRequest[]>([]);
   const [activity, setActivity] = useState([
@@ -372,8 +390,8 @@ export default function MarinaraAutoinventoryPreviewPage() {
 
   const jourvisFocusTarget = selectedAutomationAlert
     ? activeTab === "overview"
-      ? "#jourvis-automation-card"
-      : "#jourvis-global-configure"
+      ? "#jourvis-automation-decision"
+      : "#autoinventory-tab-overview"
     : selectedProcurementNeedsOwner && selectedProcurement
       ? activeTab === "orders"
         ? `#procurement-${selectedProcurement.id}`
@@ -389,7 +407,7 @@ export default function MarinaraAutoinventoryPreviewPage() {
           : undefined;
 
   const jourvisFocusLabel = selectedAutomationAlert
-    ? "Adjust my limits"
+    ? "Approve or reject"
     : selectedProcurementNeedsOwner
       ? "Your decision is needed"
       : selectedNeedsAutomationEnable
@@ -436,6 +454,7 @@ export default function MarinaraAutoinventoryPreviewPage() {
         item.automationEnabled &&
         item.automationMode !== "assist" &&
         automationTriggered(item) &&
+        automationRejected[item.id] !== automationExceptionSignature(item) &&
         !activeItemIds.has(item.id),
     );
 
@@ -527,7 +546,7 @@ export default function MarinaraAutoinventoryPreviewPage() {
           : `${request.id}: Jourvis automatically contacted ${supplier.name} because configured stock reached its trigger.`,
       );
     });
-  }, [automationMasterOn, ingredients, procurements]);
+  }, [automationMasterOn, ingredients, procurements, automationRejected]);
 
   function log(message: string) {
     setActivity((current) => [message, ...current].slice(0, 12));
@@ -571,6 +590,7 @@ export default function MarinaraAutoinventoryPreviewPage() {
     setStockFilter("All");
     setSearchTerm("");
     setAutomationAlerts({});
+    setAutomationRejected({});
     setContactDraft(null);
     setProcurements([]);
     setActivity([
@@ -688,6 +708,69 @@ export default function MarinaraAutoinventoryPreviewPage() {
 
   function updateProcurement(id: string, updater: (request: ProcurementRequest) => ProcurementRequest) {
     setProcurements((current) => current.map((request) => request.id === id ? updater(request) : request));
+  }
+
+  function approveAutomationException(item: Ingredient) {
+    const quantity = suggestedOrder(item);
+    if (quantity <= 0) {
+      setAutomationAlerts((current) => {
+        const next = { ...current };
+        delete next[item.id];
+        return next;
+      });
+      return;
+    }
+
+    const supplier = getSupplier(item);
+    const contact = getContact(item);
+    const request: ProcurementRequest = {
+      id: `AUTO-OVR-${String(procurements.length + 1).padStart(3, "0")}`,
+      supplierId: supplier.id,
+      contactId: contact.id,
+      mode: item.purchasingMode,
+      status: "requested",
+      lines: [{ itemId: item.id, requestedQty: quantity }],
+      deliveryFee: 0,
+      etaDays: item.leadDays,
+      buyerConfirmed: item.purchasingMode === "fixed",
+      supplierConfirmed: false,
+      incomingApplied: false,
+      origin: "automation",
+      previewOnly: item.automationPreview,
+      automationMode: item.automationMode,
+      counteroffersUsed: 0,
+      automationNote:
+        "Owner approved a one-time override for this automation limit. Normal limits remain unchanged for future requests.",
+    };
+
+    setProcurements((current) => [request, ...current]);
+    setAutomationAlerts((current) => {
+      const next = { ...current };
+      delete next[item.id];
+      return next;
+    });
+    setAutomationRejected((current) => {
+      const next = { ...current };
+      delete next[item.id];
+      return next;
+    });
+    log(
+      `${request.id}: owner approved the automation exception for ${item.name}. Jourvis continued with ${quantity} ${item.unit} without changing the saved spending limits.`,
+    );
+    setActiveTab("orders");
+  }
+
+  function rejectAutomationException(item: Ingredient) {
+    const signature = automationExceptionSignature(item);
+    setAutomationRejected((current) => ({ ...current, [item.id]: signature }));
+    setAutomationAlerts((current) => {
+      const next = { ...current };
+      delete next[item.id];
+      return next;
+    });
+    log(
+      `Jourvis automation rejected for ${item.name}. This exact request will stay paused unless the stock or automation rules change.`,
+    );
   }
 
   function supplierViewsRequest(request: ProcurementRequest) {
@@ -1149,7 +1232,27 @@ export default function MarinaraAutoinventoryPreviewPage() {
                         ? `Trigger ≤ ${selected.automationTriggerPercent}% · target ${formatMoney(selected.targetPackPrice)} · auto-accept ≤ ${formatMoney(selected.autoAcceptPackPrice)} · hard stop ${formatMoney(selected.hardMaxPackPrice)}`
                         : "Configure this supply if you want Jourvis to act automatically at a stock percentage you choose."}
                     </small>
-                    {automationAlerts[selected.id] ? <p>{automationAlerts[selected.id]}</p> : null}
+                    {automationAlerts[selected.id] ? (
+                      <>
+                        <p>{automationAlerts[selected.id]}</p>
+                        <div id="jourvis-automation-decision" className={styles.automationDecisionActions}>
+                          <button
+                            type="button"
+                            className={styles.automationApprove}
+                            onClick={() => approveAutomationException(selected)}
+                          >
+                            <Check size={14} aria-hidden /> Approve
+                          </button>
+                          <button
+                            type="button"
+                            className={styles.automationReject}
+                            onClick={() => rejectAutomationException(selected)}
+                          >
+                            <X size={14} aria-hidden /> Reject
+                          </button>
+                        </div>
+                      </>
+                    ) : null}
                   </div>
 
                   <div className={styles.summaryAdvice}>
@@ -1166,7 +1269,8 @@ export default function MarinaraAutoinventoryPreviewPage() {
                     </div>
                   </div>
 
-                  <div className={styles.summaryActions}>
+                  {!selectedAutomationAlert ? (
+                    <div className={styles.summaryActions}>
                     {selectedProcurement ? (
                       <button
                         type="button"
@@ -1190,6 +1294,7 @@ export default function MarinaraAutoinventoryPreviewPage() {
                       <Settings2 size={15} aria-hidden /> Configure
                     </a>
                   </div>
+                  ) : null}
 
                   <div className={styles.statusLegend} aria-label="Stock status legend">
                     <span>LEVEL COLORS</span>
@@ -1605,8 +1710,13 @@ export default function MarinaraAutoinventoryPreviewPage() {
         focusTarget={jourvisFocusTarget}
         focusLabel={jourvisFocusLabel}
         actions={
-          selectedProcurement
+          selectedAutomationAlert
             ? [
+                { label: "Approve", onClick: () => approveAutomationException(selected), primary: true },
+                { label: "Reject", onClick: () => rejectAutomationException(selected) },
+              ]
+            : selectedProcurement
+              ? [
                 { label: "View purchase flow", onClick: () => setActiveTab("orders"), primary: true },
                 { label: `Configure ${selected.name}`, href: `/restaurant/marinara-ristorante/Autoinventory-preview/configure?stock=${selected.id}` },
               ]
