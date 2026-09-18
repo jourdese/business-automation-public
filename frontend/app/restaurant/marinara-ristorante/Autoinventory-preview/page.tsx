@@ -295,6 +295,7 @@ export default function MarinaraAutoinventoryPreviewPage() {
         : "shrimp";
       setJourvisUpdateItemId(targetId);
       setJourvisOpenKey((value) => value + 1);
+      window.history.replaceState({}, "", window.location.pathname);
     }
 
     setRuntimeReady(true);
@@ -357,9 +358,10 @@ export default function MarinaraAutoinventoryPreviewPage() {
       (item) =>
         item.current <= item.reorderAt &&
         suggestedOrder(item) > 0 &&
+        !automationRejected[item.id] &&
         !activeProcurementItemIds.has(item.id),
     ),
-    [ingredients, activeProcurementItemIds],
+    [ingredients, activeProcurementItemIds, automationRejected],
   );
 
   const activeProcurements = useMemo(
@@ -2099,6 +2101,7 @@ export default function MarinaraAutoinventoryPreviewPage() {
                     const supplier = suppliers.find((candidate) => candidate.id === request.supplierId) ?? suppliers[0];
                     const contact = supplier.contacts.find((candidate) => candidate.id === request.contactId) ?? supplier.contacts[0];
                     const total = procurementTotal(request, ingredients);
+                    const requestItem = ingredients.find((item) => item.id === request.lines[0]?.itemId);
 
                     return (
                       <article id={`procurement-${request.id}`} className={styles.procurementCard} key={request.id} data-status={request.status}>
@@ -2227,8 +2230,9 @@ export default function MarinaraAutoinventoryPreviewPage() {
 
                           {request.status === "supplier_viewed" && request.mode === "fixed" && !request.buyerConfirmed ? (
                             <>
-                              <button type="button" className={styles.primaryButton} onClick={() => buyerApprovesFixedAutomation(request)}>Approve purchase order</button>
+                              <button type="button" className={styles.primaryButton} onClick={() => buyerApprovesFixedAutomation(request)}>Approve</button>
                               <button type="button" className={styles.textAction} onClick={() => declineProcurement(request)}>Reject</button>
+                              {requestItem ? <button type="button" className={styles.secondaryButton} onClick={() => openJourvisUpdate(requestItem)}>Update</button> : null}
                             </>
                           ) : null}
 
@@ -2238,9 +2242,9 @@ export default function MarinaraAutoinventoryPreviewPage() {
 
                           {request.status === "quote_received" ? (
                             <>
-                              <button type="button" className={styles.primaryButton} onClick={() => buyerAcceptsQuote(request)}>Approve quote</button>
-                              <button type="button" className={styles.secondaryButton} onClick={() => buyerCountersQuote(request)}>Counter at target price</button>
+                              <button type="button" className={styles.primaryButton} onClick={() => buyerAcceptsQuote(request)}>Approve</button>
                               <button type="button" className={styles.textAction} onClick={() => declineProcurement(request)}>Reject</button>
+                              {requestItem ? <button type="button" className={styles.secondaryButton} onClick={() => openJourvisUpdate(requestItem)}>Update</button> : null}
                             </>
                           ) : null}
 
