@@ -176,6 +176,34 @@ export function suggestedPurchaseQuantity(item: CommandCenterInventoryItem) {
   );
 }
 
+export function projectedInventoryAtDelivery(
+  item: CommandCenterInventoryItem,
+) {
+  const dailyUse = item.dailyUse ?? 0;
+  return Math.max(
+    0,
+    Math.round(
+      (item.current + item.incoming - dailyUse * item.leadDays) * 100,
+    ) / 100,
+  );
+}
+
+export function projectedInventoryPercentAtDelivery(
+  item: CommandCenterInventoryItem,
+) {
+  return Math.max(
+    0,
+    Math.min(
+      100,
+      Math.round(
+        (projectedInventoryAtDelivery(item) /
+          Math.max(item.fullLevel, 0.01)) *
+          100,
+      ),
+    ),
+  );
+}
+
 export function estimatedPurchaseTotal(
   item: CommandCenterInventoryItem,
   quantity = suggestedPurchaseQuantity(item),
