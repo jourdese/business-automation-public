@@ -58,9 +58,8 @@ function sectionHref(businessId: string, section: CommandCenterSectionId) {
 }
 
 export default function CommandCenterShell({ children }: { children: ReactNode }) {
-  const initial = readPath();
-  const [businessId, setBusinessId] = useState(initial.businessId);
-  const [activeSection, setActiveSection] = useState<CommandCenterSectionId>(initial.section);
+  const [businessId, setBusinessId] = useState("marinara-ristorante");
+  const [activeSection, setActiveSection] = useState<CommandCenterSectionId>("overview");
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   useEffect(() => {
