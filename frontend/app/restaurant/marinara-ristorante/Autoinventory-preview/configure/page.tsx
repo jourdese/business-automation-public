@@ -62,6 +62,18 @@ export default function AutoinventoryConfigurePage() {
     setSaved(true);
   }
 
+  function enableAutomationFromGuide() {
+    setItems((current) => {
+      const next = current.map((item) =>
+        item.id === selected.id ? { ...item, automationEnabled: true } : item,
+      );
+      saveConfiguredIngredients(next);
+      return next;
+    });
+    setSaved(true);
+    setGuideStep(null);
+  }
+
   function resetAll() {
     setItems(initialIngredients);
     saveConfiguredIngredients(initialIngredients);
@@ -78,7 +90,7 @@ export default function AutoinventoryConfigurePage() {
           <div>
             <p className={styles.eyebrow}><Settings2 size={14} aria-hidden /> Autoinventory configuration</p>
             <h1>Configure each stock.</h1>
-            <p>Choose which supplier and contact person Jourvis should use, what quantity means 100%, and when restocking should begin.</p>
+            <p>Choose stock targets, supplier rules, price limits and exactly how much purchasing authority Jourvis is allowed to use.</p>
           </div>
           <div className={styles.headerActions}>
             <a href="/restaurant/marinara-ristorante/Autoinventory-preview"><ArrowLeft size={15} aria-hidden /> Back to Autoinventory</a>
@@ -276,7 +288,7 @@ export default function AutoinventoryConfigurePage() {
                     {guideStep < 5 ? (
                       <button type="button" className={styles.saveButton} onClick={() => setGuideStep((guideStep ?? 0) + 1)}>Continue <ChevronRight size={14} aria-hidden /></button>
                     ) : (
-                      <button type="button" className={styles.saveButton} onClick={() => { updateSelected({ automationEnabled: true }); setGuideStep(null); }}><Check size={14} aria-hidden /> Enable for {selected.name}</button>
+                      <button type="button" className={styles.saveButton} onClick={enableAutomationFromGuide}><Check size={14} aria-hidden /> Enable & save for {selected.name}</button>
                     )}
                   </div>
                 </div>
