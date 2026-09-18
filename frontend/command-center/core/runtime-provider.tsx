@@ -612,6 +612,15 @@ export function CommandCenterRuntimeProvider({
         if (!live) return current;
 
         const configurableKeys: Array<keyof CommandCenterInventoryItem> = [
+          "fullLevel",
+          "reorderAt",
+          "supplierId",
+          "contactId",
+          "packSize",
+          "packPrice",
+          "purchaseUnit",
+          "leadDays",
+          "purchasingMode",
           "automationEnabled",
           "automationMode",
           "automationTriggerPercent",
@@ -633,6 +642,15 @@ export function CommandCenterRuntimeProvider({
 
         const applied: CommandCenterInventoryItem = {
           ...live,
+          fullLevel: next.fullLevel,
+          reorderAt: next.reorderAt,
+          supplierId: next.supplierId,
+          contactId: next.contactId,
+          packSize: next.packSize,
+          packPrice: next.packPrice,
+          purchaseUnit: next.purchaseUnit,
+          leadDays: next.leadDays,
+          purchasingMode: next.purchasingMode,
           automationEnabled: next.automationEnabled,
           automationMode: next.automationMode,
           automationTriggerPercent: next.automationTriggerPercent,
