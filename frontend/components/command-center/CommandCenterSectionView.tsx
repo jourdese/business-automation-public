@@ -427,7 +427,10 @@ export default function CommandCenterSectionView({
               {state.activity.slice(0, 6).map((entry, index) => (
                 <div key={entry.id}>
                   <span>{String(index + 1).padStart(2, "0")}</span>
-                  <div><strong>{entry.module}</strong><small>{entry.message}</small></div>
+                  <div>
+                    <strong>{entry.executionMode.toUpperCase()} · {entry.module}</strong>
+                    <small>{entry.message} Why: {entry.reason}</small>
+                  </div>
                 </div>
               ))}
             </div>
