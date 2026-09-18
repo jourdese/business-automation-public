@@ -1006,6 +1006,8 @@ export default function MarinaraAutoinventoryPreviewPage() {
                                   ? `+${procurementLine?.agreedQty ?? procurementLine?.requestedQty ?? 0} ${item.unit} confirmed`
                                   : procurementStatusLabel(procurement.status)}
                               </span>
+                            ) : automationAlerts[item.id] ? (
+                              <span className={styles.summaryAutomationAlert}>Ask owner</span>
                             ) : null}
 
                             {showSummaryLabels ? (
