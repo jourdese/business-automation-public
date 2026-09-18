@@ -539,3 +539,32 @@
     filter: brightness(1.08);
   }
 }
+
+
+.presence[data-wide="true"] .panel {
+  width: min(430px, calc(100vw - 32px));
+}
+
+.customContent {
+  border-top: 1px solid #2d414b;
+  max-height: min(58vh, 560px);
+  overflow: auto;
+  padding: 0.8rem;
+  scrollbar-gutter: stable;
+}
+
+.actions [data-danger="true"] {
+  color: #ffb5ad;
+  background: #241515;
+}
+
+.actions [data-danger="true"]:hover {
+  color: #ffe0dc;
+  background: #351b1b;
+}
+
+@media (max-width: 640px) {
+  .customContent {
+    max-height: min(52vh, 520px);
+  }
+}
