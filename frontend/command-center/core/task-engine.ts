@@ -124,7 +124,6 @@ export function deriveJourvisTasks(
     const estimatedTotal = estimatedPurchaseTotal(item, quantity);
 
     if (
-      !state.automationMasterOn ||
       !item.automationEnabled ||
       item.automationMode === "assist"
     ) {
@@ -138,10 +137,8 @@ export function deriveJourvisTasks(
         title: `${item.name} is below its low-stock level`,
         whatHappened: `${item.name} is at ${percent}%, below the ${lowPercent}% warning level.`,
         why: item.automationEnabled
-          ? state.automationMasterOn
-            ? "This item is configured as Watch only, so Jourvis is not allowed to purchase it automatically."
-            : "Global Jourvis automation is paused."
-          : "Automatic purchasing is not enabled for this item.",
+          ? "This item is configured as Watch only, so Jourvis is not allowed to purchase it automatically."
+          : "This task is set to Manual, so Jourvis will observe it but will not start purchasing automatically.",
         whatJourvisDid: `Jourvis calculated a suggested purchase of ${quantity} ${item.unit}, estimated at ₱${Math.round(estimatedTotal).toLocaleString("en-PH")}.`,
         whyOwnerIsNeeded: "Jourvis does not currently have enough authority to start this purchase automatically.",
         actions: ["approve", "reject", "update"],
