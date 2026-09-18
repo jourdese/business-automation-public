@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { ArrowLeft, ArrowRight, Bot, CheckCircle2 } from "lucide-react";
 import {
   operationCatalog,
@@ -21,7 +22,13 @@ function readRoute() {
 }
 
 export default function OperationModuleView() {
-  const { businessId, moduleId } = readRoute();
+  const [route, setRoute] = useState({ businessId: "marinara-ristorante", moduleId: "inventory" });
+
+  useEffect(() => {
+    setRoute(readRoute());
+  }, []);
+
+  const { businessId, moduleId } = route;
   const business = resolveCommandCenterBusiness(businessId);
   const module = operationCatalog[moduleId] ?? {
     label: moduleId,
