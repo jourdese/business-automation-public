@@ -142,6 +142,7 @@ const zoneOrder: Zone[] = ["Pantry", "Cold storage", "Seafood freezer", "Produce
 const stockFilters: StockFilter[] = ["All", ...zoneOrder];
 const PROCUREMENT_RUNTIME_KEY = "jourvis:marinara:procurements:v2";
 const ACTIVITY_RUNTIME_KEY = "jourvis:marinara:activity:v1";
+const AUTOMATION_REJECTED_KEY = "jourvis:marinara:automation-rejected:v1";
 
 function round(value: number) {
   return Math.round(value * 100) / 100;
@@ -297,6 +298,8 @@ export default function MarinaraAutoinventoryPreviewPage() {
       if (savedProcurements) setProcurements(JSON.parse(savedProcurements) as ProcurementRequest[]);
       const savedActivity = window.localStorage.getItem(ACTIVITY_RUNTIME_KEY);
       if (savedActivity) setActivity(JSON.parse(savedActivity) as string[]);
+      const savedRejected = window.localStorage.getItem(AUTOMATION_REJECTED_KEY);
+      if (savedRejected) setAutomationRejected(JSON.parse(savedRejected) as Record<string, string>);
     } catch {
       // Corrupt demo runtime data falls back to the seeded preview.
     }
@@ -321,6 +324,11 @@ export default function MarinaraAutoinventoryPreviewPage() {
     if (!runtimeReady) return;
     window.localStorage.setItem(ACTIVITY_RUNTIME_KEY, JSON.stringify(activity));
   }, [activity, runtimeReady]);
+
+  useEffect(() => {
+    if (!runtimeReady) return;
+    window.localStorage.setItem(AUTOMATION_REJECTED_KEY, JSON.stringify(automationRejected));
+  }, [automationRejected, runtimeReady]);
 
   const selected = ingredients.find((item) => item.id === selectedId) ?? ingredients[0];
   const selectedTone = tone(selected);
@@ -841,6 +849,7 @@ export default function MarinaraAutoinventoryPreviewPage() {
     resetInventoryRuntime();
     window.localStorage.removeItem(PROCUREMENT_RUNTIME_KEY);
     window.localStorage.removeItem(ACTIVITY_RUNTIME_KEY);
+    window.localStorage.removeItem(AUTOMATION_REJECTED_KEY);
     setIngredients(loadConfiguredIngredients());
     setSelectedId("shrimp");
     setActiveTab("overview");
