@@ -323,6 +323,120 @@ export default function MarinaraAutoinventoryPreviewPage() {
     );
   }
 
+  const automationEnabledCount = ingredients.filter((item) => item.automationEnabled).length;
+  const automationAlertCount = Object.keys(automationAlerts).length;
+
+  useEffect(() => {
+    if (!automationMasterOn) return;
+
+    const activeItemIds = new Set(
+      procurements
+        .filter((request) => activeProcurementStatus(request.status))
+        .flatMap((request) => request.lines.map((line) => line.itemId)),
+    );
+
+    const candidates = ingredients.filter(
+      (item) =>
+        item.automationEnabled &&
+        item.automationMode !== "assist" &&
+        item.current <= item.reorderAt &&
+        !activeItemIds.has(item.id),
+    );
+
+    if (!candidates.length) return;
+
+    const eligible: Ingredient[] = [];
+    const blocked: Record<string, string> = {};
+
+    candidates.forEach((item) => {
+      const quantity = suggestedOrder(item);
+      const packPrice = item.purchasingMode === "fixed" ? item.packPrice : item.targetPackPrice;
+      const estimatedSpend = Math.ceil(quantity / Math.max(item.packSize, 0.01)) * packPrice;
+
+      if (quantity > item.maxAutoOrderQty) {
+        blocked[item.id] = `Jourvis paused: suggested ${quantity} ${item.unit} exceeds the automatic quantity limit of ${item.maxAutoOrderQty} ${item.unit}.`;
+        return;
+      }
+      if (estimatedSpend > item.maxAutoOrderSpend) {
+        blocked[item.id] = `Jourvis paused: estimated ${formatMoney(estimatedSpend)} exceeds the automatic order cap of ${formatMoney(item.maxAutoOrderSpend)}.`;
+        return;
+      }
+      if (item.purchasingMode === "fixed" && item.packPrice > item.hardMaxPackPrice) {
+        blocked[item.id] = `Jourvis paused: configured pack price ${formatMoney(item.packPrice)} is above the hard maximum of ${formatMoney(item.hardMaxPackPrice)}.`;
+        return;
+      }
+      if (item.leadDays > item.maxLeadDays) {
+        blocked[item.id] = `Jourvis paused: supplier lead time of ${item.leadDays} days exceeds the allowed ${item.maxLeadDays} days.`;
+        return;
+      }
+
+      eligible.push(item);
+    });
+
+    if (Object.keys(blocked).length) {
+      setAutomationAlerts((current) => {
+        const next = { ...current };
+        Object.entries(blocked).forEach(([id, message]) => {
+          if (!next[id]) log(message);
+          next[id] = message;
+        });
+        return next;
+      });
+    }
+
+    if (!eligible.length) return;
+
+    const groups = supplierGroupsForItems(eligible);
+    const startIndex = procurements.length;
+
+    const automaticRequests: ProcurementRequest[] = groups.map((items, index) => {
+      const first = items[0];
+      const supplier = getSupplier(first);
+      const contact = getContact(first);
+      return {
+        id: `AUTO-${String(startIndex + index + 1).padStart(3, "0")}`,
+        supplierId: supplier.id,
+        contactId: contact.id,
+        mode: first.purchasingMode,
+        status: "requested",
+        lines: items.map((item) => ({
+          itemId: item.id,
+          requestedQty: Math.min(suggestedOrder(item), item.maxAutoOrderQty),
+        })),
+        deliveryFee: 0,
+        etaDays: Math.max(...items.map((item) => item.leadDays)),
+        buyerConfirmed:
+          first.purchasingMode === "fixed" && first.automationMode === "autobuy",
+        supplierConfirmed: false,
+        incomingApplied: false,
+        origin: "automation",
+        previewOnly: items.some((item) => item.automationPreview),
+        automationMode: first.automationMode,
+        counteroffersUsed: 0,
+        automationNote:
+          first.automationMode === "autobuy"
+            ? "Jourvis started this request automatically under the configured buying rules."
+            : "Jourvis contacted the supplier automatically. Owner approval remains required.",
+      };
+    });
+
+    setProcurements((current) => [...automaticRequests, ...current]);
+    setAutomationAlerts((current) => {
+      const next = { ...current };
+      eligible.forEach((item) => delete next[item.id]);
+      return next;
+    });
+
+    automaticRequests.forEach((request) => {
+      const supplier = suppliers.find((candidate) => candidate.id === request.supplierId) ?? suppliers[0];
+      log(
+        request.previewOnly
+          ? `${request.id}: PREVIEW — Jourvis would contact ${supplier.name} automatically because configured stock reached its trigger.`
+          : `${request.id}: Jourvis automatically contacted ${supplier.name} because configured stock reached its trigger.`,
+      );
+    });
+  }, [automationMasterOn, ingredients, procurements]);
+
   function log(message: string) {
     setActivity((current) => [message, ...current].slice(0, 12));
   }
