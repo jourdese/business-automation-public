@@ -18,6 +18,7 @@ import {
   X,
 } from "lucide-react";
 import JourvisPresence from "@/components/jourvis/JourvisPresence";
+import BusinessBrandMark from "./BusinessBrandMark";
 import {
   listCommandCenterBusinesses,
   resolveCommandCenterBusiness,
@@ -282,8 +283,15 @@ export default function CommandCenterShell({ children }: { children: ReactNode }
           </button>
 
           <div className={styles.businessIdentity}>
-            <span>{business.industry.toUpperCase()} · {business.timezone}</span>
-            <strong>{business.name}</strong>
+            <BusinessBrandMark
+              businessId={business.id}
+              businessName={business.name}
+              className={styles.businessBrandMark}
+            />
+            <div>
+              <span>{business.industry.toUpperCase()} · {business.timezone}</span>
+              <strong>{business.name}</strong>
+            </div>
           </div>
 
           <div className={styles.headerRuntimeActions}>
