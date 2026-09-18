@@ -1,6 +1,6 @@
 "use client";
 
-import { type ReactNode, useMemo } from "react";
+import { type ReactNode, useEffect, useMemo, useState } from "react";
 import {
   ArrowRight,
   Bot,
@@ -34,9 +34,15 @@ export default function CommandCenterSectionView({
 }: {
   section: CommandCenterSectionId;
 }) {
+  const [businessId, setBusinessId] = useState("marinara-ristorante");
+
+  useEffect(() => {
+    setBusinessId(businessIdFromPath());
+  }, []);
+
   const business = useMemo(
-    () => resolveCommandCenterBusiness(businessIdFromPath()),
-    [],
+    () => resolveCommandCenterBusiness(businessId),
+    [businessId],
   );
 
   if (section === "overview") {
