@@ -448,6 +448,7 @@ export default function MarinaraAutoinventoryPreviewPage() {
         item.automationEnabled &&
         automationTriggered(item) &&
         !automationMasterOn &&
+        !automationRejected[item.id] &&
         !activeIds.has(item.id)
       ) {
         tasks.push({
