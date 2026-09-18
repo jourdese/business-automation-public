@@ -2652,3 +2652,228 @@
     grid-template-columns: 1fr auto;
   }
 }
+
+
+.purchaseExplanation {
+  padding: 0.62rem 0.75rem;
+  border-top: 1px solid var(--cc-line);
+  background: rgba(167, 227, 197, 0.035);
+}
+
+.purchaseExplanation span {
+  display: block;
+  color: var(--mint);
+  font: 0.52rem var(--font-mono);
+  letter-spacing: 0.08em;
+}
+
+.purchaseExplanation p {
+  margin-top: 0.2rem;
+  color: var(--cc-muted);
+  font-size: 0.58rem;
+  line-height: 1.48;
+}
+
+.supplierPriceList {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.supplierPriceList > div {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) minmax(90px, auto) minmax(70px, auto);
+  gap: 0.48rem;
+  align-items: center;
+  padding: 0.42rem;
+  border: 1px solid rgba(52, 74, 84, 0.8);
+  background: #08161e;
+}
+
+.supplierPriceList span strong,
+.supplierPriceList span small {
+  display: block;
+}
+
+.supplierPriceList span strong {
+  font-size: 0.57rem;
+}
+
+.supplierPriceList span small {
+  margin-top: 0.08rem;
+  color: var(--cc-muted);
+  font-size: 0.49rem;
+}
+
+.menuGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.menuCard {
+  overflow: hidden;
+  border: 1px solid var(--cc-line);
+  background: var(--cc-panel);
+}
+
+.menuDishPhoto {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  background: #08161e;
+}
+
+.menuDishPhoto img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.menuCardBody {
+  padding: 0.8rem;
+}
+
+.menuCardTitle {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.7rem;
+}
+
+.menuCardTitle span {
+  color: var(--mint);
+  font: 0.53rem var(--font-mono);
+  letter-spacing: 0.08em;
+}
+
+.menuCardTitle h3 {
+  margin-top: 0.2rem;
+  font-size: 1rem;
+}
+
+.menuCardTitle > b {
+  flex: 0 0 auto;
+  padding: 0.2rem 0.4rem;
+  border: 1px solid #477461;
+  color: var(--mint);
+  font: 0.52rem var(--font-mono);
+}
+
+.menuCardTitle > b[data-risk="true"] {
+  border-color: #725b3c;
+  color: var(--gold);
+}
+
+.menuCardBody > p {
+  margin-top: 0.35rem;
+  color: var(--cc-muted);
+  font-size: 0.6rem;
+  line-height: 1.48;
+}
+
+.menuEconomics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.35rem;
+  margin-top: 0.65rem;
+}
+
+.menuEconomics > div {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  gap: 0.35rem;
+  align-items: center;
+  padding: 0.48rem;
+  border: 1px solid #314750;
+  background: #08161e;
+}
+
+.menuEconomics svg {
+  color: var(--mint);
+}
+
+.menuEconomics small,
+.menuEconomics strong {
+  display: block;
+}
+
+.menuEconomics small {
+  color: var(--cc-muted);
+  font-size: 0.49rem;
+}
+
+.menuEconomics strong {
+  margin-top: 0.08rem;
+  font-size: 0.59rem;
+  overflow-wrap: anywhere;
+}
+
+.menuIngredientStrip {
+  display: flex;
+  gap: 0.35rem;
+  overflow-x: auto;
+  padding: 0.65rem 0 0.18rem;
+}
+
+.menuIngredientStrip > div {
+  min-width: 130px;
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr);
+  gap: 0.35rem;
+  align-items: center;
+  padding: 0.35rem;
+  border: 1px solid #314750;
+  background: #08161e;
+}
+
+.menuIngredientStrip > div[data-low="true"] {
+  border-color: #745d3f;
+  background: rgba(200, 169, 107, 0.05);
+}
+
+.menuIngredientStrip strong,
+.menuIngredientStrip small {
+  display: block;
+}
+
+.menuIngredientStrip strong {
+  font-size: 0.54rem;
+}
+
+.menuIngredientStrip small {
+  margin-top: 0.06rem;
+  color: var(--cc-muted);
+  font-size: 0.48rem;
+}
+
+
+@media (max-width: 980px) {
+  .menuGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .supplierPriceList > div {
+    grid-template-columns: 44px minmax(0, 1fr) minmax(80px, auto);
+  }
+
+  .supplierPriceList > div > span:last-child {
+    grid-column: 2 / -1;
+  }
+}
+
+@media (max-width: 620px) {
+  .menuEconomics {
+    grid-template-columns: 1fr;
+  }
+
+  .supplierPriceList > div {
+    grid-template-columns: 44px minmax(0, 1fr);
+  }
+
+  .supplierPriceList > div > span:nth-child(n + 3) {
+    grid-column: 2;
+  }
+}
