@@ -376,6 +376,43 @@ export default function CommandCenterShell({ children }: { children: ReactNode }
               </label>
             </div>
 
+            <details className={styles.ruleAdvanced}>
+              <summary>Advanced purchasing authority</summary>
+              <div className={styles.ruleEditorGrid}>
+                <label>
+                  <span>Negotiation target</span>
+                  <div><b>₱</b><input type="number" min="0" value={updateItem.targetPackPrice} onChange={(event) => updateDraftItem({ targetPackPrice: Math.max(0, Number(event.target.value) || 0) })} /></div>
+                </label>
+                <label>
+                  <span>Absolute ceiling</span>
+                  <div><b>₱</b><input type="number" min="0" value={updateItem.hardMaxPackPrice} onChange={(event) => updateDraftItem({ hardMaxPackPrice: Math.max(updateItem.autoAcceptPackPrice, Number(event.target.value) || 0) })} /></div>
+                </label>
+                <label>
+                  <span>Max automatic quantity</span>
+                  <div><input type="number" min="0" step="0.1" value={updateItem.maxAutoOrderQty} onChange={(event) => updateDraftItem({ maxAutoOrderQty: Math.max(0, Number(event.target.value) || 0) })} /><b>{updateItem.unit}</b></div>
+                </label>
+                <label>
+                  <span>Max delivery fee</span>
+                  <div><b>₱</b><input type="number" min="0" value={updateItem.maxDeliveryFee} onChange={(event) => updateDraftItem({ maxDeliveryFee: Math.max(0, Number(event.target.value) || 0) })} /></div>
+                </label>
+                <label>
+                  <span>Max lead time</span>
+                  <div><input type="number" min="0" step="0.5" value={updateItem.maxLeadDays} onChange={(event) => updateDraftItem({ maxLeadDays: Math.max(0, Number(event.target.value) || 0) })} /><b>days</b></div>
+                </label>
+                <label>
+                  <span>Auto-negotiate</span>
+                  <select value={updateItem.autoNegotiate ? "yes" : "no"} onChange={(event) => updateDraftItem({ autoNegotiate: event.target.value === "yes" })}>
+                    <option value="yes">Yes</option>
+                    <option value="no">No</option>
+                  </select>
+                </label>
+                <label>
+                  <span>Max counteroffers</span>
+                  <input type="number" min="0" max="5" value={updateItem.maxCounteroffers} onChange={(event) => updateDraftItem({ maxCounteroffers: Math.max(0, Math.min(5, Number(event.target.value) || 0)) })} />
+                </label>
+              </div>
+            </details>
+
             <p className={styles.ruleEditorNote}>
               Changes are staged until you choose Done updating. When saved, Jourvis records the manual configuration change with its exact timestamp and the rule snapshot used afterward.
             </p>
