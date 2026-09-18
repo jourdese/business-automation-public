@@ -1676,8 +1676,8 @@ export default function MarinaraAutoinventoryPreviewPage() {
                     <span>LEVEL COLORS</span>
                     <div><i className={styles.legendReady} /><b>Ready</b><small>Above watch level</small></div>
                     <div><i className={styles.legendWatch} /><b>Watch</b><small>60% or lower</small></div>
-                    <div><i className={styles.legendLow} /><b>Low</b><small>At reorder point</small></div>
-                    <div><i className={styles.legendCritical} /><b>Critical</b><small>Well below reorder point</small></div>
+                    <div><i className={styles.legendLow} /><b>Low</b><small>At low-stock warning</small></div>
+                    <div><i className={styles.legendCritical} /><b>Critical</b><small>Well below warning level</small></div>
                   </div>
                 </aside>
               </div>
