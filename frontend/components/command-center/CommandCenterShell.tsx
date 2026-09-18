@@ -330,7 +330,11 @@ export default function CommandCenterShell({ children }: { children: ReactNode }
               <strong>{Math.round((updateItem.current / Math.max(updateItem.fullLevel, 0.01)) * 100)}% stock</strong>
             </div>
 
-            <label className={styles.ruleToggle} htmlFor={`jourvis-manages-${updateItem.id}`}>
+            <label
+              className={styles.ruleToggle}
+              htmlFor={`jourvis-manages-${updateItem.id}`}
+              aria-label={`Jourvis manages ${updateItem.name}`}
+            >
               <span><strong>Jourvis manages this item</strong><small>Allow Jourvis to act automatically according to the rule below.</small></span>
               <input
                 id={`jourvis-manages-${updateItem.id}`}
@@ -340,7 +344,11 @@ export default function CommandCenterShell({ children }: { children: ReactNode }
               />
             </label>
 
-            <label className={styles.ruleToggle} htmlFor="jourvis-global-autonomy">
+            <label
+              className={styles.ruleToggle}
+              htmlFor="jourvis-global-autonomy"
+              aria-label="Global autonomy"
+            >
               <span><strong>Global autonomy</strong><small>Pause or resume autonomous work across this Command Center.</small></span>
               <input
                 id="jourvis-global-autonomy"
