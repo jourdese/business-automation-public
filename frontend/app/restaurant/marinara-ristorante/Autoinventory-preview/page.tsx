@@ -65,6 +65,7 @@ type ProcurementStatus =
   | "awaiting_confirmation"
   | "confirmed"
   | "in_transit"
+  | "partial_received"
   | "received"
   | "declined";
 
@@ -73,7 +74,8 @@ type ProcurementLine = {
   requestedQty: number;
   agreedQty?: number;
   quotedPackPrice?: number;
-  receivedQty?: number;
+  receivedTotal?: number;
+  deliveryQty?: number;
 };
 
 type ProcurementRequest = {
@@ -247,6 +249,7 @@ function procurementStatusLabel(status: ProcurementStatus) {
   if (status === "awaiting_confirmation") return "Awaiting confirmation";
   if (status === "confirmed") return "Confirmed";
   if (status === "in_transit") return "In transit";
+  if (status === "partial_received") return "Partially received";
   if (status === "received") return "Received";
   return "Declined";
 }
@@ -1025,7 +1028,8 @@ export default function MarinaraAutoinventoryPreviewPage() {
       lines: current.lines.map((line) => ({
         ...line,
         agreedQty: line.agreedQty ?? line.requestedQty,
-        receivedQty: line.agreedQty ?? line.requestedQty,
+        receivedTotal: line.receivedTotal ?? 0,
+        deliveryQty: line.agreedQty ?? line.requestedQty,
       })),
     }));
 
@@ -1046,29 +1050,71 @@ export default function MarinaraAutoinventoryPreviewPage() {
   function changeReceivedQuantity(requestId: string, itemId: string, quantity: number) {
     updateProcurement(requestId, (current) => ({
       ...current,
-      lines: current.lines.map((line) =>
-        line.itemId === itemId ? { ...line, receivedQty: Math.max(0, round(quantity)) } : line,
-      ),
+      lines: current.lines.map((line) => {
+        if (line.itemId !== itemId) return line;
+        const agreed = line.agreedQty ?? line.requestedQty;
+        const alreadyReceived = line.receivedTotal ?? 0;
+        const remaining = Math.max(0, agreed - alreadyReceived);
+        return {
+          ...line,
+          deliveryQty: Math.max(0, Math.min(remaining, round(quantity))),
+        };
+      }),
     }));
   }
 
   function receiveProcurement(request: ProcurementRequest) {
+    const receiptByItem = new Map(
+      request.lines.map((line) => {
+        const agreed = line.agreedQty ?? line.requestedQty;
+        const alreadyReceived = line.receivedTotal ?? 0;
+        const remaining = Math.max(0, agreed - alreadyReceived);
+        const receivedNow = Math.max(
+          0,
+          Math.min(remaining, line.deliveryQty ?? remaining),
+        );
+        return [line.itemId, { agreed, alreadyReceived, remaining, receivedNow }] as const;
+      }),
+    );
+
     setIngredients((current) =>
       current.map((item) => {
-        const line = request.lines.find((candidate) => candidate.itemId === item.id);
-        if (!line) return item;
-        const agreed = line.agreedQty ?? line.requestedQty;
-        const received = line.receivedQty ?? agreed;
+        const receipt = receiptByItem.get(item.id);
+        if (!receipt) return item;
         return {
           ...item,
-          current: round(item.current + received),
-          incoming: round(Math.max(0, item.incoming - agreed)),
+          current: round(item.current + receipt.receivedNow),
+          incoming: round(Math.max(0, item.incoming - receipt.receivedNow)),
         };
       }),
     );
 
-    updateProcurement(request.id, (current) => ({ ...current, status: "received" }));
-    log(`${request.id}: delivery received using the actual received quantities. Procurement closed.`);
+    let completed = true;
+    updateProcurement(request.id, (current) => {
+      const lines = current.lines.map((line) => {
+        const receipt = receiptByItem.get(line.itemId);
+        if (!receipt) return line;
+        const receivedTotal = round(receipt.alreadyReceived + receipt.receivedNow);
+        const remainingAfter = round(Math.max(0, receipt.agreed - receivedTotal));
+        if (remainingAfter > 0) completed = false;
+        return {
+          ...line,
+          receivedTotal,
+          deliveryQty: remainingAfter,
+        };
+      });
+      return {
+        ...current,
+        status: completed ? "received" : "partial_received",
+        lines,
+      };
+    });
+
+    log(
+      completed
+        ? `${request.id}: delivery fully received and procurement closed.`
+        : `${request.id}: partial delivery recorded. The remaining quantity stays incoming and the order remains open.`,
+    );
   }
 
   const tabCounts: Record<PrimaryTab, number> = {
@@ -1576,8 +1622,8 @@ export default function MarinaraAutoinventoryPreviewPage() {
                             const reached =
                               key === "requested" ||
                               (key === "supplier" && request.status !== "requested") ||
-                              (key === "agreement" && ["quote_received", "counter_sent", "awaiting_confirmation", "confirmed", "in_transit", "received"].includes(request.status)) ||
-                              (key === "confirmed" && ["confirmed", "in_transit", "received"].includes(request.status)) ||
+                              (key === "agreement" && ["quote_received", "counter_sent", "awaiting_confirmation", "confirmed", "in_transit", "partial_received", "received"].includes(request.status)) ||
+                              (key === "confirmed" && ["confirmed", "in_transit", "partial_received", "received"].includes(request.status)) ||
                               (key === "receive" && request.status === "received");
                             return <span key={key} data-reached={reached}><i />{label}</span>;
                           })}
@@ -1628,22 +1674,30 @@ export default function MarinaraAutoinventoryPreviewPage() {
                           </div>
                         ) : null}
 
-                        {request.status === "in_transit" ? (
+                        {request.status === "in_transit" || request.status === "partial_received" ? (
                           <div className={styles.receivingEditor}>
                             <span>ACTUAL DELIVERY COUNT</span>
                             {request.lines.map((line) => {
                               const item = ingredients.find((candidate) => candidate.id === line.itemId);
                               if (!item) return null;
                               const agreed = line.agreedQty ?? line.requestedQty;
+                              const receivedTotal = line.receivedTotal ?? 0;
+                              const remaining = Math.max(0, agreed - receivedTotal);
                               return (
                                 <label key={line.itemId}>
-                                  <span>{item.name}<small>Agreed {agreed} {item.unit}</small></span>
+                                  <span>
+                                    {item.name}
+                                    <small>
+                                      Agreed {agreed} {item.unit} · received {receivedTotal} · remaining {round(remaining)}
+                                    </small>
+                                  </span>
                                   <div>
                                     <input
                                       type="number"
                                       min="0"
+                                      max={remaining}
                                       step="0.1"
-                                      value={line.receivedQty ?? agreed}
+                                      value={line.deliveryQty ?? remaining}
                                       onChange={(event) => changeReceivedQuantity(request.id, line.itemId, Number(event.target.value) || 0)}
                                     />
                                     <b>{item.unit}</b>
@@ -1694,8 +1748,10 @@ export default function MarinaraAutoinventoryPreviewPage() {
                             <span className={styles.procurementClosed}><Truck size={15} aria-hidden /> Confirmed · supplier is preparing dispatch</span>
                           ) : null}
 
-                          {request.status === "in_transit" ? (
-                            <button type="button" className={styles.primaryButton} onClick={() => receiveProcurement(request)}><PackageCheck size={15} aria-hidden /> Receive actual delivery</button>
+                          {request.status === "in_transit" || request.status === "partial_received" ? (
+                            <button type="button" className={styles.primaryButton} onClick={() => receiveProcurement(request)}>
+                              <PackageCheck size={15} aria-hidden /> {request.status === "partial_received" ? "Receive remaining delivery" : "Receive actual delivery"}
+                            </button>
                           ) : null}
 
                           {request.status === "received" ? <span className={styles.procurementClosed}><Check size={15} aria-hidden /> Received and closed</span> : null}
