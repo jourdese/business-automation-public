@@ -107,11 +107,35 @@ await test('inventory projection keeps incoming separate and subtracts lead-time
   assert.equal(projectedInventoryPercentAtDelivery(shrimp), 53);
 });
 
-await test('suggested purchasing rounds shortage up to whole configured packs', () => {
+await test('suggested purchasing rounds projected delivery shortage up to whole configured packs', () => {
   assert.equal(suggestedPurchaseQuantity(item()), 10);
   assert.equal(
-    suggestedPurchaseQuantity(item({ current: 8, incoming: 0, packSize: 5 })),
+    suggestedPurchaseQuantity(
+      item({
+        current: 8,
+        incoming: 0,
+        dailyUse: 0,
+        leadDays: 1,
+        packSize: 5,
+      }),
+    ),
     5,
+  );
+});
+
+await test('suggested purchasing includes expected consumption during supplier lead time', () => {
+  assert.equal(
+    suggestedPurchaseQuantity(
+      item({
+        current: 8,
+        incoming: 0,
+        dailyUse: 4,
+        leadDays: 2,
+        fullLevel: 10,
+        packSize: 5,
+      }),
+    ),
+    10,
   );
 });
 
