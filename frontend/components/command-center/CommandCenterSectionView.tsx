@@ -78,6 +78,7 @@ export default function CommandCenterSectionView({
     const workItems = state.inventory.filter(
       (item) =>
         item.current <= item.reorderAt ||
+        inventoryPercent(item) <= item.automationTriggerPercent ||
         activePurchaseByItem.has(item.id),
     );
     const queuedWork = workItems.filter(
