@@ -13,6 +13,7 @@ import {
   suppliers,
 } from "../inventory-config";
 import StockIcon from "../StockIcon";
+import JourvisPresence from "../JourvisPresence";
 import styles from "./configure.module.css";
 
 function round(value: number) {
@@ -316,6 +317,52 @@ export default function AutoinventoryConfigurePage() {
           </main>
         </div>
       </div>
+
+      <JourvisPresence
+        status={guideStep !== null ? `Guiding setup · ${guideStep + 1}/6` : selected.automationEnabled ? "Automation configured" : "Ready to help"}
+        message={
+          guideStep !== null
+            ? guideStep === 0
+              ? `I’m checking when to act on ${selected.name}.`
+              : guideStep === 1
+                ? "Choose how much purchasing authority you want me to have."
+                : guideStep === 2
+                  ? "Tell me the price range I’m allowed to work inside."
+                  : guideStep === 3
+                    ? "Now give me quantity, spend and delivery limits."
+                    : guideStep === 4
+                      ? "Should I negotiate for you when a quote is too high?"
+                      : "Review my rules. I’ll stop whenever something falls outside them."
+            : selected.automationEnabled
+              ? `I’m configured for ${selected.name} in ${selected.automationMode.replace("_", " ")} mode.`
+              : `Want me to learn how to manage ${selected.name}?`
+        }
+        detail={
+          guideStep !== null
+            ? "You can keep working on the page while I stay here. I’ll remember where you drag me."
+            : selected.automationEnabled
+              ? `Target ₱${selected.targetPackPrice} · auto-accept ≤ ₱${selected.autoAcceptPackPrice} · hard stop ₱${selected.hardMaxPackPrice}.`
+              : "I can walk you through the trigger, authority, price range, spend limits and negotiation rules."
+        }
+        attention={!selected.automationEnabled}
+        actions={
+          guideStep === null
+            ? [
+                { label: "Let Jourvis guide me", onClick: () => setGuideStep(0), primary: true },
+                { label: "Save configuration", onClick: save },
+                { label: "Back to Autoinventory", href: "/restaurant/marinara-ristorante/Autoinventory-preview" },
+              ]
+            : guideStep < 5
+              ? [
+                  { label: "Continue setup", onClick: () => setGuideStep((guideStep ?? 0) + 1), primary: true },
+                  { label: "Close guide", onClick: () => setGuideStep(null) },
+                ]
+              : [
+                  { label: `Enable & save ${selected.name}`, onClick: enableAutomationFromGuide, primary: true },
+                  { label: "Review previous step", onClick: () => setGuideStep(4) },
+                ]
+        }
+      />
     </div>
   );
 }
