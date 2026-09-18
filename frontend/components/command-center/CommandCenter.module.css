@@ -2978,6 +2978,382 @@
   font-size: 0.49rem;
 }
 
+.entityToolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.7rem;
+  padding: 0.62rem 0.72rem;
+  border: 1px solid var(--cc-line);
+  background: #08161e;
+}
+
+.entityToolbar > div {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.entityToolbar > span {
+  color: var(--cc-muted);
+  font: 0.54rem var(--font-mono);
+}
+
+.entityToolbar button,
+.entityEditor button,
+.entityActions button,
+.recipeBuilder button {
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.32rem;
+  padding: 0.38rem 0.58rem;
+  border: 1px solid #3a5059;
+  background: #08161e;
+  color: var(--ivory);
+  font-size: 0.58rem;
+}
+
+.entityToolbar button[data-primary],
+.entityEditor button[data-primary],
+.entityActions button[data-primary] {
+  border-color: var(--mint);
+  background: var(--mint);
+  color: var(--ink);
+}
+
+.entityActions button[data-danger],
+.recipeBuilder button[data-danger] {
+  border-color: #68433f;
+  color: #ffb0a8;
+}
+
+.entityToolbar button:hover,
+.entityEditor button:hover,
+.entityActions button:hover,
+.recipeBuilder button:hover {
+  border-color: var(--mint);
+  color: var(--mint);
+}
+
+.entityToolbar button[data-primary]:hover,
+.entityEditor button[data-primary]:hover,
+.entityActions button[data-primary]:hover {
+  color: var(--ink);
+}
+
+.entityEditor {
+  display: grid;
+  gap: 0.75rem;
+  padding: 0.8rem;
+  border: 1px solid #4a6a5c;
+  background: rgba(46, 107, 87, 0.06);
+}
+
+.entityEditor > header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.8rem;
+}
+
+.entityEditor > header span,
+.recipeBuilder > header span,
+.referenceLock > span {
+  color: var(--mint);
+  font: 0.53rem var(--font-mono);
+  letter-spacing: 0.08em;
+}
+
+.entityEditor > header h3 {
+  margin-top: 0.18rem;
+  font-size: 0.9rem;
+}
+
+.entityEditor > header p {
+  margin-top: 0.22rem;
+  max-width: 760px;
+  color: var(--cc-muted);
+  font-size: 0.57rem;
+  line-height: 1.45;
+}
+
+.entityEditorGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.55rem;
+}
+
+.entityEditorGrid label {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.entityEditorGrid label > span {
+  color: var(--cc-muted);
+  font-size: 0.54rem;
+}
+
+.entityEditorGrid input,
+.entityEditorGrid select,
+.entityEditorGrid textarea,
+.recipeBuilderLines select,
+.recipeBuilderLines input {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid #3a5059;
+  background: #07131b;
+  color: var(--ivory);
+  padding: 0.42rem 0.48rem;
+  font-size: 0.59rem;
+}
+
+.entityEditorGrid input,
+.entityEditorGrid select,
+.recipeBuilderLines select,
+.recipeBuilderLines input {
+  min-height: 36px;
+}
+
+.entityEditorGrid textarea {
+  resize: vertical;
+}
+
+.entityEditorWide {
+  grid-column: 1 / -1;
+}
+
+.moneyInput {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  border: 1px solid #3a5059;
+  background: #07131b;
+}
+
+.moneyInput b {
+  padding-left: 0.45rem;
+  color: var(--gold);
+  font-size: 0.62rem;
+}
+
+.moneyInput input {
+  border: 0;
+}
+
+.entityToggleRow {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.entityToggleRow label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.5rem;
+  border: 1px solid #344a54;
+  background: #08161e;
+  color: var(--cc-muted);
+  font-size: 0.57rem;
+}
+
+.referenceLock {
+  display: grid;
+  grid-template-columns: 180px minmax(0, 1fr);
+  gap: 0.7rem;
+  padding: 0.6rem;
+  border: 1px solid #5a533d;
+  background: rgba(200, 169, 107, 0.05);
+}
+
+.referenceLock strong,
+.referenceLock small {
+  display: block;
+}
+
+.referenceLock strong {
+  font-size: 0.65rem;
+}
+
+.referenceLock small {
+  margin-top: 0.12rem;
+  color: var(--cc-muted);
+  font-size: 0.53rem;
+}
+
+.entityEditorActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.45rem;
+}
+
+.entityActions {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  margin-top: 0.7rem;
+}
+
+.entityActions button {
+  flex: 1 1 auto;
+}
+
+.referenceLabel {
+  display: block;
+  margin-top: 0.35rem;
+  color: #7f8f96;
+  font-size: 0.5rem;
+}
+
+.recipeImpact,
+.recipeSummary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.45rem;
+}
+
+.recipeImpact article,
+.recipeSummary > span {
+  padding: 0.55rem;
+  border: 1px solid #314750;
+  background: #08161e;
+}
+
+.recipeImpact span,
+.recipeImpact strong,
+.recipeImpact small,
+.recipeSummary small,
+.recipeSummary strong {
+  display: block;
+}
+
+.recipeImpact span,
+.recipeSummary small {
+  color: var(--cc-muted);
+  font-size: 0.5rem;
+}
+
+.recipeImpact strong,
+.recipeSummary strong {
+  margin-top: 0.12rem;
+  font-size: 0.72rem;
+}
+
+.recipeImpact small {
+  margin-top: 0.1rem;
+  color: #71838b;
+  font-size: 0.5rem;
+}
+
+.recipeSummary {
+  margin-top: 0.7rem;
+}
+
+.recipeNotes {
+  margin-top: 0.65rem;
+  padding: 0.5rem;
+  border-left: 2px solid #496f60;
+  background: rgba(46, 107, 87, 0.05);
+  color: var(--cc-muted);
+  font-size: 0.56rem;
+  line-height: 1.45;
+}
+
+.recipeLinkedMenu {
+  display: grid;
+  gap: 0.3rem;
+  margin-top: 0.65rem;
+}
+
+.recipeLinkedMenu > span {
+  color: var(--mint);
+  font: 0.51rem var(--font-mono);
+  letter-spacing: 0.08em;
+}
+
+.recipeLinkedMenu > div {
+  display: flex;
+  gap: 0.3rem;
+  flex-wrap: wrap;
+}
+
+.recipeLinkedMenu small {
+  padding: 0.24rem 0.35rem;
+  border: 1px solid #314750;
+  background: #08161e;
+  color: var(--cc-muted);
+  font-size: 0.49rem;
+}
+
+.recipeBuilder {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0.65rem;
+  border: 1px solid #344a54;
+  background: rgba(7, 19, 27, 0.45);
+}
+
+.recipeBuilder > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.recipeBuilder > header > div strong {
+  display: block;
+  margin-top: 0.12rem;
+  font-size: 0.62rem;
+}
+
+.recipeBuilderLines {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.recipeBuilderLines > div:not(.recipeBuilderEmpty) {
+  display: grid;
+  grid-template-columns: minmax(150px, 1fr) minmax(160px, 0.8fr) minmax(180px, 1fr) auto;
+  gap: 0.45rem;
+  align-items: center;
+  padding: 0.45rem;
+  border: 1px solid #314750;
+  background: #08161e;
+}
+
+.recipeBuilderLines > div > small {
+  color: var(--cc-muted);
+  font-size: 0.5rem;
+}
+
+.recipeAmountInput {
+  display: grid;
+  grid-template-columns: minmax(70px, 1fr) auto;
+  gap: 0.35rem;
+  align-items: center;
+}
+
+.recipeAmountInput span {
+  color: var(--cc-muted);
+  font-size: 0.51rem;
+}
+
+.recipeBuilderEmpty {
+  padding: 0.8rem;
+  border: 1px dashed #3a5059;
+  color: var(--cc-muted);
+  font-size: 0.56rem;
+  text-align: center;
+}
+
+.menuCard[data-inactive="true"],
+.recipeCard[data-inactive="true"] {
+  opacity: 0.67;
+  border-color: #4d4f50;
+}
+
 .menuGrid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -3060,7 +3436,7 @@
 
 .menuEconomics {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 0.35rem;
   margin-top: 0.65rem;
 }
@@ -3141,6 +3517,26 @@
     grid-template-columns: 1fr;
   }
 
+  .entityEditorGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .entityEditorWide {
+    grid-column: 1 / -1;
+  }
+
+  .menuEconomics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .recipeBuilderLines > div:not(.recipeBuilderEmpty) {
+    grid-template-columns: minmax(140px, 1fr) minmax(140px, 1fr) auto;
+  }
+
+  .recipeBuilderLines > div > small {
+    grid-column: 1 / 3;
+  }
+
   .supplierPriceList > div {
     grid-template-columns: 44px minmax(0, 1fr) minmax(80px, auto);
   }
@@ -3151,6 +3547,43 @@
 }
 
 @media (max-width: 620px) {
+  .entityToolbar,
+  .entityEditor > header,
+  .referenceLock,
+  .recipeBuilder > header {
+    align-items: flex-start;
+    grid-template-columns: 1fr;
+    flex-direction: column;
+  }
+
+  .entityEditorGrid,
+  .recipeImpact,
+  .recipeSummary,
+  .menuEconomics {
+    grid-template-columns: 1fr;
+  }
+
+  .referenceLock {
+    display: grid;
+  }
+
+  .entityEditorActions {
+    justify-content: stretch;
+    flex-direction: column-reverse;
+  }
+
+  .entityEditorActions button {
+    width: 100%;
+  }
+
+  .recipeBuilderLines > div:not(.recipeBuilderEmpty) {
+    grid-template-columns: 1fr;
+  }
+
+  .recipeBuilderLines > div > small {
+    grid-column: auto;
+  }
+
   .restockSuggestionPanel > header,
   .restockSuggestionCard > header {
     flex-direction: column;
