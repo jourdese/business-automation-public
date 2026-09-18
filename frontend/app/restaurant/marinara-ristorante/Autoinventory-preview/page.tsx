@@ -170,6 +170,17 @@ function formatMoney(value: number) {
   }).format(value);
 }
 
+function procurementTotal(request: ProcurementRequest, ingredients: Ingredient[]) {
+  return request.lines.reduce((sum, line) => {
+    const item = ingredients.find((candidate) => candidate.id === line.itemId);
+    if (!item) return sum;
+    const quantity = line.agreedQty ?? line.requestedQty;
+    const packPrice = line.quotedPackPrice ?? item.packPrice;
+    const packs = Math.ceil(quantity / Math.max(item.packSize, 0.01));
+    return sum + packs * packPrice;
+  }, request.deliveryFee);
+}
+
 function supplierGroupsForItems(items: Ingredient[]) {
   const grouped = new Map<string, Ingredient[]>();
   items.forEach((item) => {
@@ -289,6 +300,19 @@ export default function MarinaraAutoinventoryPreviewPage() {
   const daysRemaining = selected.dailyUse > 0 ? selected.current / selected.dailyUse : 99;
   const orderAmount = suggestedOrder(selected);
   const supplierGroups = useMemo(() => supplierGroupsForItems(suggested), [suggested]);
+  const selectedProcurement = procurements.find(
+    (request) =>
+      activeProcurementStatus(request.status) &&
+      request.lines.some((line) => line.itemId === selected.id),
+  );
+
+  function procurementForItem(itemId: string) {
+    return procurements.find(
+      (request) =>
+        activeProcurementStatus(request.status) &&
+        request.lines.some((line) => line.itemId === itemId),
+    );
+  }
 
   function log(message: string) {
     setActivity((current) => [message, ...current].slice(0, 12));
@@ -623,7 +647,7 @@ export default function MarinaraAutoinventoryPreviewPage() {
           <div><span>Readiness</span><strong>{metrics.readiness}%</strong></div>
           <div><span>Critical</span><strong>{metrics.critical}</strong></div>
           <div><span>Low</span><strong>{metrics.low}</strong></div>
-          <div><span>Incoming</span><strong>{metrics.incoming}</strong></div>
+          <div><span>Confirmed incoming</span><strong>{metrics.incoming}</strong></div>
           <div className={styles.headerActions}>
             <a href="/restaurant/marinara-ristorante/Autoinventory-preview/configure"><Settings2 size={14} aria-hidden /> Configure stock</a>
             <a href="/restaurant/marinara-ristorante"><ArrowLeft size={14} aria-hidden /> Marinara</a>
