@@ -370,19 +370,23 @@ export function CommandCenterRuntimeProvider({
 
   useEffect(() => {
     const resolved = businessIdFromPath();
-    setBusinessId(resolved);
-    try {
-      const stored = window.localStorage.getItem(storageKey(resolved));
-      if (stored) {
-        setState(normalizeStoredState(JSON.parse(stored) as CommandCenterRuntimeState));
-      } else {
+    const timer = window.setTimeout(() => {
+      setBusinessId(resolved);
+      try {
+        const stored = window.localStorage.getItem(storageKey(resolved));
+        if (stored) {
+          setState(normalizeStoredState(JSON.parse(stored) as CommandCenterRuntimeState));
+        } else {
+          setState(createSeed(resolved));
+        }
+      } catch {
         setState(createSeed(resolved));
+      } finally {
+        setLoading(false);
       }
-    } catch {
-      setState(createSeed(resolved));
-    } finally {
-      setLoading(false);
-    }
+    }, 0);
+
+    return () => window.clearTimeout(timer);
   }, []);
 
   useEffect(() => {
@@ -398,13 +402,7 @@ export function CommandCenterRuntimeProvider({
     }, 850);
 
     return () => window.clearTimeout(timer);
-  }, [
-    loading,
-    state.automationMasterOn,
-    state.inventory,
-    state.pausedItemIds,
-    state.purchases,
-  ]);
+  }, [loading, state]);
 
   useEffect(() => {
     if (loading) return;
@@ -417,12 +415,7 @@ export function CommandCenterRuntimeProvider({
       setState((current) => advanceOneAutonomousStep(current));
     }, 900);
     return () => window.clearTimeout(timer);
-  }, [
-    loading,
-    state.automationMasterOn,
-    state.inventory,
-    state.purchases,
-  ]);
+  }, [loading, state]);
 
   const tasks = useMemo(() => deriveJourvisTasks(state), [state]);
 
