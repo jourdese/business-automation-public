@@ -85,6 +85,11 @@ type ProcurementRequest = {
   buyerConfirmed: boolean;
   supplierConfirmed: boolean;
   incomingApplied: boolean;
+  origin: "manual" | "automation";
+  previewOnly: boolean;
+  automationMode?: Ingredient["automationMode"];
+  counteroffersUsed: number;
+  automationNote?: string;
 };
 
 const recipes: Recipe[] = [
@@ -215,6 +220,8 @@ export default function MarinaraAutoinventoryPreviewPage() {
   const [stockFilter, setStockFilter] = useState<StockFilter>("All");
   const [searchTerm, setSearchTerm] = useState("");
   const [showSummaryLabels, setShowSummaryLabels] = useState(true);
+  const [automationMasterOn, setAutomationMasterOn] = useState(false);
+  const [automationAlerts, setAutomationAlerts] = useState<Record<string, string>>({});
   const [contactDraft, setContactDraft] = useState<ContactDraft | null>(null);
   const [procurements, setProcurements] = useState<ProcurementRequest[]>([]);
   const [activity, setActivity] = useState([
@@ -233,6 +240,9 @@ export default function MarinaraAutoinventoryPreviewPage() {
 
     const savedLabels = window.localStorage.getItem("jourvis-autoinventory-summary-labels");
     if (savedLabels !== null) setShowSummaryLabels(savedLabels === "true");
+
+    const savedAutomation = window.localStorage.getItem("jourvis-autoinventory-automation-master");
+    if (savedAutomation !== null) setAutomationMasterOn(savedAutomation === "true");
 
     refreshConfiguration();
     window.addEventListener("focus", refreshConfiguration);
@@ -447,6 +457,9 @@ export default function MarinaraAutoinventoryPreviewPage() {
         buyerConfirmed: first.purchasingMode === "fixed",
         supplierConfirmed: false,
         incomingApplied: false,
+        origin: "manual",
+        previewOnly: false,
+        counteroffersUsed: 0,
       };
     });
 
