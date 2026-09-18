@@ -19,6 +19,8 @@ import { operationCatalog } from "@/command-center/core/business-registry";
 import {
   inventoryPercent,
   isPurchaseActive,
+  projectedInventoryAtDelivery,
+  projectedInventoryPercentAtDelivery,
   type CommandCenterStockAdjustmentReason,
 } from "@/command-center/core/runtime";
 import { useCommandCenterRuntime } from "@/command-center/core/runtime-provider";
@@ -52,12 +54,14 @@ export default function OperationModuleView() {
   });
   const [adjustment, setAdjustment] = useState<AdjustmentDraft | null>(null);
   const [receiveDrafts, setReceiveDrafts] = useState<Record<string, string>>({});
+  const [quantityDrafts, setQuantityDrafts] = useState<Record<string, string>>({});
 
   const {
     state,
     tasks,
     adjustInventory,
     receivePurchase,
+    updatePurchaseQuantity,
     recordRecipeSale,
   } = useCommandCenterRuntime();
 
@@ -136,6 +140,8 @@ export default function OperationModuleView() {
         <div className={styles.inventoryCardGrid}>
           {state.inventory.map((item) => {
             const percent = inventoryPercent(item);
+            const projected = projectedInventoryAtDelivery(item);
+            const projectedPercent = projectedInventoryPercentAtDelivery(item);
             const low = item.current <= item.reorderAt;
             const task = tasks.find((entry) => entry.entityId === item.id);
             const supplier = supplierById.get(item.supplierId);
@@ -173,6 +179,11 @@ export default function OperationModuleView() {
                     <span>Incoming</span>
                     <strong>{item.incoming} {item.unit}</strong>
                     <small>{item.purchaseUnit}</small>
+                  </div>
+                  <div>
+                    <span>Projected at delivery</span>
+                    <strong>{projected} {item.unit}</strong>
+                    <small>{projectedPercent}% of full level</small>
                   </div>
                   <div>
                     <span>Daily use</span>
@@ -318,6 +329,15 @@ export default function OperationModuleView() {
               purchase.status === "in_transit" ||
               purchase.status === "partial_received";
             const receiveValue = receiveDrafts[purchase.id] ?? String(remaining || "");
+            const editableQuantity = ![
+              "confirmed",
+              "in_transit",
+              "partial_received",
+              "received",
+              "rejected",
+            ].includes(purchase.status);
+            const quantityValue =
+              quantityDrafts[purchase.id] ?? String(purchase.quantity);
 
             return (
               <article className={styles.purchaseCard} key={purchase.id}>
@@ -358,6 +378,44 @@ export default function OperationModuleView() {
                   <span>WHY THIS WORKFLOW EXISTS</span>
                   <p>{purchase.explanation}</p>
                 </div>
+
+                {editableQuantity && item ? (
+                  <div className={styles.quantityEditor}>
+                    <div>
+                      <strong>Requested quantity</strong>
+                      <small>Update before supplier confirmation; Jourvis will recalculate the request.</small>
+                    </div>
+                    <input
+                      type="number"
+                      min={item.packSize}
+                      step="0.01"
+                      value={quantityValue}
+                      onChange={(event) =>
+                        setQuantityDrafts((current) => ({
+                          ...current,
+                          [purchase.id]: event.target.value,
+                        }))
+                      }
+                    />
+                    <span>{item.unit}</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        updatePurchaseQuantity(
+                          purchase.id,
+                          Number(quantityValue),
+                        );
+                        setQuantityDrafts((current) => {
+                          const next = { ...current };
+                          delete next[purchase.id];
+                          return next;
+                        });
+                      }}
+                    >
+                      Update request
+                    </button>
+                  </div>
+                ) : null}
 
                 {canReceive && item ? (
                   <div className={styles.receivingBar}>
