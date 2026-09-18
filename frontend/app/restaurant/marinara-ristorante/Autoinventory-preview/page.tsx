@@ -733,6 +733,8 @@ export default function MarinaraAutoinventoryPreviewPage() {
                         const itemTone = tone(item);
                         const itemPercent = percent(item);
                         const active = selected.id === item.id;
+                        const procurement = procurementForItem(item.id);
+                        const procurementLine = procurement?.lines.find((line) => line.itemId === item.id);
 
                         return (
                           <button
@@ -751,8 +753,15 @@ export default function MarinaraAutoinventoryPreviewPage() {
 
                             <StockIcon stockId={item.id} className={styles.summaryStockIcon} size={50} />
 
-                            {item.incoming > 0 ? (
-                              <span className={styles.summaryIncoming}>+{item.incoming} {item.unit}</span>
+                            {procurement ? (
+                              <span
+                                className={styles.summaryProcurementBadge}
+                                data-status={procurement.status}
+                              >
+                                {procurement.status === "confirmed" || procurement.status === "in_transit"
+                                  ? `+${procurementLine?.agreedQty ?? procurementLine?.requestedQty ?? 0} ${item.unit} confirmed`
+                                  : procurementStatusLabel(procurement.status)}
+                              </span>
                             ) : null}
 
                             {showSummaryLabels ? (
@@ -807,22 +816,34 @@ export default function MarinaraAutoinventoryPreviewPage() {
                     <div>
                       <span>JOURVIS</span>
                       <p>
-                        {orderAmount > 0
-                          ? `Suggested request: ${orderAmount} ${selected.unit}. You can change the quantity and contact before sending.`
-                          : "Current and incoming stock cover the configured target."}
+                        {selectedProcurement
+                          ? `${selectedProcurement.id}: ${procurementStatusLabel(selectedProcurement.status)}. Requested stock does not count as incoming until both sides confirm.`
+                          : orderAmount > 0
+                            ? `Suggested request: ${orderAmount} ${selected.unit}. You can change the quantity and contact before sending.`
+                            : "Current and confirmed incoming stock cover the configured target."}
                       </p>
                     </div>
                   </div>
 
                   <div className={styles.summaryActions}>
-                    <button
-                      type="button"
-                      className={styles.primaryButton}
-                      disabled={orderAmount <= 0}
-                      onClick={() => openContact([selected], `Contact ${selectedSupplier.name}`)}
-                    >
-                      <Mail size={15} aria-hidden /> Contact supplier
-                    </button>
+                    {selectedProcurement ? (
+                      <button
+                        type="button"
+                        className={styles.primaryButton}
+                        onClick={() => setActiveTab("orders")}
+                      >
+                        <ChevronRight size={15} aria-hidden /> View purchase flow
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        className={styles.primaryButton}
+                        disabled={orderAmount <= 0}
+                        onClick={() => openContact([selected], `Contact ${selectedSupplier.name}`)}
+                      >
+                        <Mail size={15} aria-hidden /> Contact supplier
+                      </button>
+                    )}
                     <a className={styles.secondaryButton} href={`/restaurant/marinara-ristorante/Autoinventory-preview/configure?stock=${selected.id}`}>
                       <Settings2 size={15} aria-hidden /> Configure
                     </a>
