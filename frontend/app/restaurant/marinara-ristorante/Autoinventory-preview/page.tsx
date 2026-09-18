@@ -496,14 +496,18 @@ export default function MarinaraAutoinventoryPreviewPage() {
         blocked[item.id] = `Jourvis paused: suggested ${quantity} ${item.unit} exceeds the automatic quantity limit of ${item.maxAutoOrderQty} ${item.unit}.`;
         return;
       }
-      if (estimatedSpend > item.maxAutoOrderSpend) {
-        blocked[item.id] = `Jourvis paused: estimated ${formatMoney(estimatedSpend)} exceeds the automatic order cap of ${formatMoney(item.maxAutoOrderSpend)}.`;
-        return;
+
+      if (item.purchasingMode === "fixed") {
+        if (estimatedSpend > item.maxAutoOrderSpend) {
+          blocked[item.id] = `Jourvis paused: the known order total ${formatMoney(estimatedSpend)} exceeds your automatic order cap of ${formatMoney(item.maxAutoOrderSpend)}.`;
+          return;
+        }
+        if (item.packPrice > item.hardMaxPackPrice) {
+          blocked[item.id] = `Jourvis paused: configured pack price ${formatMoney(item.packPrice)} is above the hard maximum of ${formatMoney(item.hardMaxPackPrice)}.`;
+          return;
+        }
       }
-      if (item.purchasingMode === "fixed" && item.packPrice > item.hardMaxPackPrice) {
-        blocked[item.id] = `Jourvis paused: configured pack price ${formatMoney(item.packPrice)} is above the hard maximum of ${formatMoney(item.hardMaxPackPrice)}.`;
-        return;
-      }
+
       if (item.leadDays > item.maxLeadDays) {
         blocked[item.id] = `Jourvis paused: supplier lead time of ${item.leadDays} days exceeds the allowed ${item.maxLeadDays} days.`;
         return;
