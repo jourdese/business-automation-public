@@ -1,6 +1,12 @@
 "use client";
 
-import { type ReactNode, useMemo, useState } from "react";
+import {
+  type Dispatch,
+  type ReactNode,
+  type SetStateAction,
+  useMemo,
+  useState,
+} from "react";
 import {
   Archive,
   ArrowLeft,
@@ -1603,6 +1609,467 @@ export default function OperationModuleView({
           </article>
         ))}
       </div>
+    </section>
+  );
+}
+
+function MenuEditorPanel({
+  draft,
+  setDraft,
+  existing,
+  recipes,
+  onSave,
+  onCancel,
+}: {
+  draft: MenuEditorDraft;
+  setDraft: Dispatch<SetStateAction<MenuEditorDraft | null>>;
+  existing?: CommandCenterMenuItem;
+  recipes: CommandCenterRecipe[];
+  onSave: () => void;
+  onCancel: () => void;
+}) {
+  return (
+    <section className={styles.entityEditor}>
+      <header>
+        <div>
+          <span>{draft.id ? "EDIT MENU ITEM" : "NEW MENU ITEM"}</span>
+          <h3>{draft.id ? draft.name || "Menu item" : "Create menu item"}</h3>
+          <p>
+            Live fields can change freely. Archived source fields shown below are preserved.
+          </p>
+        </div>
+        <button type="button" onClick={onCancel} aria-label="Close menu editor">
+          <X size={16} aria-hidden />
+        </button>
+      </header>
+
+      <div className={styles.entityEditorGrid}>
+        <label>
+          <span>Name</span>
+          <input
+            value={draft.name}
+            onChange={(event) =>
+              setDraft((current) =>
+                current ? { ...current, name: event.target.value } : current,
+              )
+            }
+          />
+        </label>
+        <label>
+          <span>Category</span>
+          <input
+            value={draft.category}
+            onChange={(event) =>
+              setDraft((current) =>
+                current ? { ...current, category: event.target.value } : current,
+              )
+            }
+          />
+        </label>
+        <label>
+          <span>Variant / size</span>
+          <input
+            value={draft.variant}
+            placeholder="Solo, Sharing, 12-inch…"
+            onChange={(event) =>
+              setDraft((current) =>
+                current ? { ...current, variant: event.target.value } : current,
+              )
+            }
+          />
+        </label>
+        <label>
+          <span>Current selling price</span>
+          <div className={styles.moneyInput}>
+            <b>₱</b>
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              value={draft.currentPrice}
+              placeholder="Not set"
+              onChange={(event) =>
+                setDraft((current) =>
+                  current
+                    ? { ...current, currentPrice: event.target.value }
+                    : current,
+                )
+              }
+            />
+          </div>
+        </label>
+        <label>
+          <span>Linked recipe</span>
+          <select
+            value={draft.recipeId}
+            onChange={(event) =>
+              setDraft((current) =>
+                current ? { ...current, recipeId: event.target.value } : current,
+              )
+            }
+          >
+            <option value="">No recipe yet</option>
+            {recipes.map((recipe) => (
+              <option key={recipe.id} value={recipe.id}>
+                {recipe.name}{recipe.active ? "" : " · archived"}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className={styles.entityEditorWide}>
+          <span>Description</span>
+          <textarea
+            rows={3}
+            value={draft.description}
+            onChange={(event) =>
+              setDraft((current) =>
+                current
+                  ? { ...current, description: event.target.value }
+                  : current,
+              )
+            }
+          />
+        </label>
+      </div>
+
+      <div className={styles.entityToggleRow}>
+        <label>
+          <input
+            type="checkbox"
+            checked={draft.active}
+            onChange={(event) =>
+              setDraft((current) =>
+                current ? { ...current, active: event.target.checked } : current,
+              )
+            }
+          />
+          <span>Active menu item</span>
+        </label>
+        <label>
+          <input
+            type="checkbox"
+            checked={draft.available}
+            onChange={(event) =>
+              setDraft((current) =>
+                current
+                  ? { ...current, available: event.target.checked }
+                  : current,
+              )
+            }
+          />
+          <span>Available for sale</span>
+        </label>
+      </div>
+
+      {existing?.referenceSource === "archived-menu-photo" ? (
+        <div className={styles.referenceLock}>
+          <span>ARCHIVED REFERENCE · READ ONLY</span>
+          <div>
+            <strong>{existing.printedName}</strong>
+            <small>
+              {existing.referencePrice !== undefined
+                ? `₱${Math.round(existing.referencePrice).toLocaleString("en-PH")}`
+                : "Price unavailable"}
+              {existing.referencePublicationDate
+                ? ` · source date ${existing.referencePublicationDate}`
+                : ""}
+            </small>
+          </div>
+        </div>
+      ) : null}
+
+      <footer className={styles.entityEditorActions}>
+        <button type="button" onClick={onCancel}>Cancel</button>
+        <button type="button" data-primary onClick={onSave}>
+          <Save size={14} aria-hidden /> Save menu item
+        </button>
+      </footer>
+    </section>
+  );
+}
+
+function RecipeEditorPanel({
+  draft,
+  setDraft,
+  existing,
+  inventory,
+  menuItems,
+  onSave,
+  onCancel,
+}: {
+  draft: RecipeEditorDraft;
+  setDraft: Dispatch<SetStateAction<RecipeEditorDraft | null>>;
+  existing?: CommandCenterRecipe;
+  inventory: CommandCenterInventoryItem[];
+  menuItems: CommandCenterMenuItem[];
+  onSave: () => void;
+  onCancel: () => void;
+}) {
+  const costFor = (ingredients: Array<{ itemId: string; amount: string }>) =>
+    ingredients.reduce((sum, entry) => {
+      const item = inventory.find((candidate) => candidate.id === entry.itemId);
+      const amount = Number(entry.amount);
+      if (!item || !Number.isFinite(amount) || amount <= 0) return sum;
+      return sum + (item.packPrice / Math.max(item.packSize, 0.01)) * amount;
+    }, 0);
+
+  const servingsFor = (ingredients: Array<{ itemId: string; amount: string }>) => {
+    const possible = ingredients.flatMap((entry) => {
+      const item = inventory.find((candidate) => candidate.id === entry.itemId);
+      const amount = Number(entry.amount);
+      if (!item || !Number.isFinite(amount) || amount <= 0) return [];
+      return [Math.floor(item.current / amount)];
+    });
+    return possible.length ? Math.min(...possible) : 0;
+  };
+
+  const draftCost = costFor(draft.ingredients);
+  const draftServings = servingsFor(draft.ingredients);
+  const existingIngredients = existing
+    ? Object.entries(existing.ingredients).map(([itemId, amount]) => ({
+        itemId,
+        amount: String(amount),
+      }))
+    : [];
+  const previousCost = costFor(existingIngredients);
+  const costDelta = draftCost - previousCost;
+  const linkedCount = existing
+    ? menuItems.filter((item) => item.recipeId === existing.id).length
+    : 0;
+
+  function addIngredient() {
+    const used = new Set(draft.ingredients.map((entry) => entry.itemId));
+    const nextItem = inventory.find((item) => !used.has(item.id));
+    if (!nextItem) return;
+    setDraft((current) =>
+      current
+        ? {
+            ...current,
+            ingredients: [
+              ...current.ingredients,
+              { itemId: nextItem.id, amount: "" },
+            ],
+          }
+        : current,
+    );
+  }
+
+  return (
+    <section className={styles.entityEditor}>
+      <header>
+        <div>
+          <span>{draft.id ? "EDIT RECIPE" : "NEW RECIPE"}</span>
+          <h3>{draft.id ? draft.name || "Recipe" : "Create recipe"}</h3>
+          <p>
+            Ingredient quantities are per sale/serving and immediately drive stock usage and menu economics.
+          </p>
+        </div>
+        <button type="button" onClick={onCancel} aria-label="Close recipe editor">
+          <X size={16} aria-hidden />
+        </button>
+      </header>
+
+      <div className={styles.entityEditorGrid}>
+        <label>
+          <span>Name</span>
+          <input
+            value={draft.name}
+            onChange={(event) =>
+              setDraft((current) =>
+                current ? { ...current, name: event.target.value } : current,
+              )
+            }
+          />
+        </label>
+        <label>
+          <span>Status</span>
+          <select
+            value={draft.active ? "active" : "archived"}
+            onChange={(event) =>
+              setDraft((current) =>
+                current
+                  ? { ...current, active: event.target.value === "active" }
+                  : current,
+              )
+            }
+          >
+            <option value="active">Active</option>
+            <option value="archived">Archived</option>
+          </select>
+        </label>
+        <label className={styles.entityEditorWide}>
+          <span>Description</span>
+          <textarea
+            rows={2}
+            value={draft.description}
+            onChange={(event) =>
+              setDraft((current) =>
+                current
+                  ? { ...current, description: event.target.value }
+                  : current,
+              )
+            }
+          />
+        </label>
+        <label className={styles.entityEditorWide}>
+          <span>Internal notes</span>
+          <textarea
+            rows={2}
+            value={draft.notes}
+            placeholder="Prep notes, portion guidance, kitchen notes…"
+            onChange={(event) =>
+              setDraft((current) =>
+                current ? { ...current, notes: event.target.value } : current,
+              )
+            }
+          />
+        </label>
+      </div>
+
+      <div className={styles.recipeImpact}>
+        <article>
+          <span>EST. INGREDIENT COST</span>
+          <strong>₱{Math.round(draftCost).toLocaleString("en-PH")}</strong>
+          {existing ? (
+            <small>
+              {costDelta === 0
+                ? "No cost change"
+                : `${costDelta > 0 ? "+" : "-"}₱${Math.round(Math.abs(costDelta)).toLocaleString("en-PH")} vs saved recipe`}
+            </small>
+          ) : (
+            <small>Based on configured inventory pack prices</small>
+          )}
+        </article>
+        <article>
+          <span>POSSIBLE SERVINGS</span>
+          <strong>{draftServings}</strong>
+          <small>Based on current on-hand inventory</small>
+        </article>
+        <article>
+          <span>LINKED MENU ITEMS</span>
+          <strong>{linkedCount}</strong>
+          <small>These items will use the saved recipe immediately</small>
+        </article>
+      </div>
+
+      <div className={styles.recipeBuilder}>
+        <header>
+          <div>
+            <span>INGREDIENTS</span>
+            <strong>{draft.ingredients.length} mapped</strong>
+          </div>
+          <button
+            type="button"
+            onClick={addIngredient}
+            disabled={draft.ingredients.length >= inventory.length}
+          >
+            <PlusCircle size={14} aria-hidden /> Add ingredient
+          </button>
+        </header>
+
+        <div className={styles.recipeBuilderLines}>
+          {draft.ingredients.map((entry, index) => {
+            const item = inventory.find((candidate) => candidate.id === entry.itemId);
+            const usedByOtherLines = new Set(
+              draft.ingredients
+                .filter((_, lineIndex) => lineIndex !== index)
+                .map((line) => line.itemId),
+            );
+            return (
+              <div key={`${entry.itemId}-${index}`}>
+                <select
+                  value={entry.itemId}
+                  onChange={(event) =>
+                    setDraft((current) =>
+                      current
+                        ? {
+                            ...current,
+                            ingredients: current.ingredients.map((line, lineIndex) =>
+                              lineIndex === index
+                                ? { ...line, itemId: event.target.value }
+                                : line,
+                            ),
+                          }
+                        : current,
+                    )
+                  }
+                >
+                  {inventory.map((inventoryItem) => (
+                    <option
+                      key={inventoryItem.id}
+                      value={inventoryItem.id}
+                      disabled={usedByOtherLines.has(inventoryItem.id)}
+                    >
+                      {inventoryItem.name}
+                    </option>
+                  ))}
+                </select>
+                <div className={styles.recipeAmountInput}>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.001"
+                    value={entry.amount}
+                    placeholder="0.00"
+                    onChange={(event) =>
+                      setDraft((current) =>
+                        current
+                          ? {
+                              ...current,
+                              ingredients: current.ingredients.map((line, lineIndex) =>
+                                lineIndex === index
+                                  ? { ...line, amount: event.target.value }
+                                  : line,
+                              ),
+                            }
+                          : current,
+                      )
+                    }
+                  />
+                  <span>{item?.unit ?? ""} / sale</span>
+                </div>
+                <small>
+                  {item
+                    ? `On hand ${item.current} ${item.unit} · pack ₱${Math.round(item.packPrice).toLocaleString("en-PH")}`
+                    : "Inventory item unavailable"}
+                </small>
+                <button
+                  type="button"
+                  data-danger
+                  onClick={() =>
+                    setDraft((current) =>
+                      current
+                        ? {
+                            ...current,
+                            ingredients: current.ingredients.filter(
+                              (_, lineIndex) => lineIndex !== index,
+                            ),
+                          }
+                        : current,
+                    )
+                  }
+                  aria-label={`Remove ${item?.name ?? "ingredient"}`}
+                >
+                  <X size={14} aria-hidden />
+                </button>
+              </div>
+            );
+          })}
+
+          {!draft.ingredients.length ? (
+            <div className={styles.recipeBuilderEmpty}>
+              Add ingredients from Inventory to build this recipe.
+            </div>
+          ) : null}
+        </div>
+      </div>
+
+      <footer className={styles.entityEditorActions}>
+        <button type="button" onClick={onCancel}>Cancel</button>
+        <button type="button" data-primary onClick={onSave}>
+          <Save size={14} aria-hidden /> Save recipe
+        </button>
+      </footer>
     </section>
   );
 }
