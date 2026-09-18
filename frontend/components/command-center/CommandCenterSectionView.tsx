@@ -20,6 +20,7 @@ import SupplyPhoto from "./SupplyPhoto";
 import { operationCatalog } from "@/command-center/core/business-registry";
 import { jourvisAutonomyLoop } from "@/command-center/core/autonomy";
 import { buildCommandCenterForecast } from "@/command-center/core/forecast-engine";
+import { buildCommandCenterPerformance } from "@/command-center/core/performance-engine";
 import {
   estimatedPurchaseTotal,
   inventoryPercent,
@@ -542,30 +543,170 @@ export default function CommandCenterSectionView({
   }
 
   if (section === "performance") {
+    const performance = buildCommandCenterPerformance(
+      state,
+      tasks.length,
+    );
+    const metricRows = [
+      [
+        "Inventory readiness",
+        performance.inventoryReadinessPercent === null
+          ? "—"
+          : performance.inventoryReadinessPercent + "%",
+        "average on-hand stock vs configured full level",
+      ],
+      [
+        "7-day inventory risk",
+        String(performance.inventoryRiskCount),
+        "Forecast",
+      ],
+      [
+        "Menu recipe coverage",
+        performance.recipeCoveragePercent === null
+          ? "—"
+          : performance.recipeCoveragePercent + "%",
+        `${performance.recipeMappedMenuCount}/${performance.activeMenuItemCount} active items mapped`,
+      ],
+      [
+        "Average food cost",
+        performance.averageFoodCostPercent === null
+          ? "—"
+          : performance.averageFoodCostPercent + "%",
+        performance.pricedMappedMenuCount
+          ? `${performance.pricedMappedMenuCount} priced recipe-mapped item${performance.pricedMappedMenuCount === 1 ? "" : "s"}`
+          : "live selling prices required",
+      ],
+      [
+        "Active workflows",
+        String(performance.activeWorkflowCount),
+        "live purchasing work",
+      ],
+      [
+        "Owner exceptions",
+        String(performance.ownerExceptionCount),
+        "live Decisions queue",
+      ],
+      [
+        "Automation share",
+        performance.automationSharePercent === null
+          ? "—"
+          : performance.automationSharePercent + "%",
+        `${performance.automaticActivityCount} automatic · ${performance.manualActivityCount} manual actions`,
+      ],
+      [
+        "Purchase completion",
+        performance.purchaseCompletionPercent === null
+          ? "—"
+          : performance.purchaseCompletionPercent + "%",
+        `${performance.receivedPurchaseCount}/${performance.closedPurchaseCount} closed purchases received`,
+      ],
+    ];
+
     return (
       <SectionFrame
         eyebrow="PERFORMANCE"
         title="Is the business actually improving?"
-        description="Revenue is only one signal. Jourvis connects sales, profit, margin, costs, demand, and operating efficiency."
+        description="Performance now uses live Command Center operating state where the data exists. Financial KPIs stay unavailable until verified sales/accounting providers are connected."
       >
         <div className={styles.metricGrid}>
-          {[
-            ["Revenue", business.demoMetrics[0]?.value ?? "—", business.demoMetrics[0]?.change ?? ""],
-            ["Operating profit", business.demoMetrics[1]?.value ?? "—", business.demoMetrics[1]?.change ?? ""],
-            ["Active workflows", String(activePurchases.length), "Jourvis"],
-            ["Owner exceptions", String(tasks.length), "Live"],
-          ].map(([label, value, change]) => (
+          {metricRows.map(([label, value, note]) => (
             <article className={styles.metricCard} key={label}>
-              <span>{label}</span><strong>{value}</strong><div><b>{change}</b><small>{label === "Revenue" || label === "Operating profit" ? "illustrative finance seed" : "runtime"}</small></div>
+              <span>{label}</span>
+              <strong>{value}</strong>
+              <div>
+                <b>Runtime</b>
+                <small>{note}</small>
+              </div>
             </article>
           ))}
         </div>
+
         <article className={styles.panelCard}>
-          <PanelHeading icon={<Sparkles size={17} />} eyebrow="JOURVIS EXPLAINS" title="Numbers need a reason" />
-          <div className={styles.explainer}>
-            <p>Performance will not stop at charts. Jourvis will explain the operational causes behind revenue, margin, profit, cost, demand, labor, and forecast changes, then decide whether an action should be taken automatically.</p>
+          <PanelHeading
+            icon={<Sparkles size={17} />}
+            eyebrow="JOURVIS EXPLAINS"
+            title="Operational causes behind the numbers"
+          />
+          <div className={styles.insightList}>
+            <article>
+              <LineChart size={16} />
+              <div>
+                <strong>Inventory health</strong>
+                <p>
+                  {performance.inventoryRiskCount
+                    ? `${performance.inventoryRiskCount} ingredient${performance.inventoryRiskCount === 1 ? " is" : "s are"} forecast to enter a risk state within seven days. Forecast identifies the affected recipes and next purchasing action.`
+                    : "No configured ingredient is currently forecast to enter a stock-risk state within seven days."}
+                </p>
+              </div>
+            </article>
+            <article>
+              <CheckCircle2 size={16} />
+              <div>
+                <strong>Menu operating coverage</strong>
+                <p>
+                  {performance.recipeCoveragePercent === null
+                    ? "No active menu items are configured yet."
+                    : `${performance.recipeCoveragePercent}% of active menu items have an active recipe mapping. Items without recipes cannot yet drive ingredient cost or POS inventory deductions.`}
+                </p>
+              </div>
+            </article>
+            <article>
+              <Bot size={16} />
+              <div>
+                <strong>Automation load</strong>
+                <p>
+                  {performance.automationSharePercent === null
+                    ? "No automatic or manual operating actions have been recorded yet."
+                    : `${performance.automationSharePercent}% of recorded owner/Jourvis operating actions are automatic in the current browser runtime. ${performance.ownerExceptionCount} exception${performance.ownerExceptionCount === 1 ? " is" : "s are"} waiting for human authority.`}
+                </p>
+              </div>
+            </article>
+            <article>
+              <CheckCircle2 size={16} />
+              <div>
+                <strong>Purchasing outcomes</strong>
+                <p>
+                  {performance.closedPurchaseCount
+                    ? `${performance.receivedPurchaseCount} of ${performance.closedPurchaseCount} closed purchase workflow${performance.closedPurchaseCount === 1 ? "" : "s"} finished as received. Rejected requests remain visible in Activity instead of being erased.`
+                    : "No purchase workflow has reached a closed state yet."}
+                </p>
+              </div>
+            </article>
           </div>
         </article>
+
+        <div className={styles.cardGrid}>
+          {[
+            [
+              "Revenue",
+              "POS / accounting provider required",
+              "Real revenue performance needs verified sales history and a defined reporting period.",
+            ],
+            [
+              "Operating profit",
+              "Accounting provider required",
+              "Profit will activate from actual revenue, COGS, labor, and operating expense data.",
+            ],
+            [
+              "Gross margin",
+              "Sales + accounting provider required",
+              "Menu ingredient cost alone is not enough to represent business-wide gross margin.",
+            ],
+            [
+              "Average order value",
+              "POS provider required",
+              "AOV will be calculated from real transactions rather than illustrative demo seeds.",
+            ],
+          ].map(([title, source, description]) => (
+            <article className={styles.moduleCard} key={title}>
+              <LineChart size={19} />
+              <span>DATA SOURCE PENDING</span>
+              <h3>{title}</h3>
+              <p>{description}</p>
+              <small>{source}</small>
+            </article>
+          ))}
+        </div>
       </SectionFrame>
     );
   }
