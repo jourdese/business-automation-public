@@ -2126,7 +2126,7 @@
 
 .inventoryLevels {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   border-top: 1px solid var(--cc-line);
   border-bottom: 1px solid var(--cc-line);
 }
@@ -2909,4 +2909,90 @@
   height: 100%;
   display: block;
   object-fit: cover;
+}
+
+
+.quantityEditor {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) 110px auto auto;
+  gap: 0.45rem;
+  align-items: center;
+  padding: 0.62rem 0.75rem;
+  border-top: 1px solid #3c4f58;
+  background: rgba(200, 169, 107, 0.035);
+}
+
+.quantityEditor > div strong,
+.quantityEditor > div small {
+  display: block;
+}
+
+.quantityEditor > div strong {
+  font-size: 0.62rem;
+}
+
+.quantityEditor > div small {
+  margin-top: 0.12rem;
+  color: var(--cc-muted);
+  font-size: 0.53rem;
+  line-height: 1.4;
+}
+
+.quantityEditor input {
+  width: 100%;
+  min-width: 0;
+  min-height: 34px;
+  border: 1px solid #3a5059;
+  background: #07131b;
+  color: var(--ivory);
+  padding: 0.35rem 0.45rem;
+  font-size: 0.6rem;
+}
+
+.quantityEditor > span {
+  color: var(--cc-muted);
+  font-size: 0.58rem;
+}
+
+.quantityEditor button {
+  min-height: 34px;
+  padding: 0.38rem 0.58rem;
+  border: 1px solid #5e6f53;
+  background: #08161e;
+  color: var(--gold);
+  font-size: 0.58rem;
+}
+
+.quantityEditor button:hover {
+  border-color: var(--mint);
+  color: var(--mint);
+}
+
+
+@media (max-width: 980px) {
+  .inventoryLevels {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .quantityEditor {
+    grid-template-columns: minmax(160px, 1fr) 90px auto;
+  }
+
+  .quantityEditor button {
+    grid-column: 2 / -1;
+  }
+}
+
+@media (max-width: 620px) {
+  .quantityEditor {
+    grid-template-columns: 1fr auto;
+  }
+
+  .quantityEditor > div {
+    grid-column: 1 / -1;
+  }
+
+  .quantityEditor button {
+    grid-column: 1 / -1;
+  }
 }
