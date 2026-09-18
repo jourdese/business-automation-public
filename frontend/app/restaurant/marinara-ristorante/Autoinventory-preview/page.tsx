@@ -1057,8 +1057,14 @@ export default function MarinaraAutoinventoryPreviewPage() {
       const items = quotedLines
         .map((line) => ingredients.find((candidate) => candidate.id === line.itemId))
         .filter((item): item is Ingredient => Boolean(item));
+      const quotedTotal = procurementTotal(quotedRequest, ingredients);
+      const groupSpendCap = items.length
+        ? Math.min(...items.map((item) => item.maxAutoOrderSpend))
+        : 0;
 
-      const withinAutoAccept = quotedLines.every((line) => {
+      const withinAutoAccept =
+        quotedTotal <= groupSpendCap &&
+        quotedLines.every((line) => {
         const item = ingredients.find((candidate) => candidate.id === line.itemId);
         if (!item) return false;
         const quantity = line.agreedQty ?? line.requestedQty;
@@ -1085,7 +1091,17 @@ export default function MarinaraAutoinventoryPreviewPage() {
         return;
       }
 
-      const canAutoCounter = quotedLines.every((line) => {
+      const targetTotal = quotedLines.reduce((sum, line) => {
+        const item = ingredients.find((candidate) => candidate.id === line.itemId);
+        if (!item) return sum;
+        const quantity = line.agreedQty ?? line.requestedQty;
+        return sum +
+          Math.ceil(quantity / Math.max(item.packSize, 0.01)) * item.targetPackPrice;
+      }, quotedRequest.deliveryFee);
+
+      const canAutoCounter =
+        targetTotal <= groupSpendCap &&
+        quotedLines.every((line) => {
         const item = ingredients.find((candidate) => candidate.id === line.itemId);
         if (!item) return false;
         const price = line.quotedPackPrice ?? Number.POSITIVE_INFINITY;
@@ -1121,9 +1137,18 @@ export default function MarinaraAutoinventoryPreviewPage() {
         return;
       }
 
+      const firstItem = items[0];
+      const overOrderCap = quotedTotal > groupSpendCap;
+      const maxQuotedPack = Math.max(...quotedLines.map((line) => line.quotedPackPrice ?? 0));
+      const note = overOrderCap
+        ? `Supplier quoted ${formatMoney(quotedTotal)}, which is ${formatMoney(quotedTotal - groupSpendCap)} above the automatic order limit of ${formatMoney(groupSpendCap)}.`
+        : firstItem && maxQuotedPack > firstItem.autoAcceptPackPrice
+          ? `Supplier price is above Jourvis' automatic price limit. Approve this quote once, reject it, or review it in Orders.`
+          : "Supplier terms are outside Jourvis' automatic delivery rules. Owner approval is required.";
+
       updateProcurement(request.id, () => ({
         ...quotedRequest,
-        automationNote: "Owner approval required: at least one quote term falls outside Jourvis automation limits.",
+        automationNote: note,
       }));
       log(`${request.id}: Jourvis paused for owner approval because the supplier quote falls outside the configured automation limits.`);
       return;
