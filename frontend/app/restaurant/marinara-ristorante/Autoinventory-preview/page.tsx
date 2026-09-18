@@ -725,9 +725,12 @@ export default function MarinaraAutoinventoryPreviewPage() {
     });
 
     setProcurements((current) => [...automaticRequests, ...current]);
+    const approvedItemIds = new Set(
+      approvedGroups.flatMap((items) => items.map((item) => item.id)),
+    );
     setAutomationAlerts((current) => {
       const next = { ...current };
-      eligible.forEach((item) => delete next[item.id]);
+      approvedItemIds.forEach((itemId) => delete next[itemId]);
       return next;
     });
 
