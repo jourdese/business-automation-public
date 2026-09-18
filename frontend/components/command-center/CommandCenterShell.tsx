@@ -9,6 +9,7 @@ import {
   Building2,
   CalendarClock,
   CircleGauge,
+  History,
   Lightbulb,
   Menu,
   RefreshCw,
@@ -22,6 +23,7 @@ import {
   resolveCommandCenterBusiness,
 } from "@/command-center/core/business-registry";
 import { useCommandCenterRuntime } from "@/command-center/core/runtime-provider";
+import type { CommandCenterInventoryItem } from "@/command-center/core/runtime";
 import {
   commandCenterSections,
   type CommandCenterSectionId,
@@ -34,6 +36,7 @@ const icons: Record<CommandCenterSectionId, typeof CircleGauge> = {
   performance: BarChart3,
   finance: WalletCards,
   operations: BriefcaseBusiness,
+  activity: History,
   briefings: Bot,
   insights: Lightbulb,
   decisions: ShieldCheck,
@@ -64,12 +67,14 @@ export default function CommandCenterShell({ children }: { children: ReactNode }
   const [activeSection, setActiveSection] = useState<CommandCenterSectionId>("overview");
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [updateTaskId, setUpdateTaskId] = useState<string | null>(null);
+  const [updateBaseline, setUpdateBaseline] = useState<CommandCenterInventoryItem | null>(null);
+  const [updateDraft, setUpdateDraft] = useState<CommandCenterInventoryItem | null>(null);
   const [jourvisOpenKey, setJourvisOpenKey] = useState(0);
   const {
     state,
     tasks,
     actOnTask,
-    updateInventoryItem,
+    applyInventoryConfiguration,
     setAutomationMasterOn,
     resetDemo,
   } = useCommandCenterRuntime();
@@ -90,12 +95,19 @@ export default function CommandCenterShell({ children }: { children: ReactNode }
     const handleUpdate = (event: Event) => {
       const custom = event as CustomEvent<{ taskId?: string }>;
       if (!custom.detail?.taskId) return;
-      setUpdateTaskId(custom.detail.taskId);
+      const task = tasks.find((entry) => entry.id === custom.detail?.taskId);
+      const item = task?.entityId
+        ? state.inventory.find((entry) => entry.id === task.entityId)
+        : undefined;
+      if (!task || !item) return;
+      setUpdateTaskId(task.id);
+      setUpdateBaseline({ ...item });
+      setUpdateDraft({ ...item });
       setJourvisOpenKey((value) => value + 1);
     };
     window.addEventListener("jourvis-command-center-update", handleUpdate);
     return () => window.removeEventListener("jourvis-command-center-update", handleUpdate);
-  }, []);
+  }, [state.inventory, tasks]);
 
   const business = useMemo(
     () => resolveCommandCenterBusiness(businessId),
@@ -106,17 +118,35 @@ export default function CommandCenterShell({ children }: { children: ReactNode }
   const updateTask = updateTaskId
     ? tasks.find((task) => task.id === updateTaskId)
     : undefined;
-  const updateItem = updateTask?.entityId
-    ? state.inventory.find((item) => item.id === updateTask.entityId)
-    : undefined;
+  const updateItem = updateTask && updateDraft ? updateDraft : undefined;
 
   function switchBusiness(nextBusinessId: string) {
     window.location.href = sectionHref(nextBusinessId, activeSection);
   }
 
   function openTaskUpdate(taskId: string) {
+    const task = tasks.find((entry) => entry.id === taskId);
+    const item = task?.entityId
+      ? state.inventory.find((entry) => entry.id === task.entityId)
+      : undefined;
+    if (!task || !item) return;
     setUpdateTaskId(taskId);
+    setUpdateBaseline({ ...item });
+    setUpdateDraft({ ...item });
     setJourvisOpenKey((value) => value + 1);
+  }
+
+  function updateDraftItem(patch: Partial<CommandCenterInventoryItem>) {
+    setUpdateDraft((current) => current ? { ...current, ...patch } : current);
+  }
+
+  function finishTaskUpdate() {
+    if (updateBaseline && updateDraft) {
+      applyInventoryConfiguration(updateBaseline, updateDraft);
+    }
+    setUpdateTaskId(null);
+    setUpdateBaseline(null);
+    setUpdateDraft(null);
   }
 
   const jourvisActions = updateTask
@@ -125,7 +155,7 @@ export default function CommandCenterShell({ children }: { children: ReactNode }
           label: "Done updating",
           primary: true,
           keepOpen: true,
-          onClick: () => setUpdateTaskId(null),
+          onClick: finishTaskUpdate,
         },
       ]
     : topTask
@@ -304,7 +334,7 @@ export default function CommandCenterShell({ children }: { children: ReactNode }
               <input
                 type="checkbox"
                 checked={updateItem.automationEnabled}
-                onChange={(event) => updateInventoryItem(updateItem.id, { automationEnabled: event.target.checked })}
+                onChange={(event) => updateDraftItem({ automationEnabled: event.target.checked })}
               />
             </label>
 
@@ -320,11 +350,11 @@ export default function CommandCenterShell({ children }: { children: ReactNode }
             <div className={styles.ruleEditorGrid}>
               <label>
                 <span>Act at</span>
-                <div><input type="number" min="0" max="100" value={updateItem.automationTriggerPercent} onChange={(event) => updateInventoryItem(updateItem.id, { automationTriggerPercent: Math.max(0, Math.min(100, Number(event.target.value) || 0)) })} /><b>%</b></div>
+                <div><input type="number" min="0" max="100" value={updateItem.automationTriggerPercent} onChange={(event) => updateDraftItem({ automationTriggerPercent: Math.max(0, Math.min(100, Number(event.target.value) || 0)) })} /><b>%</b></div>
               </label>
               <label>
                 <span>Jourvis may</span>
-                <select value={updateItem.automationMode} onChange={(event) => updateInventoryItem(updateItem.id, { automationMode: event.target.value as typeof updateItem.automationMode })}>
+                <select value={updateItem.automationMode} onChange={(event) => updateDraftItem({ automationMode: event.target.value as typeof updateItem.automationMode })}>
                   <option value="assist">Watch only</option>
                   <option value="auto_contact">Contact supplier</option>
                   <option value="autobuy">Buy within limits</option>
@@ -332,16 +362,16 @@ export default function CommandCenterShell({ children }: { children: ReactNode }
               </label>
               <label>
                 <span>Ask me above</span>
-                <div><b>₱</b><input type="number" min="0" value={updateItem.maxAutoOrderSpend} onChange={(event) => updateInventoryItem(updateItem.id, { maxAutoOrderSpend: Math.max(0, Number(event.target.value) || 0) })} /></div>
+                <div><b>₱</b><input type="number" min="0" value={updateItem.maxAutoOrderSpend} onChange={(event) => updateDraftItem({ maxAutoOrderSpend: Math.max(0, Number(event.target.value) || 0) })} /></div>
               </label>
               <label>
                 <span>Max pack price</span>
-                <div><b>₱</b><input type="number" min="0" value={updateItem.autoAcceptPackPrice} onChange={(event) => updateInventoryItem(updateItem.id, { autoAcceptPackPrice: Math.max(0, Number(event.target.value) || 0) })} /></div>
+                <div><b>₱</b><input type="number" min="0" value={updateItem.autoAcceptPackPrice} onChange={(event) => updateDraftItem({ autoAcceptPackPrice: Math.max(0, Number(event.target.value) || 0) })} /></div>
               </label>
             </div>
 
             <p className={styles.ruleEditorNote}>
-              This is business-scoped Command Center demo state. Production providers will replace browser storage without changing this UI.
+              Changes are staged until you choose Done updating. When saved, Jourvis records the manual configuration change with its exact timestamp and the rule snapshot used afterward.
             </p>
           </div>
         ) : null}
