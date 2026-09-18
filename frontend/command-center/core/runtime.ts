@@ -215,11 +215,18 @@ export function evaluatePurchaseAuthority(
     deliveryFee <= item.maxDeliveryFee &&
     etaDays <= item.maxLeadDays;
 
+  const negotiatedTotal =
+    Math.ceil(quantity / Math.max(item.packSize, 0.01)) *
+      item.targetPackPrice +
+    deliveryFee;
+
   const canNegotiate =
     !withinAutoAccept &&
     withinHardLimits &&
     item.autoNegotiate &&
-    counteroffersUsed < item.maxCounteroffers;
+    counteroffersUsed < item.maxCounteroffers &&
+    item.targetPackPrice <= item.hardMaxPackPrice &&
+    negotiatedTotal <= item.maxAutoOrderSpend;
 
   return {
     total,
@@ -228,6 +235,7 @@ export function evaluatePurchaseAuthority(
     etaDays,
     quantity,
     counteroffersUsed,
+    negotiatedTotal,
     withinAutoAccept,
     withinHardLimits,
     canNegotiate,
