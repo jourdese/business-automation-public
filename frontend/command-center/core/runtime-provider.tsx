@@ -20,7 +20,9 @@ import {
   suggestedPurchaseQuantity,
   type CommandCenterActivity,
   type CommandCenterInventoryItem,
+  type CommandCenterMenuItem,
   type CommandCenterPurchase,
+  type CommandCenterRecipe,
   type CommandCenterRuntimeState,
   type CommandCenterStockAdjustmentReason,
   type JourvisRuntimeTask,
@@ -55,6 +57,23 @@ type CommandCenterRuntimeContextValue = {
   receivePurchase: (purchaseId: string, quantity: number) => void;
   updatePurchaseQuantity: (purchaseId: string, quantity: number) => void;
   startOwnerPurchase: (itemId: string) => void;
+  saveMenuItem: (
+    item: Omit<
+      CommandCenterMenuItem,
+      | "id"
+      | "printedName"
+      | "dishKey"
+      | "referencePrice"
+      | "referenceSource"
+      | "referencePublicationDate"
+      | "currentPriceVerified"
+    > & { id?: string },
+  ) => void;
+  archiveMenuItem: (itemId: string) => void;
+  saveRecipe: (
+    recipe: Omit<CommandCenterRecipe, "id"> & { id?: string },
+  ) => void;
+  archiveRecipe: (recipeId: string) => void;
   recordRecipeSale: (recipeId: string, quantity?: number) => void;
   resumeItem: (itemId: string) => void;
   resetDemo: () => void;
@@ -147,8 +166,25 @@ function normalizeStoredState(
       ...item,
     })),
     suppliers: stored.suppliers ?? seed.suppliers,
-    recipes: stored.recipes ?? seed.recipes,
-    menuItems: stored.menuItems ?? seed.menuItems,
+    recipes: (stored.recipes ?? seed.recipes).map((recipe) => {
+      const seeded = seed.recipes.find((entry) => entry.id === recipe.id);
+      return {
+        ...seeded,
+        ...recipe,
+        active: recipe.active ?? seeded?.active ?? true,
+      };
+    }),
+    menuItems: (stored.menuItems ?? seed.menuItems).map((item) => {
+      const seeded = seed.menuItems.find((entry) => entry.id === item.id);
+      return {
+        ...seeded,
+        ...item,
+        description: item.description ?? seeded?.description,
+        currentPrice: item.currentPrice ?? seeded?.currentPrice,
+        active: item.active ?? seeded?.active ?? true,
+        available: item.available ?? seeded?.available ?? true,
+      };
+    }),
     pausedItemIds: stored.pausedItemIds ?? [],
     purchases: (stored.purchases ?? []).map((purchase) => {
       const item = (stored.inventory ?? seed.inventory).find(
