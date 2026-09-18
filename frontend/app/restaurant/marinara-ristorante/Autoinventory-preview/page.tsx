@@ -915,6 +915,26 @@ export default function MarinaraAutoinventoryPreviewPage() {
                     <i data-on={showSummaryLabels}><b /></i>
                     <strong>{showSummaryLabels ? "ON" : "OFF"}</strong>
                   </button>
+
+                  <button
+                    type="button"
+                    className={`${styles.automationMasterSwitch} ${automationMasterOn ? styles.automationMasterOn : ""}`}
+                    role="switch"
+                    aria-checked={automationMasterOn}
+                    onClick={() => {
+                      setAutomationMasterOn((current) => {
+                        const next = !current;
+                        window.localStorage.setItem("jourvis-autoinventory-automation-master", String(next));
+                        if (next) log(`Jourvis Automation switched ON. Watching ${automationEnabledCount} configured supplies.`);
+                        else log("Jourvis Automation switched OFF. No new automatic supplier contacts will be started.");
+                        return next;
+                      });
+                    }}
+                  >
+                    <span>Jourvis Auto</span>
+                    <i data-on={automationMasterOn}><b /></i>
+                    <strong>{automationMasterOn ? "ON" : "OFF"}</strong>
+                  </button>
                 </div>
               </div>
 
@@ -944,6 +964,16 @@ export default function MarinaraAutoinventoryPreviewPage() {
                               <small>{toneLabel(itemTone)}</small>
                               <strong>{itemPercent}%</strong>
                             </span>
+
+                            {item.automationEnabled ? (
+                              <span
+                                className={styles.summaryAutomationMark}
+                                data-active={automationMasterOn}
+                                title={`Jourvis automation: ${item.automationMode}`}
+                              >
+                                A
+                              </span>
+                            ) : null}
 
                             <StockIcon stockId={item.id} className={styles.summaryStockIcon} size={50} />
 
@@ -1003,6 +1033,19 @@ export default function MarinaraAutoinventoryPreviewPage() {
                     <strong>{selectedSupplier.name}</strong>
                     <small>{selectedContact.name} · {selectedContact.role}</small>
                     <small>{selectedContact.channel} · {selectedContact.email}</small>
+                  </div>
+
+                  <div className={styles.summaryAutomationCard} data-enabled={selected.automationEnabled}>
+                    <div>
+                      <span>JOURVIS AUTOMATION</span>
+                      <strong>{selected.automationEnabled ? selected.automationMode.replace("_", " ") : "Off for this supply"}</strong>
+                    </div>
+                    <small>
+                      {selected.automationEnabled
+                        ? `Target ${formatMoney(selected.targetPackPrice)} · auto-accept ≤ ${formatMoney(selected.autoAcceptPackPrice)} · hard stop ${formatMoney(selected.hardMaxPackPrice)}`
+                        : "Configure this supply if you want Jourvis to act automatically when stock is low."}
+                    </small>
+                    {automationAlerts[selected.id] ? <p>{automationAlerts[selected.id]}</p> : null}
                   </div>
 
                   <div className={styles.summaryAdvice}>
@@ -1380,7 +1423,7 @@ export default function MarinaraAutoinventoryPreviewPage() {
           ) : null}
         </main>
 
-        <div className={styles.previewNotice}><TriangleAlert size={16} aria-hidden /><p><strong>Preview only.</strong> Supplier names, contacts, prices, stock levels and recipes are demo data. A sent request stays pending until the simulated supplier response, buyer agreement and supplier confirmation. Only confirmed orders become incoming stock; no real email, SMS, database, purchasing or accounting action occurs.</p></div>
+        <div className={styles.previewNotice}><TriangleAlert size={16} aria-hidden /><p><strong>Preview only.</strong> Supplier names, contacts, prices, stock levels and recipes are demo data. Jourvis Automation can create simulated supplier requests from low-stock rules, auto-accept or counter quotes inside configured limits, and pause for owner approval when a rule is exceeded. No real email, SMS, database, purchasing or accounting action occurs.</p></div>
       </div>
 
       {contactDraft ? (
