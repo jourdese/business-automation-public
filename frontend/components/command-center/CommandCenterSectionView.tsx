@@ -19,6 +19,7 @@ import CompanionMark from "@/components/jourvis/CompanionMark";
 import SupplyPhoto from "./SupplyPhoto";
 import { operationCatalog } from "@/command-center/core/business-registry";
 import { jourvisAutonomyLoop } from "@/command-center/core/autonomy";
+import { buildCommandCenterForecast } from "@/command-center/core/forecast-engine";
 import {
   estimatedPurchaseTotal,
   inventoryPercent,
@@ -381,30 +382,158 @@ export default function CommandCenterSectionView({
   }
 
   if (section === "forecast") {
-    const forecasts = [
-      ["Revenue", "Next 7 days", "Predict sales and expected collections."],
-      ["Demand", "Next 7 days", "Predict customer volume and service demand."],
-      ["Cash", "Next 30 days", "Predict inflows, outflows, and cash pressure."],
-      ["Labor", "Next 14 days", "Predict staffing demand and labor cost."],
-      ...(business.operations.includes("inventory")
-        ? [["Inventory", "Next 7 days", `${lowStockCount} items are already at or below their low-stock level. Jourvis will use future demand to prepare purchasing before shortages occur.`]]
-        : []),
-    ];
+    const forecast = buildCommandCenterForecast(state, 7);
+    const connectedInventoryRows = forecast.inventoryRows.filter(
+      (row) => row.dailyUse > 0,
+    );
 
     return (
       <SectionFrame
         eyebrow="FORECAST"
         title="What Jourvis expects next."
-        description="Forecasts are inputs to automation. Jourvis should prepare and execute the next action before the business reaches a problem."
+        description="Forecasts are operating inputs, not decoration. This first runtime-backed forecast uses live inventory, expected daily consumption, incoming stock, supplier lead time, recipes, purchasing rules, and active purchase workflows."
       >
+        <div className={styles.metricGrid}>
+          {[
+            [
+              "Lead-time risk",
+              String(forecast.leadTimeRiskCount),
+              "ingredients exposed before or near supplier arrival",
+            ],
+            [
+              "7-day exposure",
+              String(forecast.horizonRiskCount),
+              "ingredients projected to reach a risk state",
+            ],
+            [
+              "Restock pressure",
+              String(forecast.purchasePressureCount),
+              "ingredients with a calculated replenishment need",
+            ],
+            [
+              "Demand inputs",
+              `${forecast.configuredDemandInputs}/${state.inventory.length}`,
+              "inventory items with configured daily usage",
+            ],
+          ].map(([label, value, note]) => (
+            <article className={styles.metricCard} key={label}>
+              <span>{label}</span>
+              <strong>{value}</strong>
+              <div>
+                <b>{forecast.horizonDays} days</b>
+                <small>{note}</small>
+              </div>
+            </article>
+          ))}
+        </div>
+
+        <article className={styles.panelCard}>
+          <PanelHeading
+            icon={<LineChart size={17} />}
+            eyebrow="INVENTORY FORECAST"
+            title="Projected stock, shortage pressure, and next action"
+          />
+          <div className={styles.forecastList}>
+            {forecast.inventoryRows.map((row) => (
+              <article
+                className={styles.forecastRow}
+                data-risk={row.risk}
+                key={row.itemId}
+              >
+                <div className={styles.forecastIdentity}>
+                  <SupplyPhoto
+                    supplyId={row.itemId}
+                    className={styles.forecastSupplyPhoto}
+                    size={48}
+                  />
+                  <div>
+                    <span>{row.risk.toUpperCase()}</span>
+                    <strong>{row.name}</strong>
+                    <small>
+                      {row.daysCover !== null
+                        ? `${row.daysCover} days cover`
+                        : "No daily-use forecast configured"}
+                      {" · "}
+                      lead time {row.leadDays} day{row.leadDays === 1 ? "" : "s"}
+                    </small>
+                  </div>
+                </div>
+
+                <div className={styles.forecastFacts}>
+                  <span>
+                    <small>On hand</small>
+                    <strong>{row.current} {row.unit}</strong>
+                  </span>
+                  <span>
+                    <small>Incoming</small>
+                    <strong>{row.incoming} {row.unit}</strong>
+                  </span>
+                  <span>
+                    <small>At supplier arrival</small>
+                    <strong>{row.projectedAtDelivery} {row.unit}</strong>
+                  </span>
+                  <span>
+                    <small>After {forecast.horizonDays} days</small>
+                    <strong>{row.projectedAtHorizon} {row.unit}</strong>
+                  </span>
+                  <span>
+                    <small>Recommended order</small>
+                    <strong>{row.recommendedQuantity} {row.unit}</strong>
+                  </span>
+                </div>
+
+                <div className={styles.forecastReason}>
+                  <span>NEXT JOURVIS ACTION</span>
+                  <p>{row.nextAction}</p>
+                  {row.affectedRecipes.length ? (
+                    <small>
+                      Menu/recipe impact: {row.affectedRecipes.join(", ")}
+                    </small>
+                  ) : null}
+                </div>
+              </article>
+            ))}
+
+            {!forecast.inventoryRows.length ? (
+              <div className={styles.activityEmpty}>
+                No inventory data is connected for this business yet.
+              </div>
+            ) : null}
+          </div>
+          <p className={styles.demoNote}>
+            {connectedInventoryRows.length} ingredient{connectedInventoryRows.length === 1 ? "" : "s"} currently have demand inputs. Production forecasting will replace configured daily-use baselines with POS history, reservations/orders, seasonality, promotions, supplier history, and other verified providers.
+          </p>
+        </article>
+
         <div className={styles.cardGrid}>
-          {forecasts.map(([title, horizon, description]) => (
+          {[
+            [
+              "Revenue",
+              "POS / accounting provider required",
+              "Revenue forecasting will activate when real sales history is connected.",
+            ],
+            [
+              "Customer demand",
+              "POS / reservations provider required",
+              "Covers and order demand will use real historical and forward demand signals.",
+            ],
+            [
+              "Cash",
+              "Finance provider required",
+              "Cash forecasting will use actual receivables, payables, balances, and scheduled outflows.",
+            ],
+            [
+              "Labor",
+              "Scheduling / timeclock provider required",
+              "Labor demand will connect forecasted workload to staffing and labor cost.",
+            ],
+          ].map(([title, source, description]) => (
             <article className={styles.moduleCard} key={title}>
               <LineChart size={19} />
-              <span>{horizon}</span>
+              <span>DATA SOURCE PENDING</span>
               <h3>{title}</h3>
               <p>{description}</p>
-              <small>Every production forecast will expose its inputs, confidence, explanation, and planned action.</small>
+              <small>{source}</small>
             </article>
           ))}
         </div>
