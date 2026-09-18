@@ -16,6 +16,7 @@ import {
   WalletCards,
 } from "lucide-react";
 import CompanionMark from "@/components/jourvis/CompanionMark";
+import SupplyPhoto from "./SupplyPhoto";
 import { operationCatalog } from "@/command-center/core/business-registry";
 import { jourvisAutonomyLoop } from "@/command-center/core/autonomy";
 import {
@@ -195,6 +196,11 @@ export default function CommandCenterSectionView({
                   key={item.id}
                 >
                   <div className={styles.taskQueueIdentity}>
+                    <SupplyPhoto
+                      supplyId={item.id}
+                      className={styles.taskQueuePhoto}
+                      size={48}
+                    />
                     <span className={styles.taskQueueIcon} data-mode={automatic ? "automatic" : "manual"}>
                       {automatic ? <Sparkles size={15} aria-hidden /> : <CirclePause size={15} aria-hidden />}
                     </span>
@@ -258,6 +264,11 @@ export default function CommandCenterSectionView({
                       <CompanionMark className={styles.managingMark} />
                       <span />
                     </div>
+                    <SupplyPhoto
+                      supplyId={item.id}
+                      className={styles.managingSupplyPhoto}
+                      size={38}
+                    />
                     <div>
                       <strong>{item.name}</strong>
                       <small>
