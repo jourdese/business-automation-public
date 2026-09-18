@@ -2296,3 +2296,54 @@
   text-transform: uppercase;
   box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.28);
 }
+
+
+/* One-time automation exception decision */
+.automationDecisionActions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.45rem;
+  margin-top: 0.55rem;
+}
+
+.automationDecisionActions button {
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.5rem 0.7rem;
+  border-radius: 2px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.015em;
+}
+
+.automationApprove {
+  border: 1px solid var(--mint);
+  background: var(--mint);
+  color: var(--ink);
+}
+
+.automationApprove:hover {
+  background: var(--ivory);
+  border-color: var(--ivory);
+}
+
+.automationReject {
+  border: 1px solid #b86459;
+  background: rgba(110, 47, 42, 0.24);
+  color: #ffb3aa;
+}
+
+.automationReject:hover {
+  border-color: #ff9e91;
+  background: rgba(139, 58, 51, 0.38);
+  color: #ffd5cf;
+}
+
+@media (max-width: 420px) {
+  .automationDecisionActions {
+    grid-template-columns: 1fr;
+  }
+}
