@@ -20,6 +20,7 @@ import {
   inventoryPercent,
   isPurchaseActive,
   projectedInventoryAtDelivery,
+  purchaseProgressStage,
   projectedInventoryPercentAtDelivery,
   type CommandCenterStockAdjustmentReason,
 } from "@/command-center/core/runtime";
@@ -386,6 +387,11 @@ export default function OperationModuleView({
           {purchases.map((purchase) => {
             const item = state.inventory.find((entry) => entry.id === purchase.itemId);
             const task = tasks.find((entry) => entry.requestId === purchase.id);
+            const supplier = supplierById.get(purchase.supplierId);
+            const contact =
+              supplier?.contacts.find((entry) => entry.id === purchase.contactId) ??
+              supplier?.contacts[0];
+            const progressStage = purchaseProgressStage(purchase.status);
             const received = purchase.receivedQuantity ?? 0;
             const remaining = Math.max(0, purchase.quantity - received);
             const canReceive =
@@ -393,6 +399,7 @@ export default function OperationModuleView({
               purchase.status === "partial_received";
             const receiveValue = receiveDrafts[purchase.id] ?? String(remaining || "");
             const editableQuantity = ![
+              "awaiting_confirmation",
               "confirmed",
               "in_transit",
               "partial_received",
@@ -418,15 +425,60 @@ export default function OperationModuleView({
                         ? "Started automatically by Jourvis"
                         : "Started after owner approval"}
                       {" · "}
-                      {supplierById.get(purchase.supplierId)?.name ?? purchase.supplierId}
+                      {supplier?.name ?? purchase.supplierId}
+                      {contact ? ` · ${contact.name} · ${contact.channel}` : ""}
                     </p>
                   </div>
+                </div>
+
+                <div
+                  className={styles.purchaseProgress}
+                  aria-label={`${purchase.id} purchase progress`}
+                >
+                  {[
+                    [1, "Request"],
+                    [2, "Supplier"],
+                    [3, "Agreement"],
+                    [4, "Confirmed"],
+                    [5, "Received"],
+                  ].map(([stage, label]) => (
+                    <span
+                      key={String(label)}
+                      data-reached={progressStage >= Number(stage)}
+                    >
+                      <i aria-hidden />
+                      {label}
+                    </span>
+                  ))}
+                </div>
+
+                <div className={styles.purchaseConfirmations}>
+                  <span data-confirmed={Boolean(purchase.buyerConfirmed)}>
+                    <i aria-hidden />
+                    Buyer {purchase.buyerConfirmed ? "confirmed" : "pending"}
+                  </span>
+                  <span data-confirmed={Boolean(purchase.supplierConfirmed)}>
+                    <i aria-hidden />
+                    Supplier {purchase.supplierConfirmed ? "confirmed" : "pending"}
+                  </span>
+                  {contact?.email ? <small>{contact.email}</small> : null}
                 </div>
 
                 <div className={styles.purchaseFacts}>
                   <div><span>Quantity</span><strong>{purchase.quantity} {item?.unit ?? ""}</strong></div>
                   <div><span>Value</span><strong>₱{Math.round(purchase.quotedTotal ?? purchase.estimatedTotal).toLocaleString("en-PH")}</strong></div>
-                  <div><span>Pack price</span><strong>₱{Math.round(purchase.quotedPackPrice ?? item?.packPrice ?? 0).toLocaleString("en-PH")}</strong></div>
+                  <div>
+                    <span>Pack price</span>
+                    <strong>
+                      {purchase.quotedPackPrice !== undefined
+                        ? `₱${Math.round(purchase.quotedPackPrice).toLocaleString("en-PH")}`
+                        : item?.purchasingMode === "quote"
+                          ? "Awaiting quote"
+                          : `₱${Math.round(item?.packPrice ?? 0).toLocaleString("en-PH")}`}
+                    </strong>
+                  </div>
+                  <div><span>Delivery fee</span><strong>{purchase.deliveryFee !== undefined ? `₱${Math.round(purchase.deliveryFee).toLocaleString("en-PH")}` : "—"}</strong></div>
+                  <div><span>ETA</span><strong>{purchase.etaDays !== undefined ? `${purchase.etaDays} day${purchase.etaDays === 1 ? "" : "s"}` : "Pending"}</strong></div>
                   <div><span>Mode</span><strong>{item?.purchasingMode === "quote" ? "Supplier quote" : "Fixed price"}</strong></div>
                   <div><span>Received</span><strong>{received} {item?.unit ?? ""}</strong></div>
                   <div>
@@ -599,6 +651,7 @@ export default function OperationModuleView({
                       <strong>{contact.name}</strong>
                       <small>{contact.role}</small>
                       <span>{contact.channel} · {contact.phone}</span>
+                      <span>{contact.email}</span>
                     </div>
                   ))}
                 </div>
