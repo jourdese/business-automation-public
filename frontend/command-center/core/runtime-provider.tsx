@@ -124,8 +124,20 @@ function addActivity(
 function normalizeStoredState(
   stored: CommandCenterRuntimeState,
 ): CommandCenterRuntimeState {
+  const seed = createSeed(stored.business?.id ?? businessIdFromPath());
+  const seedInventory = new Map(seed.inventory.map((item) => [item.id, item]));
+
   return {
+    ...seed,
     ...stored,
+    inventory: (stored.inventory ?? seed.inventory).map((item) => ({
+      ...(seedInventory.get(item.id) ?? item),
+      ...item,
+    })),
+    suppliers: stored.suppliers ?? seed.suppliers,
+    recipes: stored.recipes ?? seed.recipes,
+    pausedItemIds: stored.pausedItemIds ?? [],
+    purchases: stored.purchases ?? [],
     activity: (stored.activity ?? []).map((entry) => normalizeActivity(entry)),
   };
 }
