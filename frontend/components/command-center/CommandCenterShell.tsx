@@ -86,6 +86,17 @@ export default function CommandCenterShell({ children }: { children: ReactNode }
     return () => window.removeEventListener("popstate", sync);
   }, []);
 
+  useEffect(() => {
+    const handleUpdate = (event: Event) => {
+      const custom = event as CustomEvent<{ taskId?: string }>;
+      if (!custom.detail?.taskId) return;
+      setUpdateTaskId(custom.detail.taskId);
+      setJourvisOpenKey((value) => value + 1);
+    };
+    window.addEventListener("jourvis-command-center-update", handleUpdate);
+    return () => window.removeEventListener("jourvis-command-center-update", handleUpdate);
+  }, []);
+
   const business = useMemo(
     () => resolveCommandCenterBusiness(businessId),
     [businessId],
