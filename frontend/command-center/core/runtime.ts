@@ -233,6 +233,7 @@ export function evaluatePurchaseAuthority(
   const withinAutoAccept =
     total <= item.maxAutoOrderSpend &&
     packPrice <= item.autoAcceptPackPrice &&
+    packPrice <= item.hardMaxPackPrice &&
     quantity <= item.maxAutoOrderQty &&
     deliveryFee <= item.maxDeliveryFee &&
     etaDays <= item.maxLeadDays;
@@ -270,6 +271,67 @@ export function evaluatePurchaseAuthority(
   };
 }
 
+
+export function normalizeInventoryAuthorityConfiguration(
+  item: CommandCenterInventoryItem,
+): CommandCenterInventoryItem {
+  const hardMaxPackPrice = Math.max(0, item.hardMaxPackPrice);
+  const autoAcceptPackPrice = Math.min(
+    hardMaxPackPrice,
+    Math.max(0, item.autoAcceptPackPrice),
+  );
+  const targetPackPrice = Math.min(
+    autoAcceptPackPrice,
+    Math.max(0, item.targetPackPrice),
+  );
+
+  return {
+    ...item,
+    targetPackPrice,
+    autoAcceptPackPrice,
+    hardMaxPackPrice,
+  };
+}
+
+export function canAdvancePurchase(
+  state: CommandCenterRuntimeState,
+  purchase: CommandCenterPurchase,
+) {
+  const item = state.inventory.find((entry) => entry.id === purchase.itemId);
+  if (!item) return false;
+
+  if (purchase.status === "requested") {
+    if (purchase.origin === "owner") return true;
+    if (
+      purchase.automationMode !== "autobuy" ||
+      !state.automationMasterOn
+    ) {
+      return false;
+    }
+    return evaluatePurchaseAuthority(item, purchase).withinAutoAccept;
+  }
+
+  if (
+    purchase.status === "quote_requested" ||
+    purchase.status === "counter_sent" ||
+    purchase.status === "approved" ||
+    purchase.status === "confirmed"
+  ) {
+    return true;
+  }
+
+  if (
+    purchase.status === "quote_received" &&
+    purchase.origin === "jourvis" &&
+    purchase.automationMode === "autobuy" &&
+    state.automationMasterOn
+  ) {
+    const authority = evaluatePurchaseAuthority(item, purchase);
+    return authority.withinAutoAccept || authority.canNegotiate;
+  }
+
+  return false;
+}
 
 export function taskPriorityValue(priority: JourvisTaskPriority) {
   if (priority === "high") return 3;
