@@ -23,34 +23,72 @@ export function deriveJourvisTasks(
     const item = state.inventory.find((candidate) => candidate.id === purchase.itemId);
     if (!item) return;
 
-    if (purchase.status === "requested" && purchase.origin === "jourvis") {
-      const authority = evaluatePurchaseAuthority(item, purchase);
-      const reasons = [
-        !state.automationMasterOn
-          ? "Global autonomy is paused, so Jourvis will not approve this purchase automatically."
-          : null,
-        purchase.automationMode === "auto_contact"
-          ? "Your rule lets Jourvis contact the supplier, but not approve the purchase."
-          : null,
-        authority.total > item.maxAutoOrderSpend
-          ? `The known order total is ₱${Math.round(authority.total).toLocaleString("en-PH")}, above your ₱${Math.round(item.maxAutoOrderSpend).toLocaleString("en-PH")} automatic limit.`
-          : null,
-        authority.packPrice > item.autoAcceptPackPrice
-          ? `The pack price is ₱${Math.round(authority.packPrice).toLocaleString("en-PH")}, above your ₱${Math.round(item.autoAcceptPackPrice).toLocaleString("en-PH")} automatic price limit.`
-          : null,
-        authority.quantity > item.maxAutoOrderQty
-          ? `The requested quantity ${authority.quantity} ${item.unit} is above your automatic quantity limit of ${item.maxAutoOrderQty} ${item.unit}.`
-          : null,
-        authority.etaDays > item.maxLeadDays
-          ? `The expected lead time is ${authority.etaDays} days, above your ${item.maxLeadDays}-day automatic limit.`
-          : null,
-      ].filter(Boolean);
+    if (
+      purchase.origin === "jourvis" &&
+      !state.automationMasterOn &&
+      (
+        purchase.status === "requested" ||
+        purchase.status === "quote_requested"
+      )
+    ) {
+      tasks.push({
+        id: `decision-contact-${purchase.id}`,
+        businessId: state.business.id,
+        module: "purchasing",
+        entityId: item.id,
+        requestId: purchase.id,
+        priority: "medium",
+        state: "needs_owner",
+        title: `${item.name} supplier request is paused`,
+        whatHappened:
+          "Jourvis prepared the supplier request, but global autonomy was paused before the supplier-view step.",
+        why:
+          "Global autonomy is paused, so Jourvis will not contact the supplier automatically.",
+        whatJourvisDid:
+          "Jourvis kept the prepared request pending instead of contacting the supplier while autonomous work is paused.",
+        whyOwnerIsNeeded:
+          "The owner can approve this specific request, reject it, update the rule, or resume global autonomy.",
+        actions: ["approve", "reject", "update"],
+      });
+    }
 
-      if (
-        !state.automationMasterOn ||
-        purchase.automationMode === "auto_contact" ||
-        !authority.withinAutoAccept
-      ) {
+    if (
+      purchase.status === "supplier_viewed" &&
+      item.purchasingMode === "fixed" &&
+      purchase.origin === "jourvis" &&
+      !purchase.buyerConfirmed
+    ) {
+      const authority = evaluatePurchaseAuthority(item, purchase);
+      const autonomousWithinAuthority =
+        purchase.automationMode === "autobuy" &&
+        state.automationMasterOn &&
+        authority.withinAutoAccept;
+
+      if (!autonomousWithinAuthority) {
+        const reasons = [
+          !state.automationMasterOn
+            ? "Global autonomy is paused, so Jourvis will not accept the fixed-price terms automatically."
+            : null,
+          purchase.automationMode === "auto_contact"
+            ? "Your rule lets Jourvis contact the supplier, but not approve the purchase."
+            : null,
+          authority.total > item.maxAutoOrderSpend
+            ? `The known order total is ₱${Math.round(authority.total).toLocaleString("en-PH")}, above your ₱${Math.round(item.maxAutoOrderSpend).toLocaleString("en-PH")} automatic limit.`
+            : null,
+          authority.packPrice > item.autoAcceptPackPrice
+            ? `The pack price is ₱${Math.round(authority.packPrice).toLocaleString("en-PH")}, above your ₱${Math.round(item.autoAcceptPackPrice).toLocaleString("en-PH")} automatic price limit.`
+            : null,
+          authority.packPrice > item.hardMaxPackPrice
+            ? `The pack price also exceeds your absolute ceiling of ₱${Math.round(item.hardMaxPackPrice).toLocaleString("en-PH")}.`
+            : null,
+          authority.quantity > item.maxAutoOrderQty
+            ? `The requested quantity ${authority.quantity} ${item.unit} is above your automatic quantity limit of ${item.maxAutoOrderQty} ${item.unit}.`
+            : null,
+          authority.etaDays > item.maxLeadDays
+            ? `The expected lead time is ${authority.etaDays} days, above your ${item.maxLeadDays}-day automatic limit.`
+            : null,
+        ].filter(Boolean);
+
         tasks.push({
           id: `decision-fixed-${purchase.id}`,
           businessId: state.business.id,
@@ -60,10 +98,15 @@ export function deriveJourvisTasks(
           priority: authority.withinAutoAccept ? "medium" : "high",
           state: "needs_owner",
           title: `${item.name} purchase needs approval`,
-          whatHappened: `Jourvis prepared a fixed-price purchase for ₱${Math.round(purchase.estimatedTotal).toLocaleString("en-PH")}.`,
-          why: reasons.join(" ") || "The purchase requires owner authority before Jourvis can continue.",
-          whatJourvisDid: "Jourvis prepared the supplier request but stopped before approving terms outside its authority.",
-          whyOwnerIsNeeded: "The owner must approve the purchase or update Jourvis' authority.",
+          whatHappened:
+            `The supplier viewed the fixed-price request for ₱${Math.round(purchase.estimatedTotal).toLocaleString("en-PH")}.`,
+          why:
+            reasons.join(" ") ||
+            "The purchase requires owner authority before Jourvis can accept the terms.",
+          whatJourvisDid:
+            "Jourvis contacted the supplier and stopped after the supplier viewed the request instead of accepting terms outside its authority.",
+          whyOwnerIsNeeded:
+            "The owner must approve the purchase or update Jourvis' authority.",
           actions: ["approve", "reject", "update"],
         });
       }
