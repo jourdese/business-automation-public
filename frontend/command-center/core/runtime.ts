@@ -83,6 +83,7 @@ export type CommandCenterPurchase = {
   receivedQuantity?: number;
   createdAt: string;
   origin: "jourvis" | "owner";
+  automationMode?: "assist" | "auto_contact" | "autobuy";
   explanation: string;
 };
 
