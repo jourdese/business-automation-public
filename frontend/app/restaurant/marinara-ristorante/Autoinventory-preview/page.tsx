@@ -565,6 +565,10 @@ export default function MarinaraAutoinventoryPreviewPage() {
   const jourvisTaskRequest = jourvisTask?.requestId
     ? procurements.find((request) => request.id === jourvisTask.requestId)
     : undefined;
+  const jourvisTaskQuoteExplanation =
+    jourvisTask?.kind === "quote_approval" && jourvisTaskRequest && jourvisTaskItem
+      ? quoteDecisionExplanation(jourvisTaskRequest, jourvisTaskItem, ingredients)
+      : undefined;
   const jourvisWorkingRequest = !jourvisTask
     ? activeProcurements.find((request) =>
         ["requested", "supplier_viewed", "counter_sent", "awaiting_confirmation", "confirmed", "in_transit", "partial_received"].includes(request.status),
@@ -611,9 +615,11 @@ export default function MarinaraAutoinventoryPreviewPage() {
     ? jourvisTask.kind === "automation_exception"
       ? `${jourvisTaskItem.name} is outside one of my automatic limits.`
       : jourvisTask.kind === "quote_approval"
-        ? `${jourvisTaskItem.name} has a supplier quote that needs your decision.`
+        ? jourvisTaskQuoteExplanation
+          ? `${jourvisTaskItem.name}: ${jourvisTaskQuoteExplanation.primary}`
+          : `${jourvisTaskItem.name} has a supplier quote that needs your decision.`
         : jourvisTask.kind === "fixed_approval"
-          ? `${jourvisTaskItem.name} has a purchase order ready for approval.`
+          ? `${jourvisTaskItem.name}: I contacted the supplier, but your rule does not let me approve the purchase myself.`
           : jourvisTask.kind === "automation_paused"
             ? `${jourvisTaskItem.name} reached my ${jourvisTaskItem.automationTriggerPercent}% trigger, but Jourvis Auto is paused.`
             : `${jourvisTaskItem.name} is low and needs restocking.`
@@ -639,12 +645,14 @@ export default function MarinaraAutoinventoryPreviewPage() {
     ? jourvisTask.kind === "automation_exception"
       ? automationAlerts[jourvisTaskItem.id]
       : jourvisTask.kind === "quote_approval" && jourvisTaskRequest
-        ? `${getSupplier(jourvisTaskItem).name} quoted ${formatMoney(procurementTotal(jourvisTaskRequest, ingredients))}. Approve, reject, or review the quote.`
+        ? jourvisTaskQuoteExplanation
+          ? `${getSupplier(jourvisTaskItem).name} quoted ${formatMoney(jourvisTaskQuoteExplanation.quotedTotal)}. ${jourvisTaskQuoteExplanation.detail} I stopped instead of accepting it automatically.`
+          : `${getSupplier(jourvisTaskItem).name} sent a quote. I need your decision before I continue.`
         : jourvisTask.kind === "fixed_approval" && jourvisTaskRequest
-          ? `The known order total is ${formatMoney(procurementTotal(jourvisTaskRequest, ingredients))}. Jourvis is waiting for your approval before supplier confirmation.`
+          ? `The order total is ${formatMoney(procurementTotal(jourvisTaskRequest, ingredients))}. Your rule is “Contact supplier,” so I can prepare the order but you must approve it.`
           : jourvisTask.kind === "automation_paused"
-            ? "Turn Jourvis Auto on if you want me to start handling configured items again."
-            : `Current stock is ${percent(jourvisTaskItem)}%. Choose Approve, Reject, or Update.`
+            ? `${jourvisTaskItem.name} reached ${jourvisTaskItem.automationTriggerPercent}% or lower, which is the trigger you set, but global automation is OFF. I need you because I am not allowed to act while it is paused.`
+            : `${jourvisTaskItem.name} is at ${percent(jourvisTaskItem)}%, below the low-stock warning of ${Math.round((jourvisTaskItem.reorderAt / Math.max(jourvisTaskItem.fullLevel, 0.01)) * 100)}%. I need you because this item is set to ${jourvisTaskItem.automationEnabled ? automationModeLabel(jourvisTaskItem.automationMode).toLowerCase() : "manual handling"}.`
     : jourvisWorkingRequest?.automationNote
       ? jourvisWorkingRequest.automationNote
       : jourvisWorkingRequest
