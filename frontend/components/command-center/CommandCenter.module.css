@@ -2290,6 +2290,105 @@
   border: 1px solid #3a5059;
 }
 
+.purchaseProgress {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0;
+  padding: 0.5rem 0.75rem;
+  border-top: 1px solid var(--cc-line);
+  background: rgba(7, 19, 27, 0.55);
+}
+
+.purchaseProgress span {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-width: 0;
+  color: #6f8189;
+  font: 0.52rem var(--font-mono);
+}
+
+.purchaseProgress span::after {
+  content: "";
+  position: absolute;
+  left: 10px;
+  right: 0;
+  top: 5px;
+  height: 1px;
+  background: #314750;
+  transform: translateX(12px);
+}
+
+.purchaseProgress span:last-child::after {
+  display: none;
+}
+
+.purchaseProgress i {
+  position: relative;
+  z-index: 1;
+  width: 10px;
+  height: 10px;
+  flex: 0 0 auto;
+  border: 1px solid #435962;
+  border-radius: 50%;
+  background: #08161e;
+}
+
+.purchaseProgress span[data-reached="true"] {
+  color: var(--mint);
+}
+
+.purchaseProgress span[data-reached="true"] i {
+  border-color: var(--mint);
+  background: var(--mint);
+}
+
+.purchaseProgress span[data-reached="true"]::after {
+  background: #476b5d;
+}
+
+.purchaseConfirmations {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  padding: 0.5rem 0.75rem;
+  border-top: 1px solid var(--cc-line);
+  background: rgba(7, 19, 27, 0.32);
+}
+
+.purchaseConfirmations span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.32rem;
+  color: var(--cc-muted);
+  font-size: 0.54rem;
+}
+
+.purchaseConfirmations i {
+  width: 7px;
+  height: 7px;
+  border: 1px solid #50646d;
+  border-radius: 50%;
+  background: #0a1820;
+}
+
+.purchaseConfirmations span[data-confirmed="true"] {
+  color: var(--mint);
+}
+
+.purchaseConfirmations span[data-confirmed="true"] i {
+  border-color: var(--mint);
+  background: var(--mint);
+}
+
+.purchaseConfirmations small {
+  margin-left: auto;
+  color: #72848c;
+  font-size: 0.52rem;
+}
+
 .purchaseFacts {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -2876,6 +2975,24 @@
 }
 
 @media (max-width: 620px) {
+  .purchaseProgress {
+    grid-template-columns: 1fr;
+    gap: 0.32rem;
+  }
+
+  .purchaseProgress span::after {
+    display: none;
+  }
+
+  .purchaseConfirmations {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .purchaseConfirmations small {
+    margin-left: 0;
+  }
+
   .menuEconomics {
     grid-template-columns: 1fr;
   }
