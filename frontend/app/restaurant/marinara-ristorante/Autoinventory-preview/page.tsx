@@ -279,7 +279,6 @@ export default function MarinaraAutoinventoryPreviewPage() {
     [ingredients, activeProcurementItemIds],
   );
 
-  const incoming = useMemo(() => ingredients.filter((item) => item.incoming > 0), [ingredients]);
   const activeProcurements = useMemo(
     () => procurements.filter((request) => activeProcurementStatus(request.status)),
     [procurements],
@@ -320,20 +319,6 @@ export default function MarinaraAutoinventoryPreviewPage() {
 
   function updateIngredient(id: string, updater: (item: Ingredient) => Ingredient) {
     setIngredients((current) => current.map((item) => (item.id === id ? updater(item) : item)));
-  }
-
-  function receive(item: Ingredient) {
-    if (item.incoming <= 0) {
-      log(`No incoming ${item.name} delivery is waiting to be received.`);
-      return;
-    }
-    const amount = item.incoming;
-    updateIngredient(item.id, (current) => ({
-      ...current,
-      current: round(current.current + current.incoming),
-      incoming: 0,
-    }));
-    log(`Delivery received: ${amount} ${item.unit} of ${item.name}. On-hand inventory increased.`);
   }
 
   function recordWaste(item: Ingredient) {
@@ -1186,14 +1171,14 @@ export default function MarinaraAutoinventoryPreviewPage() {
           ) : null}
         </main>
 
-        <div className={styles.previewNotice}><TriangleAlert size={16} aria-hidden /><p><strong>Preview only.</strong> Supplier names, contacts, prices, stock levels and recipes are demo data. Contact Supplier simulates the request and adds the chosen quantity to incoming stock; no real email, SMS, database, purchasing or accounting action occurs.</p></div>
+        <div className={styles.previewNotice}><TriangleAlert size={16} aria-hidden /><p><strong>Preview only.</strong> Supplier names, contacts, prices, stock levels and recipes are demo data. A sent request stays pending until the simulated supplier response, buyer agreement and supplier confirmation. Only confirmed orders become incoming stock; no real email, SMS, database, purchasing or accounting action occurs.</p></div>
       </div>
 
       {contactDraft ? (
         <div className={styles.modalBackdrop} role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setContactDraft(null); }}>
           <section className={styles.contactModal} role="dialog" aria-modal="true" aria-labelledby="contact-modal-title">
             <div className={styles.modalHeader}>
-              <div><span>SUPPLIER REQUEST</span><h2 id="contact-modal-title">{contactDraft.title}</h2><p>Change the contact person and requested quantity before sending.</p></div>
+              <div><span>SUPPLIER REQUEST</span><h2 id="contact-modal-title">{contactDraft.title}</h2><p>Change the contact person and quantity before sending. Quote-mode requests must be priced and mutually confirmed before they become incoming stock.</p></div>
               <button type="button" onClick={() => setContactDraft(null)} aria-label="Close supplier request"><X size={19} aria-hidden /></button>
             </div>
 
@@ -1204,9 +1189,9 @@ export default function MarinaraAutoinventoryPreviewPage() {
                 const selectedContactId = contactDraft.contactBySupplier[supplier.id] ?? first.contactId;
                 const contact = supplier.contacts.find((candidate) => candidate.id === selectedContactId) ?? supplier.contacts[0];
                 return (
-                  <div className={styles.modalSupplier} key={supplier.id}>
+                  <div className={styles.modalSupplier} key={`${supplier.id}-${first.purchasingMode}`}>
                     <div className={styles.modalSupplierHead}>
-                      <div><span>{supplier.name}</span><strong>{contact.name}</strong><small>{contact.role}</small></div>
+                      <div><span>{supplier.name}</span><strong>{contact.name}</strong><small>{contact.role}</small><small>{first.purchasingMode === "quote" ? "Quote required before agreement" : "Fixed-price PO · supplier acknowledgment required"}</small></div>
                       <div>
                         <span>CONTACT PERSON</span>
                         <select
@@ -1226,7 +1211,7 @@ export default function MarinaraAutoinventoryPreviewPage() {
                       const estimatedCost = Math.ceil(packs) * item.packPrice;
                       return (
                         <div className={styles.requestItem} key={item.id}>
-                          <div className={styles.requestItemTitle}><div className={styles.requestItemName}><StockIcon stockId={item.id} className={styles.stockIconSmall} size={18} /><div><strong>{item.name}</strong><small>Jourvis suggests {suggestedOrder(item)} {item.unit} · {item.purchaseUnit}</small></div></div><span>After delivery ~{Math.min(100, Math.round(((item.current + item.incoming + quantity) / item.fullLevel) * 100))}%</span></div>
+                          <div className={styles.requestItemTitle}><div className={styles.requestItemName}><StockIcon stockId={item.id} className={styles.stockIconSmall} size={18} /><div><strong>{item.name}</strong><small>Jourvis suggests {suggestedOrder(item)} {item.unit} · {item.purchaseUnit}</small></div></div><span>If confirmed ~{Math.min(100, Math.round(((item.current + item.incoming + quantity) / item.fullLevel) * 100))}%</span></div>
                           <div className={styles.quantityEditor}>
                             <button type="button" onClick={() => changeDraftQuantity(item, quantity - item.packSize)} aria-label={`Decrease ${item.name} quantity`}>−</button>
                             <label><span>Quantity to request</span><div><input type="number" min="0" step={item.packSize} value={quantity} onChange={(event) => changeDraftQuantity(item, Number(event.target.value) || 0)} /><b>{item.unit}</b></div></label>
@@ -1241,7 +1226,7 @@ export default function MarinaraAutoinventoryPreviewPage() {
               })}
             </div>
 
-            <div className={styles.modalFooter}><button type="button" className={styles.secondaryButton} onClick={() => setContactDraft(null)}>Cancel</button><button type="button" className={styles.primaryButton} onClick={sendContactRequests}><Mail size={16} aria-hidden /> Send demo request{supplierGroupsForItems(ingredients.filter((item) => contactDraft.itemIds.includes(item.id))).length > 1 ? "s" : ""}</button></div>
+            <div className={styles.modalFooter}><button type="button" className={styles.secondaryButton} onClick={() => setContactDraft(null)}>Cancel</button><button type="button" className={styles.primaryButton} onClick={sendContactRequests}><Mail size={16} aria-hidden /> Send supplier request{supplierGroupsForItems(ingredients.filter((item) => contactDraft.itemIds.includes(item.id))).length > 1 ? "s" : ""}</button></div>
           </section>
         </div>
       ) : null}
