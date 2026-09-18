@@ -489,6 +489,7 @@ export default function MarinaraAutoinventoryPreviewPage() {
     setActiveTab("overview");
     setStockFilter("All");
     setSearchTerm("");
+    setAutomationAlerts({});
     setContactDraft(null);
     setProcurements([]);
     setActivity([
