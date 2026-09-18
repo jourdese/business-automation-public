@@ -62,6 +62,7 @@ export function createMarinaraRuntimeSeed(): CommandCenterRuntimeState {
         id: "seafood-marinara",
         name: "Seafood Marinara",
         description: "Pasta, tomato sauce, shrimp, squid, basil and Parmigiano.",
+        active: true,
         ingredients: {
           pasta: 0.18,
           tomato: 0.16,
@@ -76,6 +77,7 @@ export function createMarinaraRuntimeSeed(): CommandCenterRuntimeState {
         id: "shrimp-alfredo",
         name: "Shrimp & Mushroom Alfredo",
         description: "Creamy pasta with shrimp, mushroom and Parmigiano.",
+        active: true,
         ingredients: {
           pasta: 0.18,
           shrimp: 0.09,
@@ -89,6 +91,7 @@ export function createMarinaraRuntimeSeed(): CommandCenterRuntimeState {
         id: "quattro",
         name: "Quattro Formaggi Pizza",
         description: "Pizza flour, mozzarella and Parmigiano.",
+        active: true,
         ingredients: {
           flour: 0.24,
           mozzarella: 0.13,
@@ -101,6 +104,7 @@ export function createMarinaraRuntimeSeed(): CommandCenterRuntimeState {
         id: "salmon",
         name: "Grilled Salmon Fillet",
         description: "Salmon with olive oil, mushrooms and herbs.",
+        active: true,
         ingredients: {
           salmon: 0.19,
           mushroom: 0.05,
@@ -116,6 +120,8 @@ export function createMarinaraRuntimeSeed(): CommandCenterRuntimeState {
       dishKey: item.dishKey,
       category: item.category,
       variant: item.variant ?? undefined,
+      description: item.description,
+      currentPrice: undefined,
       referencePrice:
         item.referencePriceCents === null
           ? undefined
@@ -123,6 +129,8 @@ export function createMarinaraRuntimeSeed(): CommandCenterRuntimeState {
       referenceSource: "archived-menu-photo" as const,
       referencePublicationDate: item.sourcePublicationDate ?? undefined,
       currentPriceVerified: false,
+      active: true,
+      available: true,
       recipeId: recipeIdByMenuItemId[item.key],
     })),
     pausedItemIds: [],
