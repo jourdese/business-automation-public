@@ -380,7 +380,7 @@ export default function CommandCenterShell({ children }: { children: ReactNode }
               </label>
               <label>
                 <span>Max pack price</span>
-                <div><b>₱</b><input type="number" min="0" value={updateItem.autoAcceptPackPrice} onChange={(event) => updateDraftItem({ autoAcceptPackPrice: Math.max(0, Number(event.target.value) || 0) })} /></div>
+                <div><b>₱</b><input type="number" min="0" value={updateItem.autoAcceptPackPrice} onChange={(event) => updateDraftItem({ autoAcceptPackPrice: Math.min(updateItem.hardMaxPackPrice, Math.max(0, Number(event.target.value) || 0)) })} /></div>
               </label>
             </div>
 
@@ -461,7 +461,7 @@ export default function CommandCenterShell({ children }: { children: ReactNode }
               <div className={styles.ruleEditorGrid}>
                 <label>
                   <span>Negotiation target</span>
-                  <div><b>₱</b><input type="number" min="0" value={updateItem.targetPackPrice} onChange={(event) => updateDraftItem({ targetPackPrice: Math.max(0, Number(event.target.value) || 0) })} /></div>
+                  <div><b>₱</b><input type="number" min="0" value={updateItem.targetPackPrice} onChange={(event) => updateDraftItem({ targetPackPrice: Math.min(updateItem.autoAcceptPackPrice, Math.max(0, Number(event.target.value) || 0)) })} /></div>
                 </label>
                 <label>
                   <span>Absolute ceiling</span>
