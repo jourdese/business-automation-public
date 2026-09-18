@@ -610,6 +610,7 @@ export default function MarinaraAutoinventoryPreviewPage() {
         item.automationMode !== "assist" &&
         automationTriggered(item) &&
         !automationRejected[item.id] &&
+        jourvisUpdateItemId !== item.id &&
         !activeItemIds.has(item.id),
     );
 
@@ -741,7 +742,7 @@ export default function MarinaraAutoinventoryPreviewPage() {
           : `${request.id}: Jourvis automatically contacted ${supplier.name} because configured stock reached its trigger.`,
       );
     });
-  }, [automationMasterOn, ingredients, procurements, automationRejected]);
+  }, [automationMasterOn, ingredients, procurements, automationRejected, jourvisUpdateItemId]);
 
   useEffect(() => {
     if (!runtimeReady) return;
@@ -1571,6 +1572,10 @@ export default function MarinaraAutoinventoryPreviewPage() {
             <div><b>₱</b><input type="number" min="0" value={jourvisUpdateItem.packPrice} onChange={(event) => updateJourvisConfig(jourvisUpdateItem.id, { packPrice: Math.max(0, Number(event.target.value) || 0) })} /></div>
           </label>
           <label>
+            <span>Purchase unit label</span>
+            <input type="text" value={jourvisUpdateItem.purchaseUnit} onChange={(event) => updateJourvisConfig(jourvisUpdateItem.id, { purchaseUnit: event.target.value })} />
+          </label>
+          <label>
             <span>Lead time</span>
             <div><input type="number" min="0" step="0.5" value={jourvisUpdateItem.leadDays} onChange={(event) => updateJourvisConfig(jourvisUpdateItem.id, { leadDays: Math.max(0, Number(event.target.value) || 0) })} /><b>days</b></div>
           </label>
@@ -1586,6 +1591,8 @@ export default function MarinaraAutoinventoryPreviewPage() {
           <label><span>Max delivery fee</span><div><b>₱</b><input type="number" min="0" value={jourvisUpdateItem.maxDeliveryFee} onChange={(event) => updateJourvisConfig(jourvisUpdateItem.id, { maxDeliveryFee: Math.max(0, Number(event.target.value) || 0) })} /></div></label>
           <label><span>Max lead time</span><div><input type="number" min="0" step="0.5" value={jourvisUpdateItem.maxLeadDays} onChange={(event) => updateJourvisConfig(jourvisUpdateItem.id, { maxLeadDays: Math.max(0, Number(event.target.value) || 0) })} /><b>days</b></div></label>
           <label><span>Auto-negotiate</span><select value={jourvisUpdateItem.autoNegotiate ? "yes" : "no"} onChange={(event) => updateJourvisConfig(jourvisUpdateItem.id, { autoNegotiate: event.target.value === "yes" })}><option value="yes">Yes</option><option value="no">No</option></select></label>
+          <label><span>Max counteroffers</span><input type="number" min="0" max="5" value={jourvisUpdateItem.maxCounteroffers} onChange={(event) => updateJourvisConfig(jourvisUpdateItem.id, { maxCounteroffers: Math.max(0, Math.min(5, Number(event.target.value) || 0)) })} /></label>
+          <label><span>Demo behavior</span><select value={jourvisUpdateItem.automationPreview ? "preview" : "active"} onChange={(event) => updateJourvisConfig(jourvisUpdateItem.id, { automationPreview: event.target.value === "preview" })}><option value="preview">Preview</option><option value="active">Run simulation automatically</option></select></label>
         </div>
       </details>
 
@@ -1607,7 +1614,7 @@ export default function MarinaraAutoinventoryPreviewPage() {
               <span className={styles.previewPill}>SIMULATION</span>
             </div>
             <p className={styles.intro}>
-              Stock, recipes and supplier communication in one compact workspace. Supplier and contact choices can be configured per stock item.
+              Stock, recipes and supplier communication in one compact workspace. Use Jourvis → Update for all configuration.
             </p>
           </div>
           <div className={styles.ownerPulse}>
@@ -1780,6 +1787,8 @@ export default function MarinaraAutoinventoryPreviewPage() {
                               </span>
                             ) : automationAlerts[item.id] ? (
                               <span className={styles.summaryAutomationAlert}>Ask owner</span>
+                            ) : automationRejected[item.id] ? (
+                              <span className={styles.summaryAutomationAlert}>Paused</span>
                             ) : null}
 
                             {showSummaryLabels ? (
@@ -1868,6 +1877,13 @@ export default function MarinaraAutoinventoryPreviewPage() {
                             onClick={() => rejectAutomationException(selected)}
                           >
                             <X size={14} aria-hidden /> Reject
+                          </button>
+                          <button
+                            type="button"
+                            className={styles.automationUpdate}
+                            onClick={() => openJourvisUpdate(selected)}
+                          >
+                            <Settings2 size={14} aria-hidden /> Update
                           </button>
                         </div>
                       </>
