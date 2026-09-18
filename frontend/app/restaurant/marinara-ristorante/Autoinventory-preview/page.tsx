@@ -197,6 +197,22 @@ function supplierGroupsForItems(items: Ingredient[]) {
   return [...grouped.values()];
 }
 
+function automationGroupsForItems(items: Ingredient[]) {
+  const grouped = new Map<string, Ingredient[]>();
+  items.forEach((item) => {
+    const key = [
+      item.supplierId,
+      item.purchasingMode,
+      item.automationMode,
+      item.automationPreview ? "preview" : "active",
+    ].join("::");
+    const list = grouped.get(key) ?? [];
+    list.push(item);
+    grouped.set(key, list);
+  });
+  return [...grouped.values()];
+}
+
 function procurementStatusLabel(status: ProcurementStatus) {
   if (status === "requested") return "Request sent";
   if (status === "supplier_viewed") return "Supplier viewed";
@@ -381,7 +397,7 @@ export default function MarinaraAutoinventoryPreviewPage() {
 
     if (!eligible.length) return;
 
-    const groups = supplierGroupsForItems(eligible);
+    const groups = automationGroupsForItems(eligible);
     const startIndex = procurements.length;
 
     const automaticRequests: ProcurementRequest[] = groups.map((items, index) => {
