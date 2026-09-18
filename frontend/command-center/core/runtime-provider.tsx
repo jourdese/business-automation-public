@@ -417,7 +417,12 @@ export function CommandCenterRuntimeProvider({
       setState((current) => advanceOneAutonomousStep(current));
     }, 900);
     return () => window.clearTimeout(timer);
-  }, [loading, state.inventory, state.purchases]);
+  }, [
+    loading,
+    state.automationMasterOn,
+    state.inventory,
+    state.purchases,
+  ]);
 
   const tasks = useMemo(() => deriveJourvisTasks(state), [state]);
 
