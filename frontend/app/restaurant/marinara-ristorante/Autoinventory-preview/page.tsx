@@ -579,7 +579,7 @@ export default function MarinaraAutoinventoryPreviewPage() {
       : jourvisWorkingRequest
         ? "I’m handling the supplier-side demo automatically. I’ll interrupt you only when a decision belongs to you."
         : selectedAutomationPaused
-          ? `You paused automation for ${selected.name} after rejecting a purchase. I will not try again until you resume it.`
+          ? `You paused automation for ${selected.name} after rejecting a purchase. I will not try again until you use Update to change the rule.`
           : selected.automationEnabled
             ? `I act at ${selected.automationTriggerPercent}% or lower in ${selected.automationMode === "assist" ? "watch only" : selected.automationMode === "auto_contact" ? "contact supplier" : "buy within limits"} mode.`
             : "Use Update if you want me to watch this supply or handle purchasing within your limits.";
@@ -1859,7 +1859,7 @@ export default function MarinaraAutoinventoryPreviewPage() {
                     {selectedAutomationPaused ? (
                       <div className={styles.automationPausedNotice}>
                         <span>PAUSED BY YOU</span>
-                        <p>Jourvis will not create another automatic purchase for {selected.name} until you resume it.</p>
+                        <p>Jourvis will not create another automatic purchase for {selected.name} until you use Update to change its rule.</p>
                         <button type="button" onClick={() => openJourvisUpdate(selected)}>
                           Update
                         </button>
