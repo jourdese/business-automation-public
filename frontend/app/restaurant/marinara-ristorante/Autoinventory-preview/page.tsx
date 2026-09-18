@@ -823,9 +823,12 @@ export default function MarinaraAutoinventoryPreviewPage() {
       return;
     }
 
+    const nextCurrent = round(Math.max(0, item.current + change));
+    const appliedChange = round(nextCurrent - item.current);
+
     updateIngredient(item.id, (current) => ({
       ...current,
-      current: round(Math.max(0, current.current + change)),
+      current: nextCurrent,
     }));
 
     const labels: Record<StockAdjustment["reason"], string> = {
@@ -837,7 +840,7 @@ export default function MarinaraAutoinventoryPreviewPage() {
     };
 
     log(
-      `Stock adjusted: ${item.name} ${change > 0 ? "+" : ""}${change} ${item.unit} · ${labels[stockAdjustment.reason]}.`,
+      `Stock adjusted: ${item.name} ${appliedChange > 0 ? "+" : ""}${appliedChange} ${item.unit} · ${labels[stockAdjustment.reason]}.`,
     );
     setStockAdjustment(null);
   }
