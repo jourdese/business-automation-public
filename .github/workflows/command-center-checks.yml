@@ -1,0 +1,44 @@
+name: Command Center checks
+
+on:
+  push:
+    branches: [jourvis/command-center-v1]
+  pull_request:
+    branches: [main]
+    paths:
+      - "frontend/app/command-center/**"
+      - "frontend/command-center/**"
+      - "frontend/components/command-center/**"
+      - "frontend/scripts/command-center-runtime.test.ts"
+      - "frontend/package.json"
+      - "frontend/package-lock.json"
+      - ".github/workflows/command-center-checks.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: command-center-checks-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  frontend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint:command-center
+      - run: node --experimental-strip-types --test scripts/command-center-runtime.test.ts
+      - run: npm run build
