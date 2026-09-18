@@ -1,7 +1,7 @@
 import {
   initialIngredients,
   suppliers,
-} from "@/app/restaurant/marinara-ristorante/Autoinventory-preview/inventory-config";
+} from "@/lib/businesses/restaurant/marinara-ristorante/inventory-config";
 import { marinaraOriginalMenu } from "@/lib/businesses/restaurant/marinara-ristorante/menu";
 import { marinaraRistoranteBusiness } from "./marinara-ristorante";
 import type { CommandCenterRuntimeState } from "../core/runtime";
