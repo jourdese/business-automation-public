@@ -29,10 +29,20 @@ export default function AutoinventoryConfigurePage() {
   const [guideStep, setGuideStep] = useState<number | null>(null);
 
   useEffect(() => {
-    const configured = loadConfiguredIngredients();
-    setItems(configured);
-    const requested = new URLSearchParams(window.location.search).get("stock");
-    if (requested && configured.some((item) => item.id === requested)) setSelectedId(requested);
+    const refresh = () => {
+      const configured = loadConfiguredIngredients();
+      setItems(configured);
+      const requested = new URLSearchParams(window.location.search).get("stock");
+      if (requested && configured.some((item) => item.id === requested)) setSelectedId(requested);
+    };
+
+    refresh();
+    window.addEventListener("focus", refresh);
+    window.addEventListener("storage", refresh);
+    return () => {
+      window.removeEventListener("focus", refresh);
+      window.removeEventListener("storage", refresh);
+    };
   }, []);
 
   const selected = items.find((item) => item.id === selectedId) ?? items[0];
