@@ -97,6 +97,7 @@ function createPurchase(
     estimatedTotal: estimatedPurchaseTotal(item, quantity),
     createdAt: new Date().toISOString(),
     origin,
+    automationMode: item.automationMode,
     explanation:
       origin === "jourvis"
         ? "Jourvis started this purchase automatically because stock reached its configured trigger."
@@ -165,16 +166,25 @@ function advanceOneAutonomousStep(
   state: CommandCenterRuntimeState,
 ): CommandCenterRuntimeState {
   const purchase = state.purchases.find((candidate) => {
-    if (candidate.status === "requested") return true;
+    const item = state.inventory.find((entry) => entry.id === candidate.itemId);
+    if (!item) return false;
+
+    if (candidate.status === "requested") {
+      if (candidate.origin === "owner") return true;
+      if (candidate.automationMode !== "autobuy") return false;
+      return (
+        candidate.estimatedTotal <= item.maxAutoOrderSpend &&
+        item.packPrice <= item.autoAcceptPackPrice
+      );
+    }
     if (candidate.status === "quote_requested") return true;
     if (candidate.status === "approved") return true;
     if (candidate.status === "confirmed") return true;
     if (
       candidate.status === "quote_received" &&
-      candidate.origin === "jourvis"
+      candidate.origin === "jourvis" &&
+      candidate.automationMode === "autobuy"
     ) {
-      const item = state.inventory.find((entry) => entry.id === candidate.itemId);
-      if (!item || item.automationMode !== "autobuy") return false;
       const quotedTotal = candidate.quotedTotal ?? candidate.estimatedTotal;
       const quotedPackPrice = candidate.quotedPackPrice ?? item.packPrice;
       return (
