@@ -1,17 +1,35 @@
 "use client";
 
-import { type ReactNode, useEffect, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft,
   ArrowRight,
   Bot,
   CheckCircle2,
+  MinusCircle,
+  PackageCheck,
+  PlusCircle,
+  ReceiptText,
+  ShoppingBasket,
+  Trash2,
   Truck,
 } from "lucide-react";
 import { operationCatalog } from "@/command-center/core/business-registry";
-import { inventoryPercent, isPurchaseActive } from "@/command-center/core/runtime";
+import {
+  inventoryPercent,
+  isPurchaseActive,
+  type CommandCenterStockAdjustmentReason,
+} from "@/command-center/core/runtime";
 import { useCommandCenterRuntime } from "@/command-center/core/runtime-provider";
+import SupplyPhoto from "./SupplyPhoto";
 import styles from "./CommandCenter.module.css";
+
+type AdjustmentDraft = {
+  itemId: string;
+  mode: "adjust" | "waste";
+  amount: string;
+  reason: CommandCenterStockAdjustmentReason;
+};
 
 function readRoute() {
   if (typeof window === "undefined") {
@@ -26,8 +44,20 @@ function readRoute() {
 }
 
 export default function OperationModuleView() {
-  const [route, setRoute] = useState({ businessId: "marinara-ristorante", moduleId: "inventory" });
-  const { state, tasks, actOnTask } = useCommandCenterRuntime();
+  const [route, setRoute] = useState({
+    businessId: "marinara-ristorante",
+    moduleId: "inventory",
+  });
+  const [adjustment, setAdjustment] = useState<AdjustmentDraft | null>(null);
+  const [receiveDrafts, setReceiveDrafts] = useState<Record<string, string>>({});
+
+  const {
+    state,
+    tasks,
+    adjustInventory,
+    receivePurchase,
+    recordRecipeSale,
+  } = useCommandCenterRuntime();
 
   useEffect(() => {
     setRoute(readRoute());
@@ -45,41 +75,186 @@ export default function OperationModuleView() {
       ? "/restaurant/marinara-ristorante/Autoinventory-preview"
       : null;
 
+  const supplierById = useMemo(
+    () => new Map(state.suppliers.map((supplier) => [supplier.id, supplier])),
+    [state.suppliers],
+  );
+
+  function openAdjustment(
+    itemId: string,
+    mode: AdjustmentDraft["mode"],
+  ) {
+    setAdjustment({
+      itemId,
+      mode,
+      amount: "",
+      reason: mode === "waste" ? "waste" : "physical_count",
+    });
+  }
+
+  function applyAdjustment() {
+    if (!adjustment) return;
+    const amount = Number(adjustment.amount);
+    if (!Number.isFinite(amount) || amount <= 0) return;
+
+    adjustInventory(
+      adjustment.itemId,
+      adjustment.mode === "waste" ? -amount : amount,
+      adjustment.mode === "waste" ? "waste" : adjustment.reason,
+    );
+    setAdjustment(null);
+  }
+
   if (moduleId === "inventory" && state.inventory.length) {
     return (
       <section className={styles.sectionPage}>
-        <OperationHeader businessId={business.id} moduleLabel={module.label} description={module.description} />
+        <OperationHeader
+          businessId={business.id}
+          moduleLabel={module.label}
+          description={module.description}
+        />
 
         <div className={styles.operationModuleHero}>
           <div>
             <span>JOURVIS OPERATING</span>
-            <h2>{moduleTasks.length ? `${moduleTasks.length} inventory exception${moduleTasks.length === 1 ? "" : "s"} need you.` : "Inventory is operating inside its rules."}</h2>
+            <h2>
+              {moduleTasks.length
+                ? `${moduleTasks.length} inventory exception${moduleTasks.length === 1 ? "" : "s"} need you.`
+                : "Inventory is operating inside its rules."}
+            </h2>
             <p>
-              Jourvis watches stock continuously, predicts shortages, starts allowed purchasing work,
-              keeps confirmed incoming separate from on-hand stock, and escalates only when authority is missing.
+              Jourvis watches stock, keeps incoming separate from on-hand inventory,
+              starts approved purchasing work, and records every manual adjustment
+              and automatic change in Activity.
             </p>
           </div>
           <Bot size={36} aria-hidden />
         </div>
 
-        <div className={styles.runtimeList}>
+        <div className={styles.inventoryCardGrid}>
           {state.inventory.map((item) => {
             const percent = inventoryPercent(item);
             const low = item.current <= item.reorderAt;
             const task = tasks.find((entry) => entry.entityId === item.id);
+            const supplier = supplierById.get(item.supplierId);
+            const editing = adjustment?.itemId === item.id;
+
             return (
-              <article className={styles.runtimeRow} key={item.id}>
-                <div>
-                  <strong>{item.name}</strong>
-                  <small>{item.purchaseUnit} · supplier {state.suppliers.find((supplier) => supplier.id === item.supplierId)?.name ?? item.supplierId}</small>
+              <article
+                className={styles.inventoryCard}
+                data-low={low}
+                key={item.id}
+              >
+                <div className={styles.inventoryCardTop}>
+                  <SupplyPhoto
+                    supplyId={item.id}
+                    className={styles.operationSupplyPhoto}
+                    size={74}
+                  />
+                  <div>
+                    <span>{item.zone ?? "Inventory"}</span>
+                    <h3>{item.name}</h3>
+                    <p>{supplier?.name ?? item.supplierId}</p>
+                  </div>
+                  <b data-alert={Boolean(task)}>
+                    {task ? "Needs owner" : low ? "Low" : `${percent}%`}
+                  </b>
                 </div>
-                <div><span>On hand</span><b>{item.current} / {item.fullLevel} {item.unit}</b></div>
-                <div><span>Incoming</span><b>{item.incoming} {item.unit}</b></div>
-                <div>
-                  <span className={styles.runtimeStatus} data-alert={Boolean(task)}>
-                    {task ? "Needs owner" : low ? "Low · Jourvis handling" : `${percent}% ready`}
-                  </span>
+
+                <div className={styles.inventoryLevels}>
+                  <div>
+                    <span>On hand</span>
+                    <strong>{item.current} {item.unit}</strong>
+                    <small>Full {item.fullLevel} {item.unit}</small>
+                  </div>
+                  <div>
+                    <span>Incoming</span>
+                    <strong>{item.incoming} {item.unit}</strong>
+                    <small>{item.purchaseUnit}</small>
+                  </div>
+                  <div>
+                    <span>Daily use</span>
+                    <strong>{item.dailyUse ?? "—"} {item.dailyUse ? item.unit : ""}</strong>
+                    <small>Trigger {item.automationTriggerPercent}%</small>
+                  </div>
                 </div>
+
+                <div className={styles.inventoryActions}>
+                  <button
+                    type="button"
+                    onClick={() => openAdjustment(item.id, "adjust")}
+                  >
+                    <PlusCircle size={14} aria-hidden /> Adjust stock
+                  </button>
+                  <button
+                    type="button"
+                    data-danger
+                    onClick={() => openAdjustment(item.id, "waste")}
+                  >
+                    <Trash2 size={14} aria-hidden /> Record waste
+                  </button>
+                </div>
+
+                {editing ? (
+                  <div className={styles.inlineAdjustment}>
+                    <div>
+                      <strong>
+                        {adjustment.mode === "waste"
+                          ? `Waste / spoilage · ${item.name}`
+                          : `Adjust stock · ${item.name}`}
+                      </strong>
+                      <small>
+                        This manual action will be written to Activity with its reason and timestamp.
+                      </small>
+                    </div>
+
+                    {adjustment.mode === "adjust" ? (
+                      <select
+                        value={adjustment.reason}
+                        onChange={(event) =>
+                          setAdjustment((current) =>
+                            current
+                              ? {
+                                  ...current,
+                                  reason: event.target.value as CommandCenterStockAdjustmentReason,
+                                }
+                              : current,
+                          )
+                        }
+                      >
+                        <option value="physical_count">Physical count correction</option>
+                        <option value="external_delivery">Outside-Jourvis delivery</option>
+                        <option value="transfer">Stock transfer in</option>
+                        <option value="other">Other increase</option>
+                      </select>
+                    ) : null}
+
+                    <div className={styles.adjustmentAmount}>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        placeholder="Amount"
+                        value={adjustment.amount}
+                        onChange={(event) =>
+                          setAdjustment((current) =>
+                            current ? { ...current, amount: event.target.value } : current,
+                          )
+                        }
+                      />
+                      <span>{item.unit}</span>
+                    </div>
+
+                    <div className={styles.adjustmentButtons}>
+                      <button type="button" onClick={() => setAdjustment(null)}>
+                        Cancel
+                      </button>
+                      <button type="button" data-primary onClick={applyAdjustment}>
+                        Apply
+                      </button>
+                    </div>
+                  </div>
+                ) : null}
               </article>
             );
           })}
@@ -88,14 +263,16 @@ export default function OperationModuleView() {
         {currentInventoryRoute ? (
           <article className={styles.migrationCard}>
             <div>
-              <span>EXISTING INVENTORY WORKSPACE</span>
-              <strong>Marinara Autoinventory remains available during migration</strong>
+              <span>LEGACY REFERENCE</span>
+              <strong>Previous Autoinventory remains available during parity checks</strong>
               <p>
-                The Command Center now owns shared runtime state and decisions. The existing workspace
-                remains accessible while detailed stock, receiving, recipes, and supplier tools are progressively migrated.
+                The Command Center is now the migration target. The legacy workspace is kept
+                only as a reference while remaining detailed behavior is verified.
               </p>
             </div>
-            <a href={currentInventoryRoute}>Open current inventory <ArrowRight size={14} /></a>
+            <a href={currentInventoryRoute}>
+              Open legacy inventory <ArrowRight size={14} />
+            </a>
           </article>
         ) : null}
       </section>
@@ -103,44 +280,120 @@ export default function OperationModuleView() {
   }
 
   if (moduleId === "purchasing") {
-    const purchases = state.purchases.filter((purchase) => isPurchaseActive(purchase.status));
+    const purchases = state.purchases.filter((purchase) =>
+      isPurchaseActive(purchase.status),
+    );
+
     return (
       <section className={styles.sectionPage}>
-        <OperationHeader businessId={business.id} moduleLabel={module.label} description={module.description} />
+        <OperationHeader
+          businessId={business.id}
+          moduleLabel={module.label}
+          description={module.description}
+        />
 
         <div className={styles.operationModuleHero}>
           <div>
             <span>AUTOMATED PURCHASING</span>
             <h2>Jourvis handles the supplier workflow until a real decision is needed.</h2>
             <p>
-              Requests, quotes, approvals, supplier confirmation, incoming stock, transit, and receiving
-              share one state machine. Quote exceptions flow into Decisions automatically.
+              Requests, quotes, confirmation, transit, partial receiving, and final receiving
+              now share one Command Center runtime and one Activity history.
             </p>
           </div>
           <Truck size={36} aria-hidden />
         </div>
 
-        <div className={styles.runtimeList}>
+        <div className={styles.purchaseCardList}>
           {purchases.map((purchase) => {
             const item = state.inventory.find((entry) => entry.id === purchase.itemId);
             const task = tasks.find((entry) => entry.requestId === purchase.id);
+            const received = purchase.receivedQuantity ?? 0;
+            const remaining = Math.max(0, purchase.quantity - received);
+            const canReceive =
+              purchase.status === "in_transit" ||
+              purchase.status === "partial_received";
+            const receiveValue = receiveDrafts[purchase.id] ?? String(remaining || "");
+
             return (
-              <article className={styles.runtimeRow} key={purchase.id}>
-                <div>
-                  <strong>{purchase.id} · {item?.name ?? purchase.itemId}</strong>
-                  <small>{purchase.origin === "jourvis" ? "Started automatically by Jourvis" : "Approved by owner"}</small>
+              <article className={styles.purchaseCard} key={purchase.id}>
+                <div className={styles.purchaseIdentity}>
+                  <SupplyPhoto
+                    supplyId={purchase.itemId}
+                    className={styles.purchaseSupplyPhoto}
+                    size={58}
+                  />
+                  <div>
+                    <span>{purchase.id}</span>
+                    <h3>{item?.name ?? purchase.itemId}</h3>
+                    <p>
+                      {purchase.origin === "jourvis"
+                        ? "Started automatically by Jourvis"
+                        : "Started after owner approval"}
+                    </p>
+                  </div>
                 </div>
-                <div><span>Quantity</span><b>{purchase.quantity} {item?.unit ?? ""}</b></div>
-                <div><span>Value</span><b>₱{Math.round(purchase.quotedTotal ?? purchase.estimatedTotal).toLocaleString("en-PH")}</b></div>
-                <div>
-                  <span className={styles.runtimeStatus} data-alert={Boolean(task)}>{task ? "Needs owner" : purchase.status.replaceAll("_", " ")}</span>
+
+                <div className={styles.purchaseFacts}>
+                  <div><span>Quantity</span><strong>{purchase.quantity} {item?.unit ?? ""}</strong></div>
+                  <div><span>Value</span><strong>₱{Math.round(purchase.quotedTotal ?? purchase.estimatedTotal).toLocaleString("en-PH")}</strong></div>
+                  <div><span>Received</span><strong>{received} {item?.unit ?? ""}</strong></div>
+                  <div>
+                    <span>Status</span>
+                    <strong data-alert={Boolean(task)}>
+                      {task ? "Needs owner" : purchase.status.replaceAll("_", " ")}
+                    </strong>
+                  </div>
                 </div>
+
+                {canReceive && item ? (
+                  <div className={styles.receivingBar}>
+                    <PackageCheck size={17} aria-hidden />
+                    <div>
+                      <strong>Receive physical delivery</strong>
+                      <small>{remaining} {item.unit} still incoming</small>
+                    </div>
+                    <input
+                      type="number"
+                      min="0.01"
+                      max={remaining}
+                      step="0.01"
+                      value={receiveValue}
+                      onChange={(event) =>
+                        setReceiveDrafts((current) => ({
+                          ...current,
+                          [purchase.id]: event.target.value,
+                        }))
+                      }
+                    />
+                    <span>{item.unit}</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const quantity = Number(receiveValue);
+                        receivePurchase(purchase.id, quantity);
+                        setReceiveDrafts((current) => {
+                          const next = { ...current };
+                          delete next[purchase.id];
+                          return next;
+                        });
+                      }}
+                    >
+                      Receive
+                    </button>
+                  </div>
+                ) : null}
               </article>
             );
           })}
+
           {!purchases.length ? (
             <article className={styles.panelCard}>
-              <PanelEmpty icon={<CheckCircle2 size={17} />} title="No active purchases" body="Jourvis will create purchasing work automatically when an authorized inventory rule triggers." />
+              <PanelEmpty
+                icon={<CheckCircle2 size={17} />}
+                title="No active purchases"
+                body="Jourvis will create purchasing work when an eligible automatic task reaches its trigger."
+              />
             </article>
           ) : null}
         </div>
@@ -151,25 +404,194 @@ export default function OperationModuleView() {
   if (moduleId === "suppliers") {
     return (
       <section className={styles.sectionPage}>
-        <OperationHeader businessId={business.id} moduleLabel={module.label} description={module.description} />
+        <OperationHeader
+          businessId={business.id}
+          moduleLabel={module.label}
+          description={module.description}
+        />
 
         <div className={styles.supplierRuntimeGrid}>
           {state.suppliers.map((supplier) => {
-            const suppliedItems = state.inventory.filter((item) => supplier.itemIds.includes(item.id));
+            const suppliedItems = state.inventory.filter((item) =>
+              supplier.itemIds.includes(item.id),
+            );
+            const activeSupplierPurchases = state.purchases.filter(
+              (purchase) =>
+                purchase.supplierId === supplier.id &&
+                isPurchaseActive(purchase.status),
+            );
+
             return (
-              <article key={supplier.id}>
-                <h3>{supplier.name}</h3>
-                <p>{suppliedItems.map((item) => item.name).join(", ") || "No mapped inventory items yet."}</p>
-                <small>{supplier.contacts.length} contact{supplier.contacts.length === 1 ? "" : "s"} · {suppliedItems.length} supplied item{suppliedItems.length === 1 ? "" : "s"}</small>
+              <article className={styles.supplierCardDetailed} key={supplier.id}>
+                <header>
+                  <div>
+                    <span>SUPPLIER</span>
+                    <h3>{supplier.name}</h3>
+                  </div>
+                  <b>{activeSupplierPurchases.length} active</b>
+                </header>
+
+                <div className={styles.supplierPhotoStrip}>
+                  {suppliedItems.map((item) => (
+                    <div key={item.id}>
+                      <SupplyPhoto
+                        supplyId={item.id}
+                        className={styles.supplierSupplyPhoto}
+                        size={44}
+                      />
+                      <small>{item.name}</small>
+                    </div>
+                  ))}
+                </div>
+
+                <div className={styles.supplierContacts}>
+                  {supplier.contacts.map((contact) => (
+                    <div key={contact.id}>
+                      <strong>{contact.name}</strong>
+                      <small>{contact.role}</small>
+                      <span>{contact.channel} · {contact.phone}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <footer>
+                  <span>{suppliedItems.length} supplied items</span>
+                  <span>
+                    Avg lead {suppliedItems.length
+                      ? (
+                          suppliedItems.reduce((sum, item) => sum + item.leadDays, 0) /
+                          suppliedItems.length
+                        ).toFixed(1)
+                      : "—"} days
+                  </span>
+                </footer>
               </article>
             );
           })}
-          {!state.suppliers.length ? (
-            <article>
-              <h3>No supplier data connected</h3>
-              <p>Connect a business data provider to let Jourvis compare pricing, lead times, reliability, and quote history.</p>
+        </div>
+      </section>
+    );
+  }
+
+  if (moduleId === "recipes" && state.recipes.length) {
+    return (
+      <section className={styles.sectionPage}>
+        <OperationHeader
+          businessId={business.id}
+          moduleLabel={module.label}
+          description={module.description}
+        />
+
+        <div className={styles.operationModuleHero}>
+          <div>
+            <span>RECIPE CONSUMPTION</span>
+            <h2>Sales can flow directly into inventory usage.</h2>
+            <p>
+              The demo below simulates a POS sale. Jourvis deducts the configured recipe
+              quantities automatically and records the reason in Activity.
+            </p>
+          </div>
+          <ReceiptText size={36} aria-hidden />
+        </div>
+
+        <div className={styles.recipeGrid}>
+          {state.recipes.map((recipe) => (
+            <article className={styles.recipeCard} key={recipe.id}>
+              <header>
+                <div>
+                  <span>RECIPE</span>
+                  <h3>{recipe.name}</h3>
+                  <p>{recipe.description}</p>
+                </div>
+                <ShoppingBasket size={20} aria-hidden />
+              </header>
+
+              <div className={styles.recipeIngredients}>
+                {Object.entries(recipe.ingredients).map(([itemId, amount]) => {
+                  const item = state.inventory.find((entry) => entry.id === itemId);
+                  return (
+                    <div key={itemId}>
+                      <SupplyPhoto
+                        supplyId={itemId}
+                        className={styles.recipeSupplyPhoto}
+                        size={42}
+                      />
+                      <span>
+                        <strong>{item?.name ?? itemId}</strong>
+                        <small>{amount} {item?.unit ?? ""} / sale</small>
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <button
+                type="button"
+                className={styles.recipeSaleButton}
+                onClick={() => recordRecipeSale(recipe.id, 1)}
+              >
+                Simulate POS sale
+              </button>
             </article>
-          ) : null}
+          ))}
+        </div>
+      </section>
+    );
+  }
+
+  if (moduleId === "waste" && state.inventory.length) {
+    return (
+      <section className={styles.sectionPage}>
+        <OperationHeader
+          businessId={business.id}
+          moduleLabel={module.label}
+          description={module.description}
+        />
+
+        <div className={styles.wasteGrid}>
+          {state.inventory.map((item) => {
+            const editing =
+              adjustment?.itemId === item.id && adjustment.mode === "waste";
+            return (
+              <article className={styles.wasteCard} key={item.id}>
+                <SupplyPhoto
+                  supplyId={item.id}
+                  className={styles.operationSupplyPhoto}
+                  size={62}
+                />
+                <div>
+                  <strong>{item.name}</strong>
+                  <small>{item.current} {item.unit} on hand</small>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => openAdjustment(item.id, "waste")}
+                >
+                  <Trash2 size={14} aria-hidden /> Log waste
+                </button>
+
+                {editing ? (
+                  <div className={styles.wasteInline}>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      placeholder="Amount"
+                      value={adjustment.amount}
+                      onChange={(event) =>
+                        setAdjustment((current) =>
+                          current ? { ...current, amount: event.target.value } : current,
+                        )
+                      }
+                    />
+                    <span>{item.unit}</span>
+                    <button type="button" onClick={applyAdjustment}>Save</button>
+                    <button type="button" onClick={() => setAdjustment(null)}>Cancel</button>
+                  </div>
+                ) : null}
+              </article>
+            );
+          })}
         </div>
       </section>
     );
@@ -177,16 +599,19 @@ export default function OperationModuleView() {
 
   return (
     <section className={styles.sectionPage}>
-      <OperationHeader businessId={business.id} moduleLabel={module.label} description={module.description} />
+      <OperationHeader
+        businessId={business.id}
+        moduleLabel={module.label}
+        description={module.description}
+      />
 
       <div className={styles.operationModuleHero}>
         <div>
           <span>JOURVIS OPERATING MODEL</span>
           <h2>Automatic by default. Human by exception.</h2>
           <p>
-            This module will expose business state and explanations, while Jourvis
-            performs normal operating work automatically within the authority and
-            safeguards configured for this business.
+            This shared module is ready for business-specific data and actions. Jourvis
+            can monitor, plan, act, verify, and escalate through the same Command Center runtime.
           </p>
         </div>
         <Bot size={36} aria-hidden />
@@ -207,17 +632,6 @@ export default function OperationModuleView() {
           </article>
         ))}
       </div>
-
-      <article className={styles.migrationCard}>
-        <div>
-          <span>MODULE FOUNDATION</span>
-          <strong>Ready for business-specific data and actions</strong>
-          <p>
-            This route is shared. Production data and actions will be injected through
-            Command Center providers rather than copied business pages.
-          </p>
-        </div>
-      </article>
     </section>
   );
 }
@@ -233,7 +647,10 @@ function OperationHeader({
 }) {
   return (
     <header className={styles.pageIntro}>
-      <a className={styles.backLink} href={`/command-center/${businessId}/operations`}>
+      <a
+        className={styles.backLink}
+        href={`/command-center/${businessId}/operations`}
+      >
         <ArrowLeft size={14} /> Operations
       </a>
       <span>BUSINESS OPERATION</span>
