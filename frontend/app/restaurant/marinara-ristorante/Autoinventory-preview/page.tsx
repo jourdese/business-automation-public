@@ -914,12 +914,24 @@ export default function MarinaraAutoinventoryPreviewPage() {
 
                   <div className={styles.recommendation}>
                     <Sparkles size={17} aria-hidden />
-                    <div><span>JOURVIS</span><p>{orderAmount > 0 ? `Suggested: ${orderAmount} ${selected.unit}. Based on ${selected.fullLevel} ${selected.unit} full level, ${selected.leadDays}-day lead time and expected usage.` : "Current and incoming stock cover the configured full level."}</p></div>
+                    <div>
+                      <span>JOURVIS</span>
+                      <p>
+                        {selectedProcurement
+                          ? `${selectedProcurement.id} is ${procurementStatusLabel(selectedProcurement.status).toLowerCase()}. No receiving step unlocks until the supplier and buyer reach agreement and the supplier confirms the order.`
+                          : orderAmount > 0
+                            ? `Suggested: ${orderAmount} ${selected.unit}. Based on ${selected.fullLevel} ${selected.unit} full level, ${selected.leadDays}-day lead time and expected usage.`
+                            : "Current and confirmed incoming stock cover the configured full level."}
+                      </p>
+                    </div>
                   </div>
 
                   <div className={styles.detailActions}>
-                    <button type="button" className={styles.primaryButton} disabled={orderAmount <= 0} onClick={() => openContact([selected], `Contact ${selectedSupplier.name}`)}><Mail size={16} aria-hidden /> Contact supplier</button>
-                    <button type="button" className={styles.secondaryButton} disabled={selected.incoming <= 0} onClick={() => receive(selected)}><PackageCheck size={16} aria-hidden /> Receive delivery</button>
+                    {selectedProcurement ? (
+                      <button type="button" className={styles.primaryButton} onClick={() => setActiveTab("orders")}><ChevronRight size={16} aria-hidden /> View purchase flow</button>
+                    ) : (
+                      <button type="button" className={styles.primaryButton} disabled={orderAmount <= 0} onClick={() => openContact([selected], `Contact ${selectedSupplier.name}`)}><Mail size={16} aria-hidden /> Contact supplier</button>
+                    )}
                     <a className={styles.textAction} href={`/restaurant/marinara-ristorante/Autoinventory-preview/configure?stock=${selected.id}`}><Settings2 size={15} aria-hidden /> Configure stock</a>
                     <button type="button" className={styles.textAction} onClick={() => recordWaste(selected)}><TriangleAlert size={15} aria-hidden /> Record demo waste</button>
                   </div>
