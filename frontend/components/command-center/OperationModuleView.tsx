@@ -1320,7 +1320,11 @@ export default function OperationModuleView({
     );
   }
 
-  if (moduleId === "recipes" && state.recipes.length) {
+  if (moduleId === "recipes") {
+    const editingRecipe = recipeEditor?.id
+      ? state.recipes.find((recipe) => recipe.id === recipeEditor.id)
+      : undefined;
+
     return (
       <section className={styles.sectionPage}>
         <OperationHeader
@@ -1331,60 +1335,176 @@ export default function OperationModuleView({
 
         <div className={styles.operationModuleHero}>
           <div>
-            <span>RECIPE CONSUMPTION</span>
-            <h2>Sales can flow directly into inventory usage.</h2>
+            <span>RECIPE MANAGEMENT</span>
+            <h2>Configure what every menu item consumes.</h2>
             <p>
-              The demo below simulates a POS sale. Jourvis deducts the configured recipe
-              quantities automatically and records the reason in Activity.
+              Create and edit recipes against real inventory items. Changes immediately
+              affect menu cost estimates, possible servings, stock risk, and simulated POS deductions.
             </p>
           </div>
           <ReceiptText size={36} aria-hidden />
         </div>
 
+        <div className={styles.entityToolbar}>
+          <div>
+            <button type="button" data-primary onClick={openNewRecipe}>
+              <PlusCircle size={15} aria-hidden /> Add recipe
+            </button>
+          </div>
+          <span>{state.recipes.filter((recipe) => recipe.active).length} active · {state.recipes.length} total</span>
+        </div>
+
+        {recipeEditor ? (
+          <RecipeEditorPanel
+            draft={recipeEditor}
+            setDraft={setRecipeEditor}
+            existing={editingRecipe}
+            inventory={state.inventory}
+            menuItems={state.menuItems}
+            onSave={submitRecipeEditor}
+            onCancel={() => setRecipeEditor(null)}
+          />
+        ) : null}
+
         <div className={styles.recipeGrid}>
-          {state.recipes.map((recipe) => (
-            <article className={styles.recipeCard} key={recipe.id}>
-              <MenuPhoto
-                menuId={recipe.id}
-                className={styles.recipeDishPhoto}
-              />
-              <header>
-                <div>
-                  <span>RECIPE</span>
-                  <h3>{recipe.name}</h3>
-                  <p>{recipe.description}</p>
-                </div>
-                <ShoppingBasket size={20} aria-hidden />
-              </header>
+          {state.recipes.map((recipe) => {
+            const linkedMenuItems = state.menuItems.filter(
+              (item) => item.recipeId === recipe.id,
+            );
+            const ingredientCost = Object.entries(recipe.ingredients).reduce(
+              (sum, [itemId, amount]) => {
+                const item = state.inventory.find((entry) => entry.id === itemId);
+                if (!item) return sum;
+                return sum + (item.packPrice / Math.max(item.packSize, 0.01)) * amount;
+              },
+              0,
+            );
 
-              <div className={styles.recipeIngredients}>
-                {Object.entries(recipe.ingredients).map(([itemId, amount]) => {
-                  const item = state.inventory.find((entry) => entry.id === itemId);
-                  return (
-                    <div key={itemId}>
-                      <SupplyPhoto
-                        supplyId={itemId}
-                        className={styles.recipeSupplyPhoto}
-                        size={42}
-                      />
-                      <span>
-                        <strong>{item?.name ?? itemId}</strong>
-                        <small>{amount} {item?.unit ?? ""} / sale</small>
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-
-              <button
-                type="button"
-                className={styles.recipeSaleButton}
-                onClick={() => recordRecipeSale(recipe.id, 1)}
+            return (
+              <article
+                className={styles.recipeCard}
+                data-inactive={!recipe.active}
+                key={recipe.id}
               >
-                Simulate POS sale
-              </button>
+                <MenuPhoto
+                  menuId={recipe.id}
+                  className={styles.recipeDishPhoto}
+                />
+                <header>
+                  <div>
+                    <span>{recipe.active ? "RECIPE" : "ARCHIVED RECIPE"}</span>
+                    <h3>{recipe.name}</h3>
+                    <p>{recipe.description || "No recipe description configured."}</p>
+                  </div>
+                  <ShoppingBasket size={20} aria-hidden />
+                </header>
+
+                <div className={styles.recipeSummary}>
+                  <span>
+                    <small>Ingredient cost</small>
+                    <strong>₱{Math.round(ingredientCost).toLocaleString("en-PH")}</strong>
+                  </span>
+                  <span>
+                    <small>Ingredients</small>
+                    <strong>{Object.keys(recipe.ingredients).length}</strong>
+                  </span>
+                  <span>
+                    <small>Linked menu items</small>
+                    <strong>{linkedMenuItems.length}</strong>
+                  </span>
+                </div>
+
+                {recipe.notes ? (
+                  <p className={styles.recipeNotes}>{recipe.notes}</p>
+                ) : null}
+
+                <div className={styles.recipeIngredients}>
+                  {Object.entries(recipe.ingredients).map(([itemId, amount]) => {
+                    const item = state.inventory.find((entry) => entry.id === itemId);
+                    return (
+                      <div key={itemId}>
+                        <SupplyPhoto
+                          supplyId={itemId}
+                          className={styles.recipeSupplyPhoto}
+                          size={42}
+                        />
+                        <span>
+                          <strong>{item?.name ?? itemId}</strong>
+                          <small>{amount} {item?.unit ?? ""} / sale</small>
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {linkedMenuItems.length ? (
+                  <div className={styles.recipeLinkedMenu}>
+                    <span>USED BY MENU</span>
+                    <div>
+                      {linkedMenuItems.map((item) => (
+                        <small key={item.id}>
+                          {item.name}{item.variant ? " · " + item.variant : ""}
+                        </small>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+
+                <div className={styles.entityActions}>
+                  {recipe.active ? (
+                    <button
+                      type="button"
+                      data-primary
+                      onClick={() => recordRecipeSale(recipe.id, 1)}
+                    >
+                      Simulate POS sale
+                    </button>
+                  ) : null}
+                  <button
+                    type="button"
+                    onClick={() => openRecipeEditor(recipe)}
+                  >
+                    <Pencil size={14} aria-hidden /> Edit
+                  </button>
+                  {recipe.active ? (
+                    <button
+                      type="button"
+                      data-danger
+                      onClick={() => archiveRecipe(recipe.id)}
+                    >
+                      <Archive size={14} aria-hidden /> Archive
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        saveRecipe({
+                          id: recipe.id,
+                          name: recipe.name,
+                          description: recipe.description,
+                          notes: recipe.notes,
+                          active: true,
+                          ingredients: recipe.ingredients,
+                        })
+                      }
+                    >
+                      Restore
+                    </button>
+                  )}
+                </div>
+              </article>
+            );
+          })}
+
+          {!state.recipes.length ? (
+            <article className={styles.panelCard}>
+              <PanelEmpty
+                icon={<ReceiptText size={17} />}
+                title="No recipes yet"
+                body="Create a recipe and map its ingredients to inventory."
+              />
             </article>
-          ))}
+          ) : null}
         </div>
       </section>
     );
