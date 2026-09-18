@@ -37,7 +37,9 @@ export function inventoryRuleSnapshot(
       `item automation ${item.automationEnabled ? "ON" : "OFF"} · ` +
       `${mode} · act at ${item.automationTriggerPercent}% · ` +
       `ask owner above ₱${Math.round(item.maxAutoOrderSpend).toLocaleString("en-PH")} · ` +
-      `max pack price ₱${Math.round(item.autoAcceptPackPrice).toLocaleString("en-PH")}`,
+      `auto-accept pack ₱${Math.round(item.autoAcceptPackPrice).toLocaleString("en-PH")} · ` +
+      `hard ceiling ₱${Math.round(item.hardMaxPackPrice).toLocaleString("en-PH")} · ` +
+      `auto-negotiate ${item.autoNegotiate ? "ON" : "OFF"}`,
     values: {
       automationMasterOn,
       automationEnabled: item.automationEnabled,
@@ -50,8 +52,15 @@ export function inventoryRuleSnapshot(
       purchasingMode: item.purchasingMode,
       packSize: item.packSize,
       packPrice: item.packPrice,
-      maxAutoOrderSpend: item.maxAutoOrderSpend,
+      targetPackPrice: item.targetPackPrice,
       autoAcceptPackPrice: item.autoAcceptPackPrice,
+      hardMaxPackPrice: item.hardMaxPackPrice,
+      maxAutoOrderQty: item.maxAutoOrderQty,
+      maxAutoOrderSpend: item.maxAutoOrderSpend,
+      autoNegotiate: item.autoNegotiate,
+      maxCounteroffers: item.maxCounteroffers,
+      maxDeliveryFee: item.maxDeliveryFee,
+      maxLeadDays: item.maxLeadDays,
       supplierId: item.supplierId,
       leadDays: item.leadDays,
     },
