@@ -478,6 +478,7 @@ export default function MarinaraAutoinventoryPreviewPage() {
       }
       if (
         item.current <= item.reorderAt &&
+        !automationRejected[item.id] &&
         !activeIds.has(item.id) &&
         (!item.automationEnabled || item.automationMode === "assist")
       ) {
@@ -1018,6 +1019,47 @@ export default function MarinaraAutoinventoryPreviewPage() {
     setProcurements((current) => current.map((request) => request.id === id ? updater(request) : request));
   }
 
+  function approveRestockItem(item: Ingredient) {
+    const quantity = suggestedOrder(item);
+    if (quantity <= 0) return;
+    const supplier = getSupplier(item);
+    const contact = getContact(item);
+    const request: ProcurementRequest = {
+      id: `REQ-${String(procurements.length + 1).padStart(3, "0")}`,
+      supplierId: supplier.id,
+      contactId: contact.id,
+      mode: item.purchasingMode,
+      status: "requested",
+      lines: [{ itemId: item.id, requestedQty: quantity }],
+      deliveryFee: 0,
+      etaDays: item.leadDays,
+      buyerConfirmed: item.purchasingMode === "fixed",
+      supplierConfirmed: false,
+      incomingApplied: false,
+      origin: "manual",
+      previewOnly: true,
+      counteroffersUsed: 0,
+      automationNote: "Owner approved the suggested restock through Jourvis.",
+    };
+    setAutomationRejected((current) => {
+      const next = { ...current };
+      delete next[item.id];
+      return next;
+    });
+    setProcurements((current) => [request, ...current]);
+    log(`${request.id}: approved ${quantity} ${item.unit} of ${item.name}. Jourvis started the supplier flow.`);
+  }
+
+  function rejectItem(item: Ingredient, reason = "purchase") {
+    setAutomationRejected((current) => ({ ...current, [item.id]: "owner_paused" }));
+    setAutomationAlerts((current) => {
+      const next = { ...current };
+      delete next[item.id];
+      return next;
+    });
+    log(`Jourvis paused ${reason} automation for ${item.name} after your rejection. It will not try again until you resume it.`);
+  }
+
   function approveAutomationException(item: Ingredient) {
     const quantity = suggestedOrder(item);
     if (quantity <= 0) {
@@ -1256,27 +1298,19 @@ export default function MarinaraAutoinventoryPreviewPage() {
 
   function declineProcurement(request: ProcurementRequest) {
     updateProcurement(request.id, (current) => ({ ...current, status: "declined" }));
-
-    if (request.origin === "automation") {
-      const itemIds = request.lines.map((line) => line.itemId);
-      setAutomationRejected((current) => {
-        const next = { ...current };
-        itemIds.forEach((itemId) => {
-          next[itemId] = "owner_paused";
-        });
-        return next;
+    const itemIds = request.lines.map((line) => line.itemId);
+    setAutomationRejected((current) => {
+      const next = { ...current };
+      itemIds.forEach((itemId) => {
+        next[itemId] = "owner_paused";
       });
-      const names = itemIds
-        .map((itemId) => ingredients.find((item) => item.id === itemId)?.name)
-        .filter(Boolean)
-        .join(", ");
-      log(
-        `${request.id}: rejected by owner. Jourvis automation is paused for ${names || "this supply"} until you resume it.`,
-      );
-      return;
-    }
-
-    log(`${request.id}: procurement request was declined/cancelled. No incoming stock was created.`);
+      return next;
+    });
+    const names = itemIds
+      .map((itemId) => ingredients.find((item) => item.id === itemId)?.name)
+      .filter(Boolean)
+      .join(", ");
+    log(`${request.id}: rejected by owner. Jourvis is paused for ${names || "this supply"} until you resume it.`);
   }
 
   function confirmProcurement(request: ProcurementRequest, source: "acknowledgment" | "counter" | "quote") {
