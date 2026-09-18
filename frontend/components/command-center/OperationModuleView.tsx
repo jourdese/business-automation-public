@@ -645,6 +645,10 @@ export default function OperationModuleView() {
         <div className={styles.recipeGrid}>
           {state.recipes.map((recipe) => (
             <article className={styles.recipeCard} key={recipe.id}>
+              <MenuPhoto
+                menuId={recipe.id}
+                className={styles.recipeDishPhoto}
+              />
               <header>
                 <div>
                   <span>RECIPE</span>
