@@ -40,6 +40,7 @@ type CommandCenterRuntimeContextValue = {
     next: CommandCenterInventoryItem,
   ) => void;
   setAutomationMasterOn: (enabled: boolean) => void;
+  setItemAutomationEnabled: (itemId: string, enabled: boolean) => void;
   resumeItem: (itemId: string) => void;
   resetDemo: () => void;
 };
@@ -63,7 +64,7 @@ function createGenericSeed(businessId: string): CommandCenterRuntimeState {
   return {
     version: 1,
     business: resolveCommandCenterBusiness(businessId),
-    automationMasterOn: true,
+    automationMasterOn: false,
     inventory: [],
     purchases: [],
     suppliers: [],
@@ -120,7 +121,7 @@ function normalizeStoredState(
   };
 }
 
-function planAutonomousPurchases(
+function nextAutonomousPurchase(
   state: CommandCenterRuntimeState,
 ): CommandCenterRuntimeState {
   if (!state.automationMasterOn) return state;
@@ -131,42 +132,68 @@ function planAutonomousPurchases(
       .map((purchase) => purchase.itemId),
   );
 
-  let next = state;
-  for (const item of state.inventory) {
+  const item = state.inventory.find((candidate) => {
+    if (
+      !candidate.automationEnabled ||
+      candidate.automationMode === "assist" ||
+      state.pausedItemIds.includes(candidate.id) ||
+      activeItemIds.has(candidate.id)
+    ) {
+      return false;
+    }
+
+    const percent =
+      (candidate.current / Math.max(candidate.fullLevel, 0.01)) * 100;
+    return percent <= candidate.automationTriggerPercent;
+  });
+
+  if (!item) return state;
+
+  const percent =
+    (item.current / Math.max(item.fullLevel, 0.01)) * 100;
+  const purchase = createPurchase(state, item, "jourvis");
+
+  return {
+    ...state,
+    purchases: [purchase, ...state.purchases],
+    activity: addActivity(state, {
+      module: "purchasing",
+      action: "purchase_started",
+      message: `Jourvis automatically started ${purchase.id} for ${item.name}.`,
+      actor: "jourvis",
+      executionMode: "automatic",
+      reason:
+        `${item.name} was at ${Math.round(percent)}% stock, at or below its ` +
+        `${item.automationTriggerPercent}% Jourvis action trigger. Global autonomy and item automation were enabled, and the configured mode was ${item.automationMode}.`,
+      configuration: inventoryRuleSnapshot(item, state.automationMasterOn),
+      relatedEntityId: item.id,
+      relatedRequestId: purchase.id,
+    }),
+  };
+}
+
+function hasQueuedAutonomousPurchase(state: CommandCenterRuntimeState) {
+  if (!state.automationMasterOn) return false;
+
+  const activeItemIds = new Set(
+    state.purchases
+      .filter((purchase) => isPurchaseActive(purchase.status))
+      .map((purchase) => purchase.itemId),
+  );
+
+  return state.inventory.some((item) => {
     if (
       !item.automationEnabled ||
       item.automationMode === "assist" ||
       state.pausedItemIds.includes(item.id) ||
       activeItemIds.has(item.id)
     ) {
-      continue;
+      return false;
     }
-
     const percent =
       (item.current / Math.max(item.fullLevel, 0.01)) * 100;
-    if (percent > item.automationTriggerPercent) continue;
-
-    const purchase = createPurchase(next, item, "jourvis");
-    next = {
-      ...next,
-      purchases: [purchase, ...next.purchases],
-      activity: addActivity(next, {
-        module: "purchasing",
-        action: "purchase_started",
-        message: `Jourvis automatically started ${purchase.id} for ${item.name}.`,
-        actor: "jourvis",
-        executionMode: "automatic",
-        reason:
-          `${item.name} was at ${Math.round(percent)}% stock, at or below its ` +
-          `${item.automationTriggerPercent}% Jourvis action trigger. Global autonomy and item automation were enabled, and the configured mode was ${item.automationMode}.`,
-        configuration: inventoryRuleSnapshot(item, next.automationMasterOn),
-        relatedEntityId: item.id,
-        relatedRequestId: purchase.id,
-      }),
-    };
-    activeItemIds.add(item.id);
-  }
-  return next;
+    return percent <= item.automationTriggerPercent;
+  });
 }
 
 function advanceOneAutonomousStep(
@@ -321,12 +348,20 @@ export function CommandCenterRuntimeProvider({
   }, [businessId, loading, state]);
 
   useEffect(() => {
-    if (loading) return;
-    setState((current) => {
-      const planned = planAutonomousPurchases(current);
-      return planned === current ? current : planned;
-    });
-  }, [loading, state.automationMasterOn, state.inventory, state.pausedItemIds]);
+    if (loading || !hasQueuedAutonomousPurchase(state)) return;
+
+    const timer = window.setTimeout(() => {
+      setState((current) => nextAutonomousPurchase(current));
+    }, 850);
+
+    return () => window.clearTimeout(timer);
+  }, [
+    loading,
+    state.automationMasterOn,
+    state.inventory,
+    state.pausedItemIds,
+    state.purchases,
+  ]);
 
   useEffect(() => {
     if (loading) return;
@@ -579,6 +614,47 @@ export function CommandCenterRuntimeProvider({
     }));
   }, []);
 
+  const setItemAutomationEnabled = useCallback(
+    (itemId: string, enabled: boolean) => {
+      setState((current) => {
+        const item = current.inventory.find((entry) => entry.id === itemId);
+        if (!item || item.automationEnabled === enabled) return current;
+
+        const updated: CommandCenterInventoryItem = {
+          ...item,
+          automationEnabled: enabled,
+          automationMode:
+            enabled && item.automationMode === "assist"
+              ? "autobuy"
+              : item.automationMode,
+        };
+
+        return {
+          ...current,
+          inventory: current.inventory.map((entry) =>
+            entry.id === itemId ? updated : entry,
+          ),
+          pausedItemIds: enabled
+            ? current.pausedItemIds.filter((id) => id !== itemId)
+            : current.pausedItemIds,
+          activity: addActivity(current, {
+            module: "inventory",
+            action: "task_execution_mode_changed",
+            message: `Owner set ${item.name} to ${enabled ? "Jourvis automatic" : "Manual"} handling.`,
+            actor: "owner",
+            executionMode: "manual",
+            reason: enabled
+              ? "The owner chose to let Jourvis handle this recurring inventory task automatically within its configured limits."
+              : "The owner chose to keep this recurring inventory task manual, so Jourvis will observe it but will not start purchasing automatically.",
+            configuration: inventoryRuleSnapshot(updated, current.automationMasterOn),
+            relatedEntityId: itemId,
+          }),
+        };
+      });
+    },
+    [],
+  );
+
   const resumeItem = useCallback((itemId: string) => {
     setState((current) => {
       const item = current.inventory.find((entry) => entry.id === itemId);
@@ -626,6 +702,7 @@ export function CommandCenterRuntimeProvider({
       actOnTask,
       applyInventoryConfiguration,
       setAutomationMasterOn,
+      setItemAutomationEnabled,
       resumeItem,
       resetDemo,
     }),
@@ -637,6 +714,7 @@ export function CommandCenterRuntimeProvider({
       resumeItem,
       applyInventoryConfiguration,
       setAutomationMasterOn,
+      setItemAutomationEnabled,
       state,
       tasks,
     ],
