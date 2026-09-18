@@ -1381,6 +1381,31 @@ export default function MarinaraAutoinventoryPreviewPage() {
     log(`${request.id}: supplier marked the confirmed order in transit.`);
   }
 
+  function updateRequestQuantity(requestId: string, itemId: string, quantity: number) {
+    const nextQuantity = Math.max(0, round(quantity));
+    updateProcurement(requestId, (request) => ({
+      ...request,
+      status: "supplier_viewed",
+      buyerConfirmed: false,
+      supplierConfirmed: false,
+      deliveryFee: 0,
+      automationNote: "Owner updated the request. Jourvis is waiting for the supplier response again.",
+      lines: request.lines.map((line) =>
+        line.itemId === itemId
+          ? {
+              ...line,
+              requestedQty: nextQuantity,
+              agreedQty: undefined,
+              quotedPackPrice: undefined,
+              receivedTotal: undefined,
+              deliveryQty: undefined,
+            }
+          : line,
+      ),
+    }));
+    log(`${requestId}: updated requested quantity. Jourvis sent the revised request back through the supplier flow.`);
+  }
+
   function changeReceivedQuantity(requestId: string, itemId: string, quantity: number) {
     updateProcurement(requestId, (current) => ({
       ...current,
@@ -1469,6 +1494,19 @@ export default function MarinaraAutoinventoryPreviewPage() {
   const jourvisUpdateContact = jourvisUpdateItem
     ? getContact(jourvisUpdateItem)
     : undefined;
+  const jourvisUpdateRequest = jourvisUpdateItem
+    ? procurements.find((request) =>
+        activeProcurementStatus(request.status) &&
+        request.lines.some((line) => line.itemId === jourvisUpdateItem.id),
+      )
+    : undefined;
+  const jourvisUpdateLine = jourvisUpdateRequest && jourvisUpdateItem
+    ? jourvisUpdateRequest.lines.find((line) => line.itemId === jourvisUpdateItem.id)
+    : undefined;
+  const jourvisRequestEditable = Boolean(
+    jourvisUpdateRequest &&
+    !["confirmed", "in_transit", "partial_received", "received", "declined"].includes(jourvisUpdateRequest.status),
+  );
 
   const jourvisUpdatePanel = jourvisUpdateItem && jourvisUpdateSupplier && jourvisUpdateContact ? (
     <div className={styles.jourvisUpdatePanel}>
@@ -1479,6 +1517,37 @@ export default function MarinaraAutoinventoryPreviewPage() {
           <strong>{jourvisUpdateItem.current} {jourvisUpdateItem.unit} · {percent(jourvisUpdateItem)}%</strong>
         </div>
       </div>
+
+      {jourvisUpdateRequest && jourvisUpdateLine ? (
+        <div className={styles.jourvisUpdateSection}>
+          <span>CURRENT REQUEST · {jourvisUpdateRequest.id}</span>
+          <div className={styles.jourvisUpdateGrid}>
+            <label>
+              <span>Requested quantity</span>
+              <div>
+                <input
+                  type="number"
+                  min="0"
+                  step={jourvisUpdateItem.packSize}
+                  disabled={!jourvisRequestEditable}
+                  value={jourvisUpdateLine.requestedQty}
+                  onChange={(event) => updateRequestQuantity(jourvisUpdateRequest.id, jourvisUpdateItem.id, Number(event.target.value) || 0)}
+                />
+                <b>{jourvisUpdateItem.unit}</b>
+              </div>
+            </label>
+            <label>
+              <span>Status</span>
+              <input type="text" readOnly value={procurementStatusLabel(jourvisUpdateRequest.status)} />
+            </label>
+          </div>
+          <p className={styles.jourvisUpdateHint}>
+            {jourvisRequestEditable
+              ? "Changing the quantity sends the revised request back through the supplier flow."
+              : "This order is already confirmed or in delivery, so request quantity is locked."}
+          </p>
+        </div>
+      ) : null}
 
       {automationRejected[jourvisUpdateItem.id] ? (
         <div className={styles.jourvisPausedInline}>
