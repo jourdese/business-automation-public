@@ -38,11 +38,9 @@ export default function AutoinventoryConfigurePage() {
   const supplier = getSupplier(selected);
   const contact = getContact(selected);
   const guideFocusLabels = [
-    "Set my trigger",
-    "Choose my authority",
-    "Set my price limits",
-    "Set my spending limits",
-    "Set my negotiation rule",
+    "Choose when I act",
+    "Choose what I may do",
+    "Set the limits",
     "Review and enable",
   ];
   const jourvisConfigureFocusTarget =
@@ -147,15 +145,15 @@ export default function AutoinventoryConfigurePage() {
             </div>
 
             <section className={styles.section}>
-              <div className={styles.sectionHeading}><div><span>01</span><h3>Stock levels</h3></div><p>These values control the battery and when Jourvis starts recommending a restock.</p></div>
+              <div className={styles.sectionHeading}><div><span>01</span><h3>Stock levels</h3></div><p>Set the physical stock scale and the warning level. Jourvis automation uses its own action trigger in section 04.</p></div>
               <div className={styles.batteryCard}>
                 <div className={styles.battery}><span style={{ width: `${fullPercent}%` }} /></div>
                 <div className={styles.batteryLegend}><span>{selected.current} {selected.unit} current</span><strong>{fullPercent}%</strong><span>{selected.fullLevel} {selected.unit} = 100%</span></div>
-                <div className={styles.threshold}><span style={{ left: `${reorderPercent}%` }} /><small>Reorder at {selected.reorderAt} {selected.unit} · {reorderPercent}%</small></div>
+                <div className={styles.threshold}><span style={{ left: `${reorderPercent}%` }} /><small>Low-stock warning at {selected.reorderAt} {selected.unit} · {reorderPercent}%</small></div>
               </div>
               <div className={styles.fieldsTwo}>
                 <label><span>Full level / 100%</span><div><input type="number" min="0.01" step="0.1" value={selected.fullLevel} onChange={(event) => { const value = Math.max(0.01, Number(event.target.value) || 0.01); updateSelected({ fullLevel: value, reorderAt: Math.min(selected.reorderAt, value) }); }} /><b>{selected.unit}</b></div><small>The quantity represented by a full battery.</small></label>
-                <label><span>Reorder at</span><div><input type="number" min="0" max={selected.fullLevel} step="0.1" value={selected.reorderAt} onChange={(event) => updateSelected({ reorderAt: Math.max(0, Math.min(selected.fullLevel, Number(event.target.value) || 0)) })} /><b>{selected.unit}</b></div><small>Jourvis starts suggesting supplier contact here.</small></label>
+                <label><span>Low-stock warning</span><div><input type="number" min="0" max={selected.fullLevel} step="0.1" value={selected.reorderAt} onChange={(event) => updateSelected({ reorderAt: Math.max(0, Math.min(selected.fullLevel, Number(event.target.value) || 0)) })} /><b>{selected.unit}</b></div><small>This changes the warning color only. Jourvis automation acts from its own percentage trigger below.</small></label>
               </div>
             </section>
 
@@ -185,18 +183,18 @@ export default function AutoinventoryConfigurePage() {
             <section className={styles.section}>
               <div className={styles.sectionHeading}>
                 <div><span>04</span><h3>Jourvis Automation</h3></div>
-                <p>Give Jourvis explicit permission and limits. Anything outside these rules stops and comes back to the owner.</p>
+                <p>Keep the everyday setup simple: when I should act, what I may do, and the limits I must never cross without asking you.</p>
               </div>
 
               <div className={styles.automationHero} data-enabled={selected.automationEnabled}>
                 <CompanionMark className={styles.automationCompanion} />
                 <div>
                   <span>JOURVIS ASKS</span>
-                  <h4>{selected.automationEnabled ? "I know the rules for this supply." : "Want me to manage this supply when it gets low?"}</h4>
+                  <h4>{selected.automationEnabled ? "I know when to act and when to ask you." : "Want me to help manage this supply?"}</h4>
                   <p>
                     {selected.automationEnabled
-                      ? `Mode: ${selected.automationMode.replace("_", " ")} · target ${new Intl.NumberFormat("en-PH", { style: "currency", currency: "PHP", maximumFractionDigits: 0 }).format(selected.targetPackPrice)} · hard stop ${new Intl.NumberFormat("en-PH", { style: "currency", currency: "PHP", maximumFractionDigits: 0 }).format(selected.hardMaxPackPrice)}.`
-                      : "I can watch the reorder point, contact the supplier, negotiate inside your price range, and stop whenever a limit is exceeded."}
+                      ? `I act at ${selected.automationTriggerPercent}% or lower in ${selected.automationMode === "assist" ? "watch only" : selected.automationMode === "auto_contact" ? "contact supplier" : "buy within limits"} mode.`
+                      : "Tell me when to act, what I may do, and the maximum amount I can approve without you."}
                   </p>
                 </div>
                 <div className={styles.automationHeroActions}>
@@ -219,7 +217,7 @@ export default function AutoinventoryConfigurePage() {
               {guideStep !== null ? (
                 <div className={styles.guidePanel}>
                   <div className={styles.guideProgress}>
-                    {Array.from({ length: 6 }).map((_, index) => <i key={index} data-active={index <= guideStep} />)}
+                    {Array.from({ length: 4 }).map((_, index) => <i key={index} data-active={index <= guideStep} />)}
                   </div>
 
                   {guideStep === 0 ? (
@@ -227,8 +225,8 @@ export default function AutoinventoryConfigurePage() {
                       <span>1 / WHEN SHOULD I ACT?</span>
                       <h4>Choose the stock percentage that should wake me up.</h4>
                       <p>
-                        {selected.name} is currently {fullPercent}%. I&apos;ll trigger automation at
-                        {" "}{selected.automationTriggerPercent}% or lower, which is about {automationTriggerQuantity} {selected.unit}.
+                        {selected.name} is currently {fullPercent}%. I&apos;ll act at
+                        {" "}{selected.automationTriggerPercent}% or lower, about {automationTriggerQuantity} {selected.unit}.
                       </p>
                       <div className={styles.triggerControl}>
                         <input
@@ -241,7 +239,7 @@ export default function AutoinventoryConfigurePage() {
                           aria-label={`Jourvis automation trigger for ${selected.name}`}
                         />
                         <label>
-                          <span>Jourvis trigger</span>
+                          <span>Jourvis action trigger</span>
                           <div>
                             <input
                               type="number"
@@ -253,7 +251,7 @@ export default function AutoinventoryConfigurePage() {
                             />
                             <b>%</b>
                           </div>
-                          <small>Equivalent to about {automationTriggerQuantity} {selected.unit} of your {selected.fullLevel} {selected.unit} full level.</small>
+                          <small>About {automationTriggerQuantity} {selected.unit} of your {selected.fullLevel} {selected.unit} full level.</small>
                         </label>
                       </div>
                     </div>
@@ -262,12 +260,12 @@ export default function AutoinventoryConfigurePage() {
                   {guideStep === 1 ? (
                     <div id="jourvis-guide-step-1" className={styles.guideQuestion}>
                       <span>2 / WHAT MAY I DO?</span>
-                      <h4>How much control do you want me to have?</h4>
+                      <h4>Choose one level of authority.</h4>
                       <div className={styles.modeChoices}>
                         {([
-                          ["assist", "Assist", "Tell me what to do, but never contact a supplier automatically."],
-                          ["auto_contact", "Auto-contact", "Contact the supplier when stock is low, then wait for owner approval."],
-                          ["autobuy", "Autobuy", "Contact, negotiate and accept only inside the limits below."],
+                          ["assist", "Watch only", "Tell you when action is needed. I never contact a supplier by myself."],
+                          ["auto_contact", "Contact supplier", "Ask the supplier automatically, then bring decisions back to you."],
+                          ["autobuy", "Buy within limits", "Handle the normal purchase flow myself and ask you only when a limit is exceeded."],
                         ] as const).map(([value, label, description]) => (
                           <button key={value} type="button" data-active={selected.automationMode === value} onClick={() => updateSelected({ automationMode: value })}>
                             <strong>{label}</strong><small>{description}</small>
@@ -279,88 +277,73 @@ export default function AutoinventoryConfigurePage() {
 
                   {guideStep === 2 ? (
                     <div id="jourvis-guide-step-2" className={styles.guideQuestion}>
-                      <span>3 / WHAT PRICE IS SAFE?</span>
-                      <h4>Give me a target, an auto-accept ceiling, and a hard stop.</h4>
+                      <span>3 / WHAT ARE MY LIMITS?</span>
+                      <h4>Set the two numbers I must not exceed automatically.</h4>
                       <div className={styles.guideFields}>
-                        <label><span>Target / pack</span><div><b>₱</b><input type="number" min="0" value={selected.targetPackPrice} onChange={(event) => updateSelected({ targetPackPrice: Math.max(0, Number(event.target.value) || 0) })} /></div></label>
-                        <label><span>Auto-accept up to</span><div><b>₱</b><input type="number" min={selected.targetPackPrice} value={selected.autoAcceptPackPrice} onChange={(event) => updateSelected({ autoAcceptPackPrice: Math.max(selected.targetPackPrice, Number(event.target.value) || 0) })} /></div></label>
-                        <label><span>Never exceed</span><div><b>₱</b><input type="number" min={selected.autoAcceptPackPrice} value={selected.hardMaxPackPrice} onChange={(event) => updateSelected({ hardMaxPackPrice: Math.max(selected.autoAcceptPackPrice, Number(event.target.value) || 0) })} /></div></label>
+                        <label>
+                          <span>Maximum automatic order</span>
+                          <div><b>₱</b><input type="number" min="0" value={selected.maxAutoOrderSpend} onChange={(event) => updateSelected({ maxAutoOrderSpend: Math.max(0, Number(event.target.value) || 0) })} /></div>
+                          <small>If an actual order or quote is above this, I ask you.</small>
+                        </label>
+                        <label>
+                          <span>Maximum automatic pack price</span>
+                          <div><b>₱</b><input type="number" min="0" value={selected.autoAcceptPackPrice} onChange={(event) => updateSelected({ autoAcceptPackPrice: Math.max(0, Number(event.target.value) || 0), hardMaxPackPrice: Math.max(selected.hardMaxPackPrice, Number(event.target.value) || 0) })} /></div>
+                          <small>For quote suppliers, I compare the supplier&apos;s actual quote to this price.</small>
+                        </label>
                       </div>
-                      <p className={styles.guideHint}>The hard maximum stays private. Jourvis does not tell the supplier your ceiling.</p>
+                      <p className={styles.guideHint}>Anything outside these limits becomes a simple Approve once / Reject decision. Advanced rules are optional.</p>
                     </div>
                   ) : null}
 
                   {guideStep === 3 ? (
                     <div id="jourvis-guide-step-3" className={styles.guideQuestion}>
-                      <span>4 / HOW MUCH MAY I SPEND?</span>
-                      <h4>Set quantity and spend guardrails.</h4>
-                      <div className={styles.guideFields}>
-                        <label><span>Max automatic quantity</span><div><input type="number" min="0" step="0.1" value={selected.maxAutoOrderQty} onChange={(event) => updateSelected({ maxAutoOrderQty: Math.max(0, Number(event.target.value) || 0) })} /><b>{selected.unit}</b></div></label>
-                        <label><span>Max automatic order</span><div><b>₱</b><input type="number" min="0" value={selected.maxAutoOrderSpend} onChange={(event) => updateSelected({ maxAutoOrderSpend: Math.max(0, Number(event.target.value) || 0) })} /></div></label>
-                        <label><span>Max delivery fee</span><div><b>₱</b><input type="number" min="0" value={selected.maxDeliveryFee} onChange={(event) => updateSelected({ maxDeliveryFee: Math.max(0, Number(event.target.value) || 0) })} /></div></label>
-                        <label><span>Max lead time</span><div><input type="number" min="0" step="0.5" value={selected.maxLeadDays} onChange={(event) => updateSelected({ maxLeadDays: Math.max(0, Number(event.target.value) || 0) })} /><b>days</b></div></label>
-                      </div>
-                    </div>
-                  ) : null}
-
-                  {guideStep === 4 ? (
-                    <div id="jourvis-guide-step-4" className={styles.guideQuestion}>
-                      <span>5 / MAY I NEGOTIATE?</span>
-                      <h4>Tell me what to do when a quote is above the auto-accept price.</h4>
-                      <div className={styles.negotiationRow}>
-                        <button type="button" data-active={selected.autoNegotiate} onClick={() => updateSelected({ autoNegotiate: !selected.autoNegotiate })}>
-                          <strong>{selected.autoNegotiate ? "Auto-negotiate ON" : "Auto-negotiate OFF"}</strong>
-                          <small>{selected.autoNegotiate ? "I may counter up to the limit below." : "I will stop and ask you instead."}</small>
-                        </button>
-                        <label><span>Max counteroffers</span><input type="number" min="0" max="5" value={selected.maxCounteroffers} onChange={(event) => updateSelected({ maxCounteroffers: Math.max(0, Math.min(5, Number(event.target.value) || 0)) })} /></label>
-                      </div>
-                    </div>
-                  ) : null}
-
-                  {guideStep === 5 ? (
-                    <div id="jourvis-guide-step-5" className={styles.guideQuestion}>
-                      <span>6 / READY</span>
-                      <h4>Here&apos;s what I&apos;ll do for {selected.name}.</h4>
+                      <span>4 / READY</span>
+                      <h4>This is the rule I&apos;ll follow for {selected.name}.</h4>
                       <div className={styles.ruleSummary}>
-                        <div><span>Automation trigger</span><strong>≤ {selected.automationTriggerPercent}%</strong></div>
-                        <div><span>Mode</span><strong>{selected.automationMode.replace("_", " ")}</strong></div>
-                        <div><span>Target price</span><strong>₱{selected.targetPackPrice}</strong></div>
-                        <div><span>Auto-accept</span><strong>≤ ₱{selected.autoAcceptPackPrice}</strong></div>
-                        <div><span>Hard stop</span><strong>₱{selected.hardMaxPackPrice}</strong></div>
+                        <div><span>Act at</span><strong>≤ {selected.automationTriggerPercent}%</strong></div>
+                        <div><span>Authority</span><strong>{selected.automationMode === "assist" ? "Watch only" : selected.automationMode === "auto_contact" ? "Contact supplier" : "Buy within limits"}</strong></div>
                         <div><span>Max order</span><strong>₱{selected.maxAutoOrderSpend}</strong></div>
+                        <div><span>Max pack price</span><strong>₱{selected.autoAcceptPackPrice}</strong></div>
                       </div>
                       <label className={styles.previewRule}>
                         <input type="checkbox" checked={selected.automationPreview} onChange={(event) => updateSelected({ automationPreview: event.target.checked })} />
-                        <span><strong>Preview mode</strong><small>Jourvis runs the workflow in the demo but marks automatic actions as a dry run.</small></span>
+                        <span><strong>Preview mode</strong><small>Keep this on while testing. Jourvis will simulate supplier actions instead of sending anything real.</small></span>
                       </label>
                     </div>
                   ) : null}
 
                   <div className={styles.guideNav}>
                     <button type="button" className={styles.resetButton} onClick={() => guideStep === 0 ? setGuideStep(null) : setGuideStep((guideStep ?? 1) - 1)}><ChevronLeft size={14} aria-hidden /> {guideStep === 0 ? "Close" : "Back"}</button>
-                    {guideStep < 5 ? (
+                    {guideStep < 3 ? (
                       <button type="button" className={styles.saveButton} onClick={() => setGuideStep((guideStep ?? 0) + 1)}>Continue <ChevronRight size={14} aria-hidden /></button>
                     ) : (
-                      <button type="button" className={styles.saveButton} onClick={enableAutomationFromGuide}><Check size={14} aria-hidden /> Enable & save for {selected.name}</button>
+                      <button type="button" className={styles.saveButton} onClick={enableAutomationFromGuide}><Check size={14} aria-hidden /> Enable & save {selected.name}</button>
                     )}
                   </div>
                 </div>
               ) : null}
 
               <div className={styles.automationRules}>
-                <label><span>Jourvis trigger</span><div><input type="number" min="0" max="100" step="1" value={selected.automationTriggerPercent} onChange={(event) => updateSelected({ automationTriggerPercent: Math.max(0, Math.min(100, Number(event.target.value) || 0)) })} /><b>%</b></div><small>Start automation at or below this stock level · about {automationTriggerQuantity} {selected.unit}.</small></label>
-                <label><span>Automation mode</span><select value={selected.automationMode} onChange={(event) => updateSelected({ automationMode: event.target.value as Ingredient["automationMode"] })}><option value="assist">Assist only</option><option value="auto_contact">Auto-contact supplier</option><option value="autobuy">Autobuy within limits</option></select><small>Autobuy still stops when any configured limit is exceeded.</small></label>
-                <label><span>Target pack price</span><div><b>₱</b><input type="number" min="0" value={selected.targetPackPrice} onChange={(event) => updateSelected({ targetPackPrice: Math.max(0, Number(event.target.value) || 0) })} /></div><small>The price Jourvis aims for when negotiating.</small></label>
-                <label><span>Auto-accept up to</span><div><b>₱</b><input type="number" min="0" value={selected.autoAcceptPackPrice} onChange={(event) => updateSelected({ autoAcceptPackPrice: Math.max(0, Number(event.target.value) || 0) })} /></div><small>Quotes at or below this may be accepted automatically in Autobuy mode.</small></label>
-                <label><span>Absolute maximum</span><div><b>₱</b><input type="number" min="0" value={selected.hardMaxPackPrice} onChange={(event) => updateSelected({ hardMaxPackPrice: Math.max(0, Number(event.target.value) || 0) })} /></div><small>Jourvis never accepts or counters above this private ceiling.</small></label>
-                <label><span>Max auto quantity</span><div><input type="number" min="0" step="0.1" value={selected.maxAutoOrderQty} onChange={(event) => updateSelected({ maxAutoOrderQty: Math.max(0, Number(event.target.value) || 0) })} /><b>{selected.unit}</b></div><small>If the suggested quantity is higher, Jourvis asks you.</small></label>
-                <label><span>Max order spend</span><div><b>₱</b><input type="number" min="0" value={selected.maxAutoOrderSpend} onChange={(event) => updateSelected({ maxAutoOrderSpend: Math.max(0, Number(event.target.value) || 0) })} /></div><small>Maximum automatic spend for this stock rule.</small></label>
-                <label><span>Auto-negotiate</span><select value={selected.autoNegotiate ? "yes" : "no"} onChange={(event) => updateSelected({ autoNegotiate: event.target.value === "yes" })}><option value="yes">Yes — counter within limits</option><option value="no">No — always ask owner</option></select><small>Only applies when a supplier quote is above the auto-accept ceiling.</small></label>
-                <label><span>Max counteroffers</span><input type="number" min="0" max="5" value={selected.maxCounteroffers} onChange={(event) => updateSelected({ maxCounteroffers: Math.max(0, Math.min(5, Number(event.target.value) || 0)) })} /><small>Jourvis stops and asks you after this many counters.</small></label>
-                <label><span>Max delivery fee</span><div><b>₱</b><input type="number" min="0" value={selected.maxDeliveryFee} onChange={(event) => updateSelected({ maxDeliveryFee: Math.max(0, Number(event.target.value) || 0) })} /></div><small>Higher fees require owner approval.</small></label>
-                <label><span>Max lead time</span><div><input type="number" min="0" step="0.5" value={selected.maxLeadDays} onChange={(event) => updateSelected({ maxLeadDays: Math.max(0, Number(event.target.value) || 0) })} /><b>days</b></div><small>Longer supplier lead times require owner approval.</small></label>
-                <label><span>Automation run mode</span><select value={selected.automationPreview ? "preview" : "active"} onChange={(event) => updateSelected({ automationPreview: event.target.value === "preview" })}><option value="preview">Preview / dry run</option><option value="active">Active rules</option></select><small>This prototype never sends a real message; the setting shows how production behavior would differ.</small></label>
+                <label><span>Jourvis action trigger</span><div><input type="number" min="0" max="100" step="1" value={selected.automationTriggerPercent} onChange={(event) => updateSelected({ automationTriggerPercent: Math.max(0, Math.min(100, Number(event.target.value) || 0)) })} /><b>%</b></div><small>When stock reaches this percentage, Jourvis acts according to the authority below.</small></label>
+                <label><span>What Jourvis may do</span><select value={selected.automationMode} onChange={(event) => updateSelected({ automationMode: event.target.value as Ingredient["automationMode"] })}><option value="assist">Watch only</option><option value="auto_contact">Contact supplier</option><option value="autobuy">Buy within limits</option></select><small>Buy within limits means Jourvis handles normal cases and asks you only for exceptions.</small></label>
+                <label><span>Maximum automatic order</span><div><b>₱</b><input type="number" min="0" value={selected.maxAutoOrderSpend} onChange={(event) => updateSelected({ maxAutoOrderSpend: Math.max(0, Number(event.target.value) || 0) })} /></div><small>Above this total, Jourvis asks for a one-time approval.</small></label>
+                <label><span>Maximum automatic pack price</span><div><b>₱</b><input type="number" min="0" value={selected.autoAcceptPackPrice} onChange={(event) => updateSelected({ autoAcceptPackPrice: Math.max(0, Number(event.target.value) || 0) })} /></div><small>For quote suppliers, this is checked against the actual supplier quote.</small></label>
               </div>
+
+              <details className={styles.advancedRules}>
+                <summary>Advanced rules</summary>
+                <p>Only change these if your supplier relationship needs more control.</p>
+                <div className={styles.automationRules}>
+                  <label><span>Negotiation target price</span><div><b>₱</b><input type="number" min="0" value={selected.targetPackPrice} onChange={(event) => updateSelected({ targetPackPrice: Math.max(0, Number(event.target.value) || 0) })} /></div><small>Jourvis aims for this price when countering.</small></label>
+                  <label><span>Absolute price ceiling</span><div><b>₱</b><input type="number" min="0" value={selected.hardMaxPackPrice} onChange={(event) => updateSelected({ hardMaxPackPrice: Math.max(selected.autoAcceptPackPrice, Number(event.target.value) || 0) })} /></div><small>Jourvis never negotiates above this private ceiling without owner approval.</small></label>
+                  <label><span>Maximum automatic quantity</span><div><input type="number" min="0" step="0.1" value={selected.maxAutoOrderQty} onChange={(event) => updateSelected({ maxAutoOrderQty: Math.max(0, Number(event.target.value) || 0) })} /><b>{selected.unit}</b></div><small>Large quantity exceptions come back to you.</small></label>
+                  <label><span>Auto-negotiate</span><select value={selected.autoNegotiate ? "yes" : "no"} onChange={(event) => updateSelected({ autoNegotiate: event.target.value === "yes" })}><option value="yes">Yes — counter within limits</option><option value="no">No — ask me instead</option></select><small>Used only when a quote is above the normal auto-accept price.</small></label>
+                  <label><span>Maximum counteroffers</span><input type="number" min="0" max="5" value={selected.maxCounteroffers} onChange={(event) => updateSelected({ maxCounteroffers: Math.max(0, Math.min(5, Number(event.target.value) || 0)) })} /><small>After this many counters, Jourvis asks you.</small></label>
+                  <label><span>Maximum delivery fee</span><div><b>₱</b><input type="number" min="0" value={selected.maxDeliveryFee} onChange={(event) => updateSelected({ maxDeliveryFee: Math.max(0, Number(event.target.value) || 0) })} /></div><small>Higher fees require approval.</small></label>
+                  <label><span>Maximum lead time</span><div><input type="number" min="0" step="0.5" value={selected.maxLeadDays} onChange={(event) => updateSelected({ maxLeadDays: Math.max(0, Number(event.target.value) || 0) })} /><b>days</b></div><small>Longer delivery times require approval.</small></label>
+                  <label><span>Run mode</span><select value={selected.automationPreview ? "preview" : "active"} onChange={(event) => updateSelected({ automationPreview: event.target.value === "preview" })}><option value="preview">Preview / dry run</option><option value="active">Active rules</option></select><small>This demo never sends a real message; the setting shows intended production behavior.</small></label>
+                </div>
+              </details>
             </section>
 
             <div className={styles.saveBar}>
@@ -372,7 +355,7 @@ export default function AutoinventoryConfigurePage() {
       </div>
 
       <JourvisPresence
-        status={guideStep !== null ? `Guiding setup · ${guideStep + 1}/6` : selected.automationEnabled ? "Automation configured" : "Ready to help"}
+        status={guideStep !== null ? `Guiding setup · ${guideStep + 1}/4` : selected.automationEnabled ? "Automation configured" : "Ready to help"}
         message={
           guideStep !== null
             ? guideStep === 0
@@ -380,12 +363,8 @@ export default function AutoinventoryConfigurePage() {
               : guideStep === 1
                 ? "Choose how much purchasing authority you want me to have."
                 : guideStep === 2
-                  ? "Tell me the price range I’m allowed to work inside."
-                  : guideStep === 3
-                    ? "Now give me quantity, spend and delivery limits."
-                    : guideStep === 4
-                      ? "Should I negotiate for you when a quote is too high?"
-                      : "Review my rules. I’ll stop whenever something falls outside them."
+                  ? "Set the order and price limits I must not cross without you."
+                  : "Review the simple rule I’ll follow."
             : selected.automationEnabled
               ? `I’m configured for ${selected.name} in ${selected.automationMode.replace("_", " ")} mode.`
               : `Want me to learn how to manage ${selected.name}?`
@@ -407,14 +386,14 @@ export default function AutoinventoryConfigurePage() {
                 { label: "Save configuration", onClick: save },
                 { label: "Back to Autoinventory", href: "/restaurant/marinara-ristorante/Autoinventory-preview" },
               ]
-            : guideStep < 5
+            : guideStep < 3
               ? [
                   { label: "Continue setup", onClick: () => setGuideStep((guideStep ?? 0) + 1), primary: true },
                   { label: "Close guide", onClick: () => setGuideStep(null) },
                 ]
               : [
                   { label: `Enable & save ${selected.name}`, onClick: enableAutomationFromGuide, primary: true },
-                  { label: "Review previous step", onClick: () => setGuideStep(4) },
+                  { label: "Review previous step", onClick: () => setGuideStep(2) },
                 ]
         }
       />
