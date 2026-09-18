@@ -1,5 +1,6 @@
 import {
   estimatedPurchaseTotal,
+  evaluateAutomaticPurchaseStart,
   evaluatePurchaseAuthority,
   inventoryPercent,
   isPurchaseActive,
@@ -210,6 +211,33 @@ export function deriveJourvisTasks(
 
     const quantity = suggestedPurchaseQuantity(item);
     const estimatedTotal = estimatedPurchaseTotal(item, quantity);
+    const automaticStart = evaluateAutomaticPurchaseStart(item);
+
+    if (
+      state.automationMasterOn &&
+      item.automationEnabled &&
+      item.automationMode !== "assist" &&
+      !automaticStart.allowed
+    ) {
+      tasks.push({
+        id: `restock-guard-${item.id}`,
+        businessId: state.business.id,
+        module: "inventory",
+        entityId: item.id,
+        priority: "high",
+        state: "needs_owner",
+        title: `${item.name} automatic restock is blocked`,
+        whatHappened:
+          `${item.name} reached its Jourvis action trigger, but the proposed supplier request is already outside the configured automatic authority.`,
+        why: automaticStart.reasons.join(" "),
+        whatJourvisDid:
+          "Jourvis stopped before contacting the supplier because the request already violates a known quantity, spend, price, or lead-time safeguard.",
+        whyOwnerIsNeeded:
+          "The owner can approve this one-time exception, reject it, or update the rule before supplier contact.",
+        actions: ["approve", "reject", "update"],
+      });
+      return;
+    }
 
     if (
       !item.automationEnabled ||
