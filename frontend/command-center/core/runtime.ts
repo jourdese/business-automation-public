@@ -109,6 +109,8 @@ export type CommandCenterRecipe = {
   id: string;
   name: string;
   description: string;
+  notes?: string;
+  active: boolean;
   ingredients: Record<string, number>;
 };
 
@@ -119,10 +121,14 @@ export type CommandCenterMenuItem = {
   dishKey: string;
   category: string;
   variant?: string;
+  description?: string;
+  currentPrice?: number;
   referencePrice?: number;
   referenceSource: "archived-menu-photo" | "demo";
   referencePublicationDate?: string;
   currentPriceVerified: boolean;
+  active: boolean;
+  available: boolean;
   recipeId?: string;
 };
 
