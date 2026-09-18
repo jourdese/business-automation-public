@@ -630,9 +630,42 @@ export default function MarinaraAutoinventoryPreviewPage() {
     if (!eligible.length) return;
 
     const groups = automationGroupsForItems(eligible);
+    const approvedGroups: Ingredient[][] = [];
+    const groupedBlocks: Record<string, string> = {};
+
+    groups.forEach((items) => {
+      if (items[0]?.purchasingMode !== "fixed") {
+        approvedGroups.push(items);
+        return;
+      }
+
+      const knownTotal = items.reduce((sum, item) => {
+        const quantity = suggestedOrder(item);
+        return sum + Math.ceil(quantity / Math.max(item.packSize, 0.01)) * item.packPrice;
+      }, 0);
+      const groupCap = Math.min(...items.map((item) => item.maxAutoOrderSpend));
+
+      if (knownTotal > groupCap) {
+        items.forEach((item) => {
+          groupedBlocks[item.id] =
+            `Jourvis paused: the combined order from ${getSupplier(item).name} is ${formatMoney(knownTotal)}, above the automatic order cap of ${formatMoney(groupCap)}.`;
+        });
+        return;
+      }
+
+      approvedGroups.push(items);
+    });
+
+    if (Object.keys(groupedBlocks).length) {
+      Object.entries(groupedBlocks)
+        .filter(([id]) => !automationAlerts[id])
+        .forEach(([, message]) => log(message));
+      setAutomationAlerts((current) => ({ ...current, ...groupedBlocks }));
+    }
+
     const startIndex = procurements.length;
 
-    const automaticRequests: ProcurementRequest[] = groups.map((items, index) => {
+    const automaticRequests: ProcurementRequest[] = approvedGroups.map((items, index) => {
       const first = items[0];
       const supplier = getSupplier(first);
       const contact = getContact(first);
