@@ -30,11 +30,21 @@ export default function CommandCenterIndexPage() {
               alignItems: "center",
             }}
           >
-            <BusinessBrandMark
-              businessId={business.id}
-              businessName={business.name}
-              className="command-center-business-card-mark"
-            />
+            <span
+              style={{
+                width: 56,
+                height: 56,
+                display: "block",
+                border: "1px solid var(--border)",
+                background: "#08161e",
+                padding: 5,
+              }}
+            >
+              <BusinessBrandMark
+                businessId={business.id}
+                businessName={business.name}
+              />
+            </span>
             <span>
               <span style={{ display: "block", color: "var(--mint)", fontSize: 11, letterSpacing: "0.08em" }}>
                 {business.industry.toUpperCase()}
