@@ -17,6 +17,7 @@ import {
   isPurchaseActive,
   normalizeInventoryAuthorityConfiguration,
   suggestedPurchaseQuantity,
+  type CommandCenterActivity,
   type CommandCenterInventoryItem,
   type CommandCenterPurchase,
   type CommandCenterRuntimeState,
@@ -512,11 +513,30 @@ export function CommandCenterRuntimeProvider({
           if (purchase) {
             return {
               ...current,
-              purchases: current.purchases.map((entry) =>
-                entry.id === purchase.id
-                  ? { ...entry, status: "approved", explanation: "Owner approved the exception through Jourvis." }
-                  : entry,
-              ),
+              purchases: current.purchases.map((entry) => {
+                if (entry.id !== purchase.id) return entry;
+
+                if (
+                  entry.status === "requested" ||
+                  entry.status === "quote_requested"
+                ) {
+                  return {
+                    ...entry,
+                    origin: "owner" as const,
+                    buyerConfirmed: item?.purchasingMode === "fixed",
+                    explanation:
+                      "Owner approved this specific supplier request while global autonomy or the automatic rule would not continue it.",
+                  };
+                }
+
+                return {
+                  ...entry,
+                  status: "awaiting_confirmation" as const,
+                  buyerConfirmed: true,
+                  explanation:
+                    "Owner accepted the purchase terms through Jourvis. Final supplier confirmation is still pending.",
+                };
+              }),
               pausedItemIds: item
                 ? current.pausedItemIds.filter((id) => id !== item.id)
                 : current.pausedItemIds,
@@ -854,9 +874,14 @@ export function CommandCenterRuntimeProvider({
         const purchase = current.purchases.find((entry) => entry.id === purchaseId);
         if (!purchase) return current;
         if (
-          ["confirmed", "in_transit", "partial_received", "received", "rejected"].includes(
-            purchase.status,
-          )
+          [
+            "awaiting_confirmation",
+            "confirmed",
+            "in_transit",
+            "partial_received",
+            "received",
+            "rejected",
+          ].includes(purchase.status)
         ) {
           return current;
         }
@@ -878,30 +903,54 @@ export function CommandCenterRuntimeProvider({
 
         return {
           ...current,
-          purchases: current.purchases.map((entry) =>
-            entry.id === purchaseId
-              ? {
-                  ...entry,
-                  quantity: normalizedQuantity,
-                  estimatedTotal:
-                    packs * item.packPrice,
-                  quotedTotal:
-                    entry.quotedPackPrice !== undefined
-                      ? nextTotal
-                      : entry.quotedTotal,
-                  status:
-                    entry.status === "quote_received" ||
-                    entry.status === "counter_sent" ||
-                    entry.status === "approved"
-                      ? item.purchasingMode === "quote"
-                        ? "quote_requested"
-                        : "requested"
-                      : entry.status,
-                  explanation:
-                    "The owner changed the requested quantity, so Jourvis recalculated the request and returned it to the supplier workflow.",
-                }
-              : entry,
-          ),
+          purchases: current.purchases.map((entry) => {
+            if (entry.id !== purchaseId) return entry;
+
+            const restartSupplierFlow = [
+              "supplier_viewed",
+              "quote_received",
+              "counter_sent",
+              "approved",
+            ].includes(entry.status);
+
+            return {
+              ...entry,
+              quantity: normalizedQuantity,
+              estimatedTotal: packs * item.packPrice,
+              quotedPackPrice: restartSupplierFlow
+                ? undefined
+                : entry.quotedPackPrice,
+              quotedTotal: restartSupplierFlow
+                ? undefined
+                : entry.quotedPackPrice !== undefined
+                  ? nextTotal
+                  : entry.quotedTotal,
+              deliveryFee: restartSupplierFlow
+                ? undefined
+                : entry.deliveryFee,
+              etaDays: restartSupplierFlow
+                ? undefined
+                : entry.etaDays,
+              counteroffersUsed: restartSupplierFlow
+                ? 0
+                : entry.counteroffersUsed,
+              origin: restartSupplierFlow ? "owner" as const : entry.origin,
+              buyerConfirmed: restartSupplierFlow
+                ? item.purchasingMode === "fixed"
+                : entry.buyerConfirmed,
+              supplierConfirmed: restartSupplierFlow
+                ? false
+                : entry.supplierConfirmed,
+              status: restartSupplierFlow
+                ? item.purchasingMode === "quote"
+                  ? "quote_requested" as const
+                  : "requested" as const
+                : entry.status,
+              explanation: restartSupplierFlow
+                ? "The owner changed the requested quantity, so Jourvis cleared the previous supplier terms and restarted the supplier workflow."
+                : "The owner changed the requested quantity before supplier agreement; Jourvis recalculated the request.",
+            };
+          }),
           activity: addActivity(current, {
             module: "purchasing",
             action: "purchase_quantity_updated",
