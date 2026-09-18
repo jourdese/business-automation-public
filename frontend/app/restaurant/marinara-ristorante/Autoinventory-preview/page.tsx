@@ -1656,50 +1656,42 @@ export default function MarinaraAutoinventoryPreviewPage() {
 
                         <div className={styles.procurementActions}>
                           {request.status === "requested" ? (
-                            <button type="button" className={styles.primaryButton} onClick={() => supplierViewsRequest(request)}>
-                              Simulate supplier view
-                            </button>
+                            <span className={styles.procurementClosed}><Clock3 size={15} aria-hidden /> Sent · waiting for supplier to open the request</span>
                           ) : null}
 
                           {request.status === "supplier_viewed" && request.mode === "quote" ? (
+                            <span className={styles.procurementClosed}><Clock3 size={15} aria-hidden /> Supplier viewed it · waiting for quote</span>
+                          ) : null}
+
+                          {request.status === "supplier_viewed" && request.mode === "fixed" && !request.buyerConfirmed ? (
                             <>
-                              <button type="button" className={styles.primaryButton} onClick={() => supplierSubmitsQuote(request)}>Simulate supplier quote</button>
-                              <button type="button" className={styles.textAction} onClick={() => declineProcurement(request)}>Supplier declines</button>
+                              <button type="button" className={styles.primaryButton} onClick={() => buyerApprovesFixedAutomation(request)}>Approve purchase order</button>
+                              <button type="button" className={styles.textAction} onClick={() => declineProcurement(request)}>Reject</button>
                             </>
                           ) : null}
 
-                          {request.status === "supplier_viewed" && request.mode === "fixed" ? (
-                            <>
-                              {request.origin === "automation" && request.automationMode === "auto_contact" && !request.buyerConfirmed ? (
-                                <button type="button" className={styles.primaryButton} onClick={() => buyerApprovesFixedAutomation(request)}>Owner approves PO</button>
-                              ) : (
-                                <button type="button" className={styles.primaryButton} onClick={() => confirmProcurement(request, "acknowledgment")}>Supplier acknowledges PO</button>
-                              )}
-                              <button type="button" className={styles.textAction} onClick={() => declineProcurement(request)}>Supplier rejects</button>
-                            </>
+                          {request.status === "supplier_viewed" && request.mode === "fixed" && request.buyerConfirmed ? (
+                            <span className={styles.procurementClosed}><Clock3 size={15} aria-hidden /> Approved · waiting for supplier confirmation</span>
                           ) : null}
 
                           {request.status === "quote_received" ? (
                             <>
-                              <button type="button" className={styles.primaryButton} onClick={() => buyerAcceptsQuote(request)}>Buyer accepts quote</button>
+                              <button type="button" className={styles.primaryButton} onClick={() => buyerAcceptsQuote(request)}>Approve quote</button>
                               <button type="button" className={styles.secondaryButton} onClick={() => buyerCountersQuote(request)}>Counter at target price</button>
-                              <button type="button" className={styles.textAction} onClick={() => declineProcurement(request)}>Reject quote</button>
+                              <button type="button" className={styles.textAction} onClick={() => declineProcurement(request)}>Reject</button>
                             </>
                           ) : null}
 
                           {request.status === "counter_sent" ? (
-                            <>
-                              <button type="button" className={styles.primaryButton} onClick={() => confirmProcurement(request, "counter")}>Supplier accepts counter</button>
-                              <button type="button" className={styles.textAction} onClick={() => declineProcurement(request)}>Supplier rejects counter</button>
-                            </>
+                            <span className={styles.procurementClosed}><Clock3 size={15} aria-hidden /> Counter sent · waiting for supplier</span>
                           ) : null}
 
                           {request.status === "awaiting_confirmation" ? (
-                            <button type="button" className={styles.primaryButton} onClick={() => confirmProcurement(request, "quote")}>Supplier final confirmation</button>
+                            <span className={styles.procurementClosed}><Clock3 size={15} aria-hidden /> Price agreed · waiting for supplier confirmation</span>
                           ) : null}
 
                           {request.status === "confirmed" ? (
-                            <button type="button" className={styles.primaryButton} onClick={() => markProcurementInTransit(request)}><Truck size={15} aria-hidden /> Mark in transit</button>
+                            <span className={styles.procurementClosed}><Truck size={15} aria-hidden /> Confirmed · supplier is preparing dispatch</span>
                           ) : null}
 
                           {request.status === "in_transit" ? (
