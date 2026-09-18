@@ -19,6 +19,7 @@ import CompanionMark from "@/components/jourvis/CompanionMark";
 import SupplyPhoto from "./SupplyPhoto";
 import { operationCatalog } from "@/command-center/core/business-registry";
 import { jourvisAutonomyLoop } from "@/command-center/core/autonomy";
+import { buildCommandCenterFinance } from "@/command-center/core/finance-engine";
 import { buildCommandCenterForecast } from "@/command-center/core/forecast-engine";
 import { buildCommandCenterPerformance } from "@/command-center/core/performance-engine";
 import {
@@ -712,25 +713,118 @@ export default function CommandCenterSectionView({
   }
 
   if (section === "finance") {
+    const finance = buildCommandCenterFinance(state);
+    const formatMoney = (value: number) =>
+      "₱" + Math.round(value).toLocaleString("en-PH");
+
     return (
       <SectionFrame
         eyebrow="FINANCE"
-        title="Where the money went."
-        description="A shared finance layer for P&L, cash flow, expenses, receivables, payables, reconciliation, and financial explanations."
+        title="Where the money went—and what is committed next."
+        description="Finance now exposes the operating values Command Center can genuinely derive. Formal P&L, cash flow, expenses, receivables, payables, and reconciliation remain locked behind verified financial providers."
       >
+        <div className={styles.metricGrid}>
+          {[
+            [
+              "Open purchase commitments",
+              formatMoney(finance.openPurchaseCommitments),
+              "all active purchasing workflows",
+            ],
+            [
+              "Confirmed incoming commitments",
+              formatMoney(finance.confirmedIncomingCommitments),
+              "confirmed / in-transit / partially received purchases",
+            ],
+            [
+              "Received purchasing spend",
+              formatMoney(finance.receivedPurchaseSpend),
+              "closed received purchases in current runtime history",
+            ],
+            [
+              "Configured inventory value",
+              formatMoney(finance.configuredInventoryValue),
+              "on-hand quantity × configured ingredient unit cost",
+            ],
+            [
+              "Avg menu gross profit",
+              finance.averageMenuGrossProfit === null
+                ? "—"
+                : formatMoney(finance.averageMenuGrossProfit),
+              finance.pricedMappedMenuCount
+                ? `${finance.pricedMappedMenuCount} priced recipe-mapped item${finance.pricedMappedMenuCount === 1 ? "" : "s"}`
+                : "live selling prices required",
+            ],
+            [
+              "Avg menu gross margin",
+              finance.averageMenuGrossMarginPercent === null
+                ? "—"
+                : finance.averageMenuGrossMarginPercent + "%",
+              "ingredient cost only; operating expenses not included",
+            ],
+          ].map(([label, value, note]) => (
+            <article className={styles.metricCard} key={label}>
+              <span>{label}</span>
+              <strong>{value}</strong>
+              <div>
+                <b>Runtime</b>
+                <small>{note}</small>
+              </div>
+            </article>
+          ))}
+        </div>
+
+        <article className={styles.panelCard}>
+          <PanelHeading
+            icon={<WalletCards size={17} />}
+            eyebrow="WHAT THESE NUMBERS MEAN"
+            title="Operational finance, not accounting fiction"
+          />
+          <div className={styles.explainer}>
+            <p>
+              Purchase commitments and configured inventory value come from the current Command Center operating state. Menu gross profit/margin uses current selling price minus configured recipe ingredient cost only. It does not claim to include labor, rent, taxes, payment fees, utilities, or other operating expenses.
+            </p>
+          </div>
+        </article>
+
         <div className={styles.cardGrid}>
           {[
-            ["Profit & Loss", "Revenue, COGS, gross profit, operating expenses, net profit."],
-            ["Cash Flow", "Money entering and leaving the business, plus projected cash."],
-            ["Expenses", "Expense categories, anomalies, recurring costs, and trends."],
-            ["Payables", "What is owed, when it is due, and which payments need attention."],
-            ["Receivables", "Money expected from customers, channels, or counterparties."],
-            ["Reconciliation", "Compare business records with payment and bank activity."],
-          ].map(([title, description]) => (
+            [
+              "Profit & Loss",
+              "Accounting + sales provider required",
+              "Revenue, COGS, gross profit, operating expenses, and net profit need a verified accounting period.",
+            ],
+            [
+              "Cash Flow",
+              "Bank/accounting provider required",
+              "Cash forecasting requires balances, inflows, scheduled outflows, and actual payment timing.",
+            ],
+            [
+              "Expenses",
+              "Accounting/expense provider required",
+              "Expense categories, recurring costs, and anomalies will activate from real ledger/receipt data.",
+            ],
+            [
+              "Payables",
+              "Accounting/AP provider required",
+              "Supplier obligations need invoice amount, due date, payment status, and counterparty records.",
+            ],
+            [
+              "Receivables",
+              "Sales/accounting provider required",
+              "Expected collections require invoices, channels, counterparties, and payment status.",
+            ],
+            [
+              "Reconciliation",
+              "Bank + accounting provider required",
+              "Jourvis will compare business records with actual payment and bank activity once both sources are connected.",
+            ],
+          ].map(([title, source, description]) => (
             <article className={styles.moduleCard} key={title}>
               <WalletCards size={19} />
+              <span>DATA SOURCE PENDING</span>
               <h3>{title}</h3>
               <p>{description}</p>
+              <small>{source}</small>
             </article>
           ))}
         </div>
