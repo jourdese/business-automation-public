@@ -2716,12 +2716,23 @@
   background: var(--cc-panel);
 }
 
-.menuDishPhoto {
+.menuDishPhoto,
+.menuDishPlaceholder {
   display: block;
   width: 100%;
   aspect-ratio: 16 / 9;
   overflow: hidden;
   background: #08161e;
+}
+
+.menuDishPlaceholder {
+  display: grid;
+  place-items: center;
+  border-bottom: 1px solid var(--cc-line);
+  color: #537167;
+  background:
+    radial-gradient(circle at 50% 45%, rgba(46, 107, 87, 0.14), transparent 42%),
+    #08161e;
 }
 
 .menuDishPhoto img {
