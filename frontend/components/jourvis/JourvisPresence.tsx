@@ -2,11 +2,19 @@
 
 import {
   type PointerEvent as ReactPointerEvent,
+  useCallback,
   useEffect,
   useRef,
   useState,
 } from "react";
-import { ChevronLeft, ChevronRight, Grip, Sparkles, X } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Crosshair,
+  Grip,
+  Sparkles,
+  X,
+} from "lucide-react";
 import CompanionMark from "./CompanionMark";
 import styles from "./JourvisPresence.module.css";
 
@@ -22,7 +30,16 @@ type Position = {
   top: number;
 };
 
+type FocusGeometry = {
+  x: number;
+  y: number;
+  distance: number;
+  angle: number;
+  visible: boolean;
+};
+
 const POSITION_KEY = "jourvis:presence-position:v1";
+const FOCUS_CLASS = "jourvis-focus-target";
 
 export default function JourvisPresence({
   eyebrow = "JOURVIS",
@@ -31,6 +48,8 @@ export default function JourvisPresence({
   status = "Available",
   attention = false,
   actions = [],
+  focusTarget,
+  focusLabel = "Jourvis needs this",
 }: {
   eyebrow?: string;
   message: string;
@@ -38,8 +57,11 @@ export default function JourvisPresence({
   status?: string;
   attention?: boolean;
   actions?: JourvisPresenceAction[];
+  focusTarget?: string;
+  focusLabel?: string;
 }) {
   const rootRef = useRef<HTMLDivElement>(null);
+  const targetRef = useRef<HTMLElement | null>(null);
   const dragRef = useRef<{
     pointerId: number;
     startX: number;
@@ -52,6 +74,7 @@ export default function JourvisPresence({
   const [open, setOpen] = useState(false);
   const [nudge, setNudge] = useState(true);
   const [dragging, setDragging] = useState(false);
+  const [focusGeometry, setFocusGeometry] = useState<FocusGeometry | null>(null);
 
   useEffect(() => {
     try {
@@ -84,6 +107,87 @@ export default function JourvisPresence({
     window.addEventListener("resize", keepOnScreen);
     return () => window.removeEventListener("resize", keepOnScreen);
   }, []);
+
+  const updateFocusGeometry = useCallback(() => {
+    const root = rootRef.current;
+    const target = targetRef.current;
+    if (!root || !target || !attention || !focusTarget) {
+      setFocusGeometry(null);
+      return;
+    }
+
+    const rootRect = root.getBoundingClientRect();
+    const targetRect = target.getBoundingClientRect();
+    const sourceX = rootRect.left + rootRect.width / 2;
+    const sourceY = rootRect.top + rootRect.height / 2;
+    const targetX = targetRect.left + targetRect.width / 2;
+    const targetY = targetRect.top + targetRect.height / 2;
+    const dx = targetX - sourceX;
+    const dy = targetY - sourceY;
+    const distance = Math.hypot(dx, dy);
+    const visible =
+      targetRect.bottom > 8 &&
+      targetRect.top < window.innerHeight - 8 &&
+      targetRect.right > 8 &&
+      targetRect.left < window.innerWidth - 8;
+
+    setFocusGeometry({
+      x: dx,
+      y: dy,
+      distance: Math.max(0, distance - 34),
+      angle: Math.atan2(dy, dx) * (180 / Math.PI),
+      visible,
+    });
+  }, [attention, focusTarget]);
+
+  useEffect(() => {
+    let currentTarget: HTMLElement | null = null;
+
+    function applyTarget() {
+      const nextTarget =
+        attention && focusTarget
+          ? document.querySelector<HTMLElement>(focusTarget)
+          : null;
+
+      if (currentTarget !== nextTarget) {
+        if (currentTarget) {
+          currentTarget.classList.remove(FOCUS_CLASS);
+          currentTarget.removeAttribute("data-jourvis-focus-label");
+        }
+        currentTarget = nextTarget;
+        targetRef.current = nextTarget;
+        if (nextTarget) {
+          nextTarget.classList.add(FOCUS_CLASS);
+          nextTarget.setAttribute("data-jourvis-focus-label", focusLabel);
+        }
+      }
+
+      updateFocusGeometry();
+    }
+
+    applyTarget();
+
+    const observer = new MutationObserver(applyTarget);
+    observer.observe(document.body, { childList: true, subtree: true });
+    window.addEventListener("resize", applyTarget);
+    window.addEventListener("scroll", applyTarget, true);
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", applyTarget);
+      window.removeEventListener("scroll", applyTarget, true);
+      if (currentTarget) {
+        currentTarget.classList.remove(FOCUS_CLASS);
+        currentTarget.removeAttribute("data-jourvis-focus-label");
+      }
+      targetRef.current = null;
+      setFocusGeometry(null);
+    };
+  }, [attention, focusTarget, focusLabel, updateFocusGeometry]);
+
+  useEffect(() => {
+    updateFocusGeometry();
+  }, [position, open, dragging, updateFocusGeometry]);
 
   function remember(next: Position) {
     setPosition(next);
@@ -127,6 +231,7 @@ export default function JourvisPresence({
     if (dragRef.current?.pointerId !== event.pointerId) return;
     dragRef.current = null;
     setDragging(false);
+    window.requestAnimationFrame(updateFocusGeometry);
   }
 
   function toggleOpen() {
@@ -142,11 +247,27 @@ export default function JourvisPresence({
     const height = root?.getBoundingClientRect().height ?? 72;
     const next = clampPosition(
       side === "left" ? 18 : window.innerWidth - 90,
-      Math.min(window.innerHeight - height - 24, position?.top ?? window.innerHeight - 116),
+      Math.min(
+        window.innerHeight - height - 24,
+        position?.top ?? window.innerHeight - 116,
+      ),
       72,
       height,
     );
     remember(next);
+  }
+
+  function revealTarget() {
+    const target = targetRef.current;
+    if (!target) return;
+    target.scrollIntoView({
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+        ? "auto"
+        : "smooth",
+      block: "center",
+      inline: "nearest",
+    });
+    window.setTimeout(updateFocusGeometry, 320);
   }
 
   const side =
@@ -162,8 +283,35 @@ export default function JourvisPresence({
       data-dragging={dragging}
       data-side={side}
       data-vertical={vertical}
-      style={position ? { left: position.left, top: position.top, right: "auto", bottom: "auto" } : undefined}
+      style={
+        position
+          ? { left: position.left, top: position.top, right: "auto", bottom: "auto" }
+          : undefined
+      }
     >
+      {focusGeometry?.visible && attention ? (
+        <>
+          <span
+            className={styles.focusBeam}
+            style={{
+              width: focusGeometry.distance,
+              transform: `rotate(${focusGeometry.angle}deg)`,
+            }}
+            aria-hidden="true"
+          />
+          <span
+            className={styles.focusBadge}
+            style={{
+              left: 36 + focusGeometry.x,
+              top: 36 + focusGeometry.y,
+            }}
+            aria-hidden="true"
+          >
+            {focusLabel}
+          </span>
+        </>
+      ) : null}
+
       {nudge && !open ? (
         <button type="button" className={styles.nudge} onClick={() => setOpen(true)}>
           <span>{attention ? "I need you for this one." : "I’m right here."}</span>
@@ -175,13 +323,20 @@ export default function JourvisPresence({
         <section className={styles.panel} aria-label="Jourvis assistant">
           <div className={styles.panelTop}>
             <div className={styles.identity}>
-              <span className={styles.miniCompanion}><CompanionMark /></span>
+              <span className={styles.miniCompanion}>
+                <CompanionMark />
+              </span>
               <div>
                 <span>{eyebrow}</span>
                 <strong>{status}</strong>
               </div>
             </div>
-            <button type="button" className={styles.iconButton} onClick={() => setOpen(false)} aria-label="Close Jourvis">
+            <button
+              type="button"
+              className={styles.iconButton}
+              onClick={() => setOpen(false)}
+              aria-label="Close Jourvis"
+            >
               <X size={15} aria-hidden />
             </button>
           </div>
@@ -194,12 +349,21 @@ export default function JourvisPresence({
             </div>
           </div>
 
+          {attention && focusTarget ? (
+            <button type="button" className={styles.showTarget} onClick={revealTarget}>
+              <Crosshair size={14} aria-hidden />
+              <span>Show me where</span>
+              <ChevronRight size={14} aria-hidden />
+            </button>
+          ) : null}
+
           {actions.length ? (
             <div className={styles.actions}>
               {actions.slice(0, 3).map((action) =>
                 action.href ? (
                   <a key={action.label} href={action.href} data-primary={action.primary}>
-                    {action.label}<ChevronRight size={14} aria-hidden />
+                    {action.label}
+                    <ChevronRight size={14} aria-hidden />
                   </a>
                 ) : (
                   <button
@@ -211,7 +375,8 @@ export default function JourvisPresence({
                       setOpen(false);
                     }}
                   >
-                    {action.label}<ChevronRight size={14} aria-hidden />
+                    {action.label}
+                    <ChevronRight size={14} aria-hidden />
                   </button>
                 ),
               )}
@@ -219,10 +384,24 @@ export default function JourvisPresence({
           ) : null}
 
           <div className={styles.dockControls}>
-            <span><Grip size={12} aria-hidden /> Drag me anywhere</span>
+            <span>
+              <Grip size={12} aria-hidden /> Drag me anywhere
+            </span>
             <div>
-              <button type="button" onClick={() => dock("left")} aria-label="Dock Jourvis on the left"><ChevronLeft size={13} aria-hidden /></button>
-              <button type="button" onClick={() => dock("right")} aria-label="Dock Jourvis on the right"><ChevronRight size={13} aria-hidden /></button>
+              <button
+                type="button"
+                onClick={() => dock("left")}
+                aria-label="Dock Jourvis on the left"
+              >
+                <ChevronLeft size={13} aria-hidden />
+              </button>
+              <button
+                type="button"
+                onClick={() => dock("right")}
+                aria-label="Dock Jourvis on the right"
+              >
+                <ChevronRight size={13} aria-hidden />
+              </button>
             </div>
           </div>
         </section>
@@ -241,9 +420,13 @@ export default function JourvisPresence({
         aria-expanded={open}
       >
         <span className={styles.orbHalo} />
-        <span className={styles.orbFace}><CompanionMark /></span>
+        <span className={styles.orbFace}>
+          <CompanionMark />
+        </span>
         <span className={styles.presenceDot} />
-        <span className={styles.dragHint}><Grip size={11} aria-hidden /></span>
+        <span className={styles.dragHint}>
+          <Grip size={11} aria-hidden />
+        </span>
       </button>
     </div>
   );
@@ -253,7 +436,12 @@ function windowSafeWidth() {
   return typeof window === "undefined" ? 1280 : window.innerWidth;
 }
 
-function clampPosition(left: number, top: number, width: number, height: number): Position {
+function clampPosition(
+  left: number,
+  top: number,
+  width: number,
+  height: number,
+): Position {
   if (typeof window === "undefined") return { left, top };
   const pad = 12;
   return {
