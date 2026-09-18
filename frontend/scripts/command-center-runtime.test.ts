@@ -16,6 +16,7 @@ import {
 import { deriveJourvisTasks } from '../command-center/core/task-engine.ts';
 import { buildCommandCenterForecast } from '../command-center/core/forecast-engine.ts';
 import { buildCommandCenterPerformance } from '../command-center/core/performance-engine.ts';
+import { buildCommandCenterFinance } from '../command-center/core/finance-engine.ts';
 
 function item(
   patch: Partial<CommandCenterInventoryItem> = {},
@@ -609,4 +610,81 @@ await test('Performance purchase completion uses only closed workflows', () => {
   assert.equal(performance.receivedPurchaseCount, 1);
   assert.equal(performance.closedPurchaseCount, 2);
   assert.equal(performance.purchaseCompletionPercent, 50);
+});
+
+
+await test('Finance derives purchase commitments and received spend from runtime purchases', () => {
+  const shrimp = item();
+  const active = purchase({
+    id: 'JV-0001',
+    status: 'in_transit',
+    quotedTotal: 6000,
+  });
+  const received = purchase({
+    id: 'JV-0002',
+    status: 'received',
+    quotedTotal: 5500,
+    receivedQuantity: 10,
+  });
+  const rejected = purchase({
+    id: 'JV-0003',
+    status: 'rejected',
+    quotedTotal: 9000,
+  });
+  const finance = buildCommandCenterFinance(
+    state(shrimp, [active, received, rejected]),
+  );
+
+  assert.equal(finance.openPurchaseCommitments, 6000);
+  assert.equal(finance.confirmedIncomingCommitments, 6000);
+  assert.equal(finance.receivedPurchaseSpend, 5500);
+});
+
+await test('Finance estimates configured inventory value from pack unit cost', () => {
+  const shrimp = item({
+    current: 2.2,
+    packSize: 5,
+    packPrice: 2800,
+  });
+  const finance = buildCommandCenterFinance(state(shrimp));
+
+  assert.equal(finance.configuredInventoryValue, 1232);
+});
+
+await test('Finance computes menu gross profit and margin only for priced mapped items', () => {
+  const shrimp = item({
+    packSize: 5,
+    packPrice: 2800,
+  });
+  const runtime = state(shrimp);
+  runtime.recipes = [
+    {
+      id: 'recipe-shrimp',
+      name: 'Shrimp Pasta',
+      description: 'Test',
+      active: true,
+      ingredients: { shrimp: 0.1 },
+    },
+  ];
+  runtime.menuItems = [
+    {
+      id: 'menu-shrimp',
+      name: 'Shrimp Pasta',
+      printedName: 'Shrimp Pasta',
+      dishKey: 'shrimp-pasta',
+      category: 'Pasta',
+      currentPrice: 200,
+      referenceSource: 'demo',
+      currentPriceVerified: true,
+      active: true,
+      available: true,
+      recipeId: 'recipe-shrimp',
+    },
+  ];
+
+  const finance = buildCommandCenterFinance(runtime);
+
+  assert.equal(finance.pricedMappedMenuCount, 1);
+  assert.equal(finance.averageMenuGrossProfit, 144);
+  assert.equal(finance.averageMenuGrossMarginPercent, 72);
 });
