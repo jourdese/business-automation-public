@@ -2996,3 +2996,19 @@
     grid-column: 1 / -1;
   }
 }
+
+
+.businessIdentity {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.businessBrandMark {
+  width: 42px !important;
+  height: 42px !important;
+  flex: 0 0 42px;
+  padding: 3px;
+  border: 1px solid #344a54;
+  background: #08161e;
+}
