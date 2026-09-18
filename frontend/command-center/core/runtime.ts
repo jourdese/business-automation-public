@@ -240,6 +240,47 @@ export function estimatedPurchaseTotal(
   );
 }
 
+export function evaluateAutomaticPurchaseStart(
+  item: CommandCenterInventoryItem,
+) {
+  const quantity = suggestedPurchaseQuantity(item);
+  const estimatedTotal = estimatedPurchaseTotal(item, quantity);
+  const reasons: string[] = [];
+
+  if (quantity <= 0) {
+    reasons.push("No purchase quantity is currently required.");
+  }
+  if (quantity > item.maxAutoOrderQty) {
+    reasons.push(
+      `Suggested quantity ${quantity} ${item.unit} exceeds the automatic quantity limit of ${item.maxAutoOrderQty} ${item.unit}.`,
+    );
+  }
+  if (item.leadDays > item.maxLeadDays) {
+    reasons.push(
+      `Supplier lead time of ${item.leadDays} days exceeds the allowed ${item.maxLeadDays} days.`,
+    );
+  }
+  if (item.purchasingMode === "fixed") {
+    if (estimatedTotal > item.maxAutoOrderSpend) {
+      reasons.push(
+        `Known order total ₱${Math.round(estimatedTotal).toLocaleString("en-PH")} exceeds the automatic order cap of ₱${Math.round(item.maxAutoOrderSpend).toLocaleString("en-PH")}.`,
+      );
+    }
+    if (item.packPrice > item.hardMaxPackPrice) {
+      reasons.push(
+        `Configured pack price ₱${Math.round(item.packPrice).toLocaleString("en-PH")} exceeds the hard maximum of ₱${Math.round(item.hardMaxPackPrice).toLocaleString("en-PH")}.`,
+      );
+    }
+  }
+
+  return {
+    allowed: reasons.length === 0,
+    quantity,
+    estimatedTotal,
+    reasons,
+  };
+}
+
 export function isPurchaseActive(status: CommandCenterPurchaseStatus) {
   return status !== "received" && status !== "rejected";
 }
