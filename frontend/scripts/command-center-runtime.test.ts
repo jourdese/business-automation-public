@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   canAdvancePurchase,
+  evaluateAutomaticPurchaseStart,
   evaluatePurchaseAuthority,
   normalizeInventoryAuthorityConfiguration,
   projectedInventoryAtDelivery,
@@ -368,4 +369,45 @@ await test('purchase progress separates request, supplier view, agreement, confi
   assert.equal(purchaseProgressStage('confirmed'), 4);
   assert.equal(purchaseProgressStage('in_transit'), 4);
   assert.equal(purchaseProgressStage('received'), 5);
+});
+
+
+await test('pre-contact guard blocks automatic requests that already exceed known authority', () => {
+  const shrimp = item({
+    purchasingMode: 'fixed',
+    current: 2,
+    dailyUse: 2,
+    leadDays: 2,
+    maxAutoOrderQty: 5,
+  });
+  const result = evaluateAutomaticPurchaseStart(shrimp);
+
+  assert.equal(result.allowed, false);
+  assert.match(result.reasons.join(' '), /quantity limit/i);
+});
+
+await test('pre-contact guard blocks fixed-price supplier contact above hard price limits', () => {
+  const result = evaluateAutomaticPurchaseStart(
+    item({
+      purchasingMode: 'fixed',
+      packPrice: 4000,
+      hardMaxPackPrice: 3100,
+      maxAutoOrderSpend: 5000,
+    }),
+  );
+
+  assert.equal(result.allowed, false);
+  assert.match(result.reasons.join(' '), /hard maximum/i);
+});
+
+await test('automatic pre-contact violation becomes an owner task when autonomy is running', () => {
+  const shrimp = item({
+    purchasingMode: 'fixed',
+    maxAutoOrderQty: 5,
+  });
+  const tasks = deriveJourvisTasks(state(shrimp, [], true));
+
+  assert.equal(tasks.length, 1);
+  assert.match(tasks[0]?.title ?? '', /blocked/i);
+  assert.match(tasks[0]?.whatJourvisDid ?? '', /before contacting/i);
 });
