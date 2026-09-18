@@ -12,6 +12,7 @@ export const restaurantCapabilities = [
   "forecast",
   "performance",
   "finance",
+  "activity",
   "briefings",
   "insights",
   "decisions",
