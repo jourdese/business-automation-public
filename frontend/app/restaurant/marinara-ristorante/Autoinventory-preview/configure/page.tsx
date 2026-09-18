@@ -135,8 +135,9 @@ export default function AutoinventoryConfigurePage() {
             </section>
 
             <section className={styles.section}>
-              <div className={styles.sectionHeading}><div><span>03</span><h3>Purchasing rules</h3></div><p>Jourvis rounds recommendations to the supplier&apos;s purchase unit and considers lead time.</p></div>
+              <div className={styles.sectionHeading}><div><span>03</span><h3>Purchasing rules</h3></div><p>Choose whether this supply uses a fixed-price purchase order or requires a supplier quote before both sides confirm.</p></div>
               <div className={styles.fieldsGrid}>
+                <label><span>Purchasing mode</span><select value={selected.purchasingMode} onChange={(event) => updateSelected({ purchasingMode: event.target.value as Ingredient["purchasingMode"] })}><option value="fixed">Fixed / contracted price</option><option value="quote">Quote required first</option></select><small>{selected.purchasingMode === "quote" ? "Jourvis requests a quote, then waits for buyer and supplier confirmation." : "Jourvis sends the known price as a PO and waits for supplier acknowledgment."}</small></label>
                 <label><span>Purchase quantity</span><div><input type="number" min="0.01" step="0.1" value={selected.packSize} onChange={(event) => updateSelected({ packSize: Math.max(0.01, Number(event.target.value) || 0.01) })} /><b>{selected.unit}</b></div><small>How much one supplier pack contains.</small></label>
                 <label><span>Purchase unit label</span><input type="text" value={selected.purchaseUnit} onChange={(event) => updateSelected({ purchaseUnit: event.target.value })} /><small>Example: 5 kg pack or 12-bottle case.</small></label>
                 <label><span>Pack price</span><div><b>₱</b><input type="number" min="0" step="1" value={selected.packPrice} onChange={(event) => updateSelected({ packPrice: Math.max(0, Number(event.target.value) || 0) })} /></div><small>Demo estimated cost for one purchase unit.</small></label>
