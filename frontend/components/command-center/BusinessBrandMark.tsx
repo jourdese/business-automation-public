@@ -30,19 +30,44 @@ export default function BusinessBrandMark({
 
   if (!src) {
     return (
-      <span className={className} aria-hidden="true">
+      <span
+        className={className}
+        aria-hidden="true"
+        style={{
+          width: "100%",
+          height: "100%",
+          display: "grid",
+          placeItems: "center",
+          overflow: "hidden",
+        }}
+      >
         <b>{initials(businessName)}</b>
       </span>
     );
   }
 
   return (
-    <span className={className} aria-hidden="true">
+    <span
+      className={className}
+      aria-hidden="true"
+      style={{
+        width: "100%",
+        height: "100%",
+        display: "grid",
+        placeItems: "center",
+        overflow: "hidden",
+      }}
+    >
       <img
         src={src}
         alt=""
         draggable={false}
         decoding="async"
+        style={{
+          width: "100%",
+          height: "100%",
+          objectFit: "contain",
+        }}
       />
     </span>
   );
