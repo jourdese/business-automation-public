@@ -1435,6 +1435,162 @@ export default function MarinaraAutoinventoryPreviewPage() {
     activity: activity.length,
   };
 
+  const jourvisUpdateItem = jourvisUpdateItemId
+    ? ingredients.find((item) => item.id === jourvisUpdateItemId)
+    : undefined;
+  const jourvisUpdateSupplier = jourvisUpdateItem
+    ? getSupplier(jourvisUpdateItem)
+    : undefined;
+  const jourvisUpdateContact = jourvisUpdateItem
+    ? getContact(jourvisUpdateItem)
+    : undefined;
+
+  const jourvisUpdatePanel = jourvisUpdateItem && jourvisUpdateSupplier && jourvisUpdateContact ? (
+    <div className={styles.jourvisUpdatePanel}>
+      <div className={styles.jourvisUpdateTitle}>
+        <StockIcon stockId={jourvisUpdateItem.id} className={styles.stockIconSmall} size={24} />
+        <div>
+          <span>UPDATE {jourvisUpdateItem.name.toUpperCase()}</span>
+          <strong>{jourvisUpdateItem.current} {jourvisUpdateItem.unit} · {percent(jourvisUpdateItem)}%</strong>
+        </div>
+      </div>
+
+      {automationRejected[jourvisUpdateItem.id] ? (
+        <div className={styles.jourvisPausedInline}>
+          <strong>Paused by you</strong>
+          <p>I will not start another automatic purchase for this item until you resume me.</p>
+          <button type="button" onClick={() => resumeAutomation(jourvisUpdateItem)}>Resume Jourvis</button>
+        </div>
+      ) : null}
+
+      <div className={styles.jourvisUpdateSection}>
+        <span>JOURVIS CONTROL</span>
+        <label className={styles.jourvisInlineToggle}>
+          <span>
+            <strong>Manage this supply</strong>
+            <small>Let Jourvis watch this item and act according to the rules below.</small>
+          </span>
+          <input
+            type="checkbox"
+            checked={jourvisUpdateItem.automationEnabled}
+            onChange={(event) => updateJourvisConfig(jourvisUpdateItem.id, { automationEnabled: event.target.checked })}
+          />
+        </label>
+        <label className={styles.jourvisInlineToggle}>
+          <span>
+            <strong>Global automation</strong>
+            <small>Pause or resume all configured Jourvis automation.</small>
+          </span>
+          <input
+            type="checkbox"
+            checked={automationMasterOn}
+            onChange={(event) => {
+              const next = event.target.checked;
+              setAutomationMasterOn(next);
+              window.localStorage.setItem("jourvis-autoinventory-automation-master", String(next));
+            }}
+          />
+        </label>
+        <div className={styles.jourvisUpdateGrid}>
+          <label>
+            <span>Act at</span>
+            <div><input type="number" min="0" max="100" value={jourvisUpdateItem.automationTriggerPercent} onChange={(event) => updateJourvisConfig(jourvisUpdateItem.id, { automationTriggerPercent: Math.max(0, Math.min(100, Number(event.target.value) || 0)) })} /><b>%</b></div>
+          </label>
+          <label>
+            <span>Jourvis may</span>
+            <select value={jourvisUpdateItem.automationMode} onChange={(event) => updateJourvisConfig(jourvisUpdateItem.id, { automationMode: event.target.value as Ingredient["automationMode"] })}>
+              <option value="assist">Watch only</option>
+              <option value="auto_contact">Contact supplier</option>
+              <option value="autobuy">Buy within limits</option>
+            </select>
+          </label>
+          <label>
+            <span>Ask me above</span>
+            <div><b>₱</b><input type="number" min="0" value={jourvisUpdateItem.maxAutoOrderSpend} onChange={(event) => updateJourvisConfig(jourvisUpdateItem.id, { maxAutoOrderSpend: Math.max(0, Number(event.target.value) || 0) })} /></div>
+          </label>
+          <label>
+            <span>Max pack price</span>
+            <div><b>₱</b><input type="number" min="0" value={jourvisUpdateItem.autoAcceptPackPrice} onChange={(event) => {
+              const value = Math.max(0, Number(event.target.value) || 0);
+              updateJourvisConfig(jourvisUpdateItem.id, {
+                autoAcceptPackPrice: value,
+                hardMaxPackPrice: Math.max(jourvisUpdateItem.hardMaxPackPrice, value),
+              });
+            }} /></div>
+          </label>
+        </div>
+      </div>
+
+      <details className={styles.jourvisUpdateDetails}>
+        <summary>Stock settings</summary>
+        <div className={styles.jourvisUpdateGrid}>
+          <label>
+            <span>Full level / 100%</span>
+            <div><input type="number" min="0.01" step="0.1" value={jourvisUpdateItem.fullLevel} onChange={(event) => {
+              const value = Math.max(0.01, Number(event.target.value) || 0.01);
+              updateJourvisConfig(jourvisUpdateItem.id, { fullLevel: value, reorderAt: Math.min(jourvisUpdateItem.reorderAt, value) });
+            }} /><b>{jourvisUpdateItem.unit}</b></div>
+          </label>
+          <label>
+            <span>Low-stock warning</span>
+            <div><input type="number" min="0" step="0.1" value={jourvisUpdateItem.reorderAt} onChange={(event) => updateJourvisConfig(jourvisUpdateItem.id, { reorderAt: Math.max(0, Math.min(jourvisUpdateItem.fullLevel, Number(event.target.value) || 0)) })} /><b>{jourvisUpdateItem.unit}</b></div>
+          </label>
+        </div>
+      </details>
+
+      <details className={styles.jourvisUpdateDetails}>
+        <summary>Supplier & purchasing</summary>
+        <div className={styles.jourvisUpdateGrid}>
+          <label>
+            <span>Supplier</span>
+            <select value={jourvisUpdateItem.supplierId} onChange={(event) => changeJourvisSupplier(jourvisUpdateItem, event.target.value)}>
+              {suppliers.map((supplier) => <option key={supplier.id} value={supplier.id}>{supplier.name}</option>)}
+            </select>
+          </label>
+          <label>
+            <span>Contact</span>
+            <select value={jourvisUpdateItem.contactId} onChange={(event) => updateJourvisConfig(jourvisUpdateItem.id, { contactId: event.target.value })}>
+              {jourvisUpdateSupplier.contacts.map((contact) => <option key={contact.id} value={contact.id}>{contact.name} · {contact.role}</option>)}
+            </select>
+          </label>
+          <label>
+            <span>Purchase mode</span>
+            <select value={jourvisUpdateItem.purchasingMode} onChange={(event) => updateJourvisConfig(jourvisUpdateItem.id, { purchasingMode: event.target.value as Ingredient["purchasingMode"] })}>
+              <option value="fixed">Fixed / contracted price</option>
+              <option value="quote">Quote required</option>
+            </select>
+          </label>
+          <label>
+            <span>Pack quantity</span>
+            <div><input type="number" min="0.01" step="0.1" value={jourvisUpdateItem.packSize} onChange={(event) => updateJourvisConfig(jourvisUpdateItem.id, { packSize: Math.max(0.01, Number(event.target.value) || 0.01) })} /><b>{jourvisUpdateItem.unit}</b></div>
+          </label>
+          <label>
+            <span>Pack price / estimate</span>
+            <div><b>₱</b><input type="number" min="0" value={jourvisUpdateItem.packPrice} onChange={(event) => updateJourvisConfig(jourvisUpdateItem.id, { packPrice: Math.max(0, Number(event.target.value) || 0) })} /></div>
+          </label>
+          <label>
+            <span>Lead time</span>
+            <div><input type="number" min="0" step="0.5" value={jourvisUpdateItem.leadDays} onChange={(event) => updateJourvisConfig(jourvisUpdateItem.id, { leadDays: Math.max(0, Number(event.target.value) || 0) })} /><b>days</b></div>
+          </label>
+        </div>
+      </details>
+
+      <details className={styles.jourvisUpdateDetails}>
+        <summary>Advanced limits</summary>
+        <div className={styles.jourvisUpdateGrid}>
+          <label><span>Negotiation target</span><div><b>₱</b><input type="number" min="0" value={jourvisUpdateItem.targetPackPrice} onChange={(event) => updateJourvisConfig(jourvisUpdateItem.id, { targetPackPrice: Math.max(0, Number(event.target.value) || 0) })} /></div></label>
+          <label><span>Absolute ceiling</span><div><b>₱</b><input type="number" min="0" value={jourvisUpdateItem.hardMaxPackPrice} onChange={(event) => updateJourvisConfig(jourvisUpdateItem.id, { hardMaxPackPrice: Math.max(jourvisUpdateItem.autoAcceptPackPrice, Number(event.target.value) || 0) })} /></div></label>
+          <label><span>Max quantity</span><div><input type="number" min="0" step="0.1" value={jourvisUpdateItem.maxAutoOrderQty} onChange={(event) => updateJourvisConfig(jourvisUpdateItem.id, { maxAutoOrderQty: Math.max(0, Number(event.target.value) || 0) })} /><b>{jourvisUpdateItem.unit}</b></div></label>
+          <label><span>Max delivery fee</span><div><b>₱</b><input type="number" min="0" value={jourvisUpdateItem.maxDeliveryFee} onChange={(event) => updateJourvisConfig(jourvisUpdateItem.id, { maxDeliveryFee: Math.max(0, Number(event.target.value) || 0) })} /></div></label>
+          <label><span>Max lead time</span><div><input type="number" min="0" step="0.5" value={jourvisUpdateItem.maxLeadDays} onChange={(event) => updateJourvisConfig(jourvisUpdateItem.id, { maxLeadDays: Math.max(0, Number(event.target.value) || 0) })} /><b>days</b></div></label>
+          <label><span>Auto-negotiate</span><select value={jourvisUpdateItem.autoNegotiate ? "yes" : "no"} onChange={(event) => updateJourvisConfig(jourvisUpdateItem.id, { autoNegotiate: event.target.value === "yes" })}><option value="yes">Yes</option><option value="no">No</option></select></label>
+        </div>
+      </details>
+
+      <p className={styles.jourvisUpdateSaved}>Changes save immediately in this browser.</p>
+    </div>
+  ) : null;
+
   return (
     <div className={styles.page}>
       <div className={styles.shell}>
