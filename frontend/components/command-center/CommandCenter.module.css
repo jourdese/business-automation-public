@@ -1757,10 +1757,30 @@
   color: #aeb7bc;
 }
 
+.taskQueueStatus > span[data-state="paused"] {
+  border-color: #72534f;
+  color: #ffb3aa;
+}
+
 .taskQueueStatus small {
   margin-top: 0.25rem;
   color: #75868f;
   font-size: 0.55rem;
+}
+
+.taskResumeButton {
+  min-height: 30px;
+  align-self: center;
+  padding: 0.34rem 0.52rem;
+  border: 1px solid #72534f;
+  background: rgba(139, 85, 78, 0.08);
+  color: #ffb3aa;
+  font-size: 0.55rem;
+}
+
+.taskResumeButton:hover {
+  border-color: var(--mint);
+  color: var(--mint);
 }
 
 .taskModeSwitch {
@@ -1978,6 +1998,7 @@
   }
 
   .taskQueueStatus,
+  .taskResumeButton,
   .taskModeSwitch {
     grid-column: auto;
     grid-row: auto;
