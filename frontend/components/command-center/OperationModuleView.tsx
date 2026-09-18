@@ -1,6 +1,6 @@
 "use client";
 
-import { type ReactNode, useEffect, useMemo, useState } from "react";
+import { type ReactNode, useMemo, useState } from "react";
 import {
   ArrowLeft,
   ArrowRight,
@@ -35,23 +35,14 @@ type AdjustmentDraft = {
   reason: CommandCenterStockAdjustmentReason;
 };
 
-function readRoute() {
-  if (typeof window === "undefined") {
-    return { businessId: "marinara-ristorante", moduleId: "inventory" };
-  }
-  const parts = window.location.pathname.split("/").filter(Boolean);
-  const operations = parts.indexOf("operations");
-  return {
-    businessId: parts[parts.indexOf("command-center") + 1] || "marinara-ristorante",
-    moduleId: operations >= 0 ? parts[operations + 1] || "workflows" : "workflows",
-  };
-}
+export default function OperationModuleView({
+  businessId,
+  moduleId,
+}: {
+  businessId: string;
+  moduleId: string;
+}) {
 
-export default function OperationModuleView() {
-  const [route, setRoute] = useState({
-    businessId: "marinara-ristorante",
-    moduleId: "inventory",
-  });
   const [adjustment, setAdjustment] = useState<AdjustmentDraft | null>(null);
   const [receiveDrafts, setReceiveDrafts] = useState<Record<string, string>>({});
   const [quantityDrafts, setQuantityDrafts] = useState<Record<string, string>>({});
@@ -68,19 +59,14 @@ export default function OperationModuleView() {
     recordRecipeSale,
   } = useCommandCenterRuntime();
 
-  useEffect(() => {
-    setRoute(readRoute());
-  }, []);
-
-  const { moduleId } = route;
   const business = state.business;
-  const module = operationCatalog[moduleId] ?? {
+  const operationModule = operationCatalog[moduleId] ?? {
     label: moduleId,
     description: "Business operation managed by Jourvis.",
   };
   const moduleTasks = tasks.filter((task) => task.module === moduleId);
   const currentInventoryRoute =
-    business.id === "marinara-ristorante" && moduleId === "inventory"
+    businessId === "marinara-ristorante" && moduleId === "inventory"
       ? "/restaurant/marinara-ristorante/Autoinventory-preview"
       : null;
 
@@ -140,9 +126,9 @@ export default function OperationModuleView() {
     return (
       <section className={styles.sectionPage}>
         <OperationHeader
-          businessId={business.id}
-          moduleLabel={module.label}
-          description={module.description}
+          businessId={businessId}
+          moduleLabel={operationModule.label}
+          description={operationModule.description}
         />
 
         <div className={styles.operationModuleHero}>
@@ -358,9 +344,9 @@ export default function OperationModuleView() {
     return (
       <section className={styles.sectionPage}>
         <OperationHeader
-          businessId={business.id}
-          moduleLabel={module.label}
-          description={module.description}
+          businessId={businessId}
+          moduleLabel={operationModule.label}
+          description={operationModule.description}
         />
 
         <div className={styles.operationModuleHero}>
@@ -556,9 +542,9 @@ export default function OperationModuleView() {
     return (
       <section className={styles.sectionPage}>
         <OperationHeader
-          businessId={business.id}
-          moduleLabel={module.label}
-          description={module.description}
+          businessId={businessId}
+          moduleLabel={operationModule.label}
+          description={operationModule.description}
         />
 
         <div className={styles.supplierRuntimeGrid}>
@@ -639,9 +625,9 @@ export default function OperationModuleView() {
     return (
       <section className={styles.sectionPage}>
         <OperationHeader
-          businessId={business.id}
-          moduleLabel={module.label}
-          description={module.description}
+          businessId={businessId}
+          moduleLabel={operationModule.label}
+          description={operationModule.description}
         />
 
         <div className={styles.operationModuleHero}>
@@ -762,9 +748,9 @@ export default function OperationModuleView() {
     return (
       <section className={styles.sectionPage}>
         <OperationHeader
-          businessId={business.id}
-          moduleLabel={module.label}
-          description={module.description}
+          businessId={businessId}
+          moduleLabel={operationModule.label}
+          description={operationModule.description}
         />
 
         <div className={styles.operationModuleHero}>
@@ -832,9 +818,9 @@ export default function OperationModuleView() {
     return (
       <section className={styles.sectionPage}>
         <OperationHeader
-          businessId={business.id}
-          moduleLabel={module.label}
-          description={module.description}
+          businessId={businessId}
+          moduleLabel={operationModule.label}
+          description={operationModule.description}
         />
 
         <div className={styles.wasteGrid}>
@@ -889,9 +875,9 @@ export default function OperationModuleView() {
   return (
     <section className={styles.sectionPage}>
       <OperationHeader
-        businessId={business.id}
-        moduleLabel={module.label}
-        description={module.description}
+        businessId={businessId}
+        moduleLabel={operationModule.label}
+        description={operationModule.description}
       />
 
       <div className={styles.operationModuleHero}>
