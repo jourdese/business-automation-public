@@ -1,0 +1,107 @@
+import type {
+  CommandCenterActivity,
+  CommandCenterActivityConfiguration,
+  CommandCenterInventoryItem,
+  CommandCenterRuntimeState,
+} from "./runtime";
+
+export type ActivityInput = {
+  module: string;
+  action: string;
+  message: string;
+  actor: CommandCenterActivity["actor"];
+  executionMode: CommandCenterActivity["executionMode"];
+  reason: string;
+  configuration?: CommandCenterActivityConfiguration;
+  relatedEntityId?: string;
+  relatedRequestId?: string;
+  at?: string;
+};
+
+export function inventoryRuleSnapshot(
+  item: CommandCenterInventoryItem,
+  automationMasterOn: boolean,
+  capturedAt = new Date().toISOString(),
+): CommandCenterActivityConfiguration {
+  const mode =
+    item.automationMode === "autobuy"
+      ? "Buy within limits"
+      : item.automationMode === "auto_contact"
+        ? "Contact supplier"
+        : "Watch only";
+
+  return {
+    capturedAt,
+    summary:
+      `Global autonomy ${automationMasterOn ? "ON" : "OFF"} · ` +
+      `item automation ${item.automationEnabled ? "ON" : "OFF"} · ` +
+      `${mode} · act at ${item.automationTriggerPercent}% · ` +
+      `ask owner above ₱${Math.round(item.maxAutoOrderSpend).toLocaleString("en-PH")} · ` +
+      `max pack price ₱${Math.round(item.autoAcceptPackPrice).toLocaleString("en-PH")}`,
+    values: {
+      automationMasterOn,
+      automationEnabled: item.automationEnabled,
+      automationMode: item.automationMode,
+      automationTriggerPercent: item.automationTriggerPercent,
+      reorderAt: item.reorderAt,
+      current: item.current,
+      fullLevel: item.fullLevel,
+      incoming: item.incoming,
+      purchasingMode: item.purchasingMode,
+      packSize: item.packSize,
+      packPrice: item.packPrice,
+      maxAutoOrderSpend: item.maxAutoOrderSpend,
+      autoAcceptPackPrice: item.autoAcceptPackPrice,
+      supplierId: item.supplierId,
+      leadDays: item.leadDays,
+    },
+  };
+}
+
+export function createActivity(
+  state: CommandCenterRuntimeState,
+  input: ActivityInput,
+): CommandCenterActivity {
+  const at = input.at ?? new Date().toISOString();
+  return {
+    id: `activity-${Date.parse(at) || Date.now()}-${state.activity.length + 1}`,
+    at,
+    module: input.module,
+    action: input.action,
+    message: input.message,
+    actor: input.actor,
+    executionMode: input.executionMode,
+    reason: input.reason,
+    configuration: input.configuration,
+    relatedEntityId: input.relatedEntityId,
+    relatedRequestId: input.relatedRequestId,
+  };
+}
+
+export function prependActivity(
+  state: CommandCenterRuntimeState,
+  input: ActivityInput,
+) {
+  return [createActivity(state, input), ...state.activity].slice(0, 250);
+}
+
+export function normalizeActivity(
+  activity: Partial<CommandCenterActivity> &
+    Pick<CommandCenterActivity, "id" | "at" | "module" | "message">,
+): CommandCenterActivity {
+  return {
+    id: activity.id,
+    at: activity.at,
+    module: activity.module,
+    message: activity.message,
+    action: activity.action ?? "legacy_event",
+    actor: activity.actor ?? "system",
+    executionMode: activity.executionMode ?? "system",
+    reason:
+      activity.reason ??
+      "This activity was recorded before detailed execution reasoning was enabled.",
+    configuration: activity.configuration,
+    relatedEntityId: activity.relatedEntityId,
+    relatedRequestId: activity.relatedRequestId,
+  };
+}
