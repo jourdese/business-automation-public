@@ -54,6 +54,39 @@ type ContactDraft = {
   title: string;
 };
 
+type ProcurementStatus =
+  | "requested"
+  | "supplier_viewed"
+  | "quote_received"
+  | "counter_sent"
+  | "awaiting_confirmation"
+  | "confirmed"
+  | "in_transit"
+  | "received"
+  | "declined";
+
+type ProcurementLine = {
+  itemId: string;
+  requestedQty: number;
+  agreedQty?: number;
+  quotedPackPrice?: number;
+  receivedQty?: number;
+};
+
+type ProcurementRequest = {
+  id: string;
+  supplierId: string;
+  contactId: string;
+  mode: Ingredient["purchasingMode"];
+  status: ProcurementStatus;
+  lines: ProcurementLine[];
+  deliveryFee: number;
+  etaDays: number;
+  buyerConfirmed: boolean;
+  supplierConfirmed: boolean;
+  incomingApplied: boolean;
+};
+
 const recipes: Recipe[] = [
   {
     id: "seafood-marinara",
@@ -140,11 +173,28 @@ function formatMoney(value: number) {
 function supplierGroupsForItems(items: Ingredient[]) {
   const grouped = new Map<string, Ingredient[]>();
   items.forEach((item) => {
-    const list = grouped.get(item.supplierId) ?? [];
+    const key = `${item.supplierId}::${item.purchasingMode}`;
+    const list = grouped.get(key) ?? [];
     list.push(item);
-    grouped.set(item.supplierId, list);
+    grouped.set(key, list);
   });
   return [...grouped.values()];
+}
+
+function procurementStatusLabel(status: ProcurementStatus) {
+  if (status === "requested") return "Request sent";
+  if (status === "supplier_viewed") return "Supplier viewed";
+  if (status === "quote_received") return "Quote received";
+  if (status === "counter_sent") return "Counter sent";
+  if (status === "awaiting_confirmation") return "Awaiting confirmation";
+  if (status === "confirmed") return "Confirmed";
+  if (status === "in_transit") return "In transit";
+  if (status === "received") return "Received";
+  return "Declined";
+}
+
+function activeProcurementStatus(status: ProcurementStatus) {
+  return status !== "received" && status !== "declined";
 }
 
 export default function MarinaraAutoinventoryPreviewPage() {
@@ -155,6 +205,7 @@ export default function MarinaraAutoinventoryPreviewPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [showSummaryLabels, setShowSummaryLabels] = useState(true);
   const [contactDraft, setContactDraft] = useState<ContactDraft | null>(null);
+  const [procurements, setProcurements] = useState<ProcurementRequest[]>([]);
   const [activity, setActivity] = useState([
     "Jourvis finished the morning inventory scan.",
     "42 guests are forecast for tonight's dinner service.",
@@ -197,11 +248,31 @@ export default function MarinaraAutoinventoryPreviewPage() {
     () => ingredients.filter((item) => item.current <= item.reorderAt).sort((a, b) => percent(a) - percent(b)),
     [ingredients],
   );
-  const suggested = useMemo(
-    () => ingredients.filter((item) => item.current <= item.reorderAt && suggestedOrder(item) > 0),
-    [ingredients],
+
+  const activeProcurementItemIds = useMemo(
+    () => new Set(
+      procurements
+        .filter((request) => activeProcurementStatus(request.status))
+        .flatMap((request) => request.lines.map((line) => line.itemId)),
+    ),
+    [procurements],
   );
+
+  const suggested = useMemo(
+    () => ingredients.filter(
+      (item) =>
+        item.current <= item.reorderAt &&
+        suggestedOrder(item) > 0 &&
+        !activeProcurementItemIds.has(item.id),
+    ),
+    [ingredients, activeProcurementItemIds],
+  );
+
   const incoming = useMemo(() => ingredients.filter((item) => item.incoming > 0), [ingredients]);
+  const activeProcurements = useMemo(
+    () => procurements.filter((request) => activeProcurementStatus(request.status)),
+    [procurements],
+  );
 
   const filteredIngredients = useMemo(() => {
     const query = searchTerm.trim().toLowerCase();
@@ -275,6 +346,7 @@ export default function MarinaraAutoinventoryPreviewPage() {
     setStockFilter("All");
     setSearchTerm("");
     setContactDraft(null);
+    setProcurements([]);
     setActivity([
       "Jourvis finished the morning inventory scan.",
       "42 guests are forecast for tonight's dinner service.",
@@ -346,31 +418,177 @@ export default function MarinaraAutoinventoryPreviewPage() {
       return;
     }
 
+    const startIndex = procurements.length;
+    const nextRequests: ProcurementRequest[] = groups.map((items, index) => {
+      const first = items[0];
+      const supplier = getSupplier(first);
+      const contactId = contactDraft.contactBySupplier[supplier.id] ?? first.contactId;
+      return {
+        id: `REQ-${String(startIndex + index + 1).padStart(3, "0")}`,
+        supplierId: supplier.id,
+        contactId,
+        mode: first.purchasingMode,
+        status: "requested",
+        lines: items.map((item) => ({
+          itemId: item.id,
+          requestedQty: contactDraft.quantities[item.id] ?? 0,
+        })),
+        deliveryFee: 0,
+        etaDays: Math.max(...items.map((item) => item.leadDays)),
+        buyerConfirmed: first.purchasingMode === "fixed",
+        supplierConfirmed: false,
+        incomingApplied: false,
+      };
+    });
+
+    setProcurements((current) => [...nextRequests, ...current]);
+
+    nextRequests.forEach((request) => {
+      const supplier = suppliers.find((candidate) => candidate.id === request.supplierId) ?? suppliers[0];
+      const contact = supplier.contacts.find((candidate) => candidate.id === request.contactId) ?? supplier.contacts[0];
+      log(
+        request.mode === "quote"
+          ? `${request.id}: quote request sent to ${contact.name} at ${supplier.name}. Stock is not incoming yet.`
+          : `${request.id}: fixed-price purchase order sent to ${contact.name} at ${supplier.name}. Awaiting supplier acknowledgment.`,
+      );
+    });
+
+    setContactDraft(null);
+    setActiveTab("orders");
+  }
+
+  function updateProcurement(id: string, updater: (request: ProcurementRequest) => ProcurementRequest) {
+    setProcurements((current) => current.map((request) => request.id === id ? updater(request) : request));
+  }
+
+  function supplierViewsRequest(request: ProcurementRequest) {
+    updateProcurement(request.id, (current) => ({ ...current, status: "supplier_viewed" }));
+    log(`${request.id}: supplier viewed the request.`);
+  }
+
+  function supplierSubmitsQuote(request: ProcurementRequest) {
+    updateProcurement(request.id, (current) => ({
+      ...current,
+      status: "quote_received",
+      deliveryFee: 150,
+      lines: current.lines.map((line) => {
+        const item = ingredients.find((candidate) => candidate.id === line.itemId);
+        return {
+          ...line,
+          agreedQty: line.requestedQty,
+          quotedPackPrice: item ? Math.round(item.packPrice * 1.05) : 0,
+        };
+      }),
+    }));
+    log(`${request.id}: supplier submitted a demo quote. Buyer review is required.`);
+  }
+
+  function buyerAcceptsQuote(request: ProcurementRequest) {
+    updateProcurement(request.id, (current) => ({
+      ...current,
+      status: "awaiting_confirmation",
+      buyerConfirmed: true,
+    }));
+    log(`${request.id}: buyer accepted the quote. Awaiting final supplier confirmation.`);
+  }
+
+  function buyerCountersQuote(request: ProcurementRequest) {
+    updateProcurement(request.id, (current) => ({
+      ...current,
+      status: "counter_sent",
+      buyerConfirmed: true,
+      lines: current.lines.map((line) => {
+        const item = ingredients.find((candidate) => candidate.id === line.itemId);
+        return {
+          ...line,
+          quotedPackPrice: item?.packPrice ?? line.quotedPackPrice,
+          agreedQty: line.agreedQty ?? line.requestedQty,
+        };
+      }),
+    }));
+    log(`${request.id}: buyer sent a counteroffer using the previous configured pack price.`);
+  }
+
+  function declineProcurement(request: ProcurementRequest) {
+    updateProcurement(request.id, (current) => ({ ...current, status: "declined" }));
+    log(`${request.id}: procurement request was declined/cancelled. No incoming stock was created.`);
+  }
+
+  function confirmProcurement(request: ProcurementRequest, source: "acknowledgment" | "counter" | "quote") {
+    if (request.incomingApplied) return;
+
+    const quantities = request.lines.map((line) => ({
+      itemId: line.itemId,
+      qty: line.agreedQty ?? line.requestedQty,
+    }));
+
     setIngredients((current) =>
       current.map((item) => {
-        const qty = contactDraft.quantities[item.id] ?? 0;
-        return qty > 0 ? { ...item, incoming: round(item.incoming + qty) } : item;
+        const line = quantities.find((candidate) => candidate.itemId === item.id);
+        return line ? { ...item, incoming: round(item.incoming + line.qty) } : item;
       }),
     );
 
-    groups.forEach((items) => {
-      const supplier = getSupplier(items[0]);
-      const contactId = contactDraft.contactBySupplier[supplier.id] ?? items[0].contactId;
-      const contact = supplier.contacts.find((candidate) => candidate.id === contactId) ?? supplier.contacts[0];
-      const summary = items
-        .map((item) => `${item.name} ${contactDraft.quantities[item.id]} ${item.unit}`)
-        .join(", ");
-      log(`Demo supplier request sent to ${contact.name} at ${supplier.name}: ${summary}.`);
-    });
-    setContactDraft(null);
-    setActiveTab("orders");
+    updateProcurement(request.id, (current) => ({
+      ...current,
+      status: "confirmed",
+      buyerConfirmed: true,
+      supplierConfirmed: true,
+      incomingApplied: true,
+      lines: current.lines.map((line) => ({
+        ...line,
+        agreedQty: line.agreedQty ?? line.requestedQty,
+        receivedQty: line.agreedQty ?? line.requestedQty,
+      })),
+    }));
+
+    log(
+      source === "acknowledgment"
+        ? `${request.id}: supplier acknowledged the fixed-price order. Both parties confirmed; stock is now confirmed incoming.`
+        : source === "counter"
+          ? `${request.id}: supplier accepted the buyer counteroffer. Both parties confirmed; stock is now confirmed incoming.`
+          : `${request.id}: supplier gave final confirmation after buyer acceptance. Stock is now confirmed incoming.`,
+    );
+  }
+
+  function markProcurementInTransit(request: ProcurementRequest) {
+    updateProcurement(request.id, (current) => ({ ...current, status: "in_transit" }));
+    log(`${request.id}: supplier marked the confirmed order in transit.`);
+  }
+
+  function changeReceivedQuantity(requestId: string, itemId: string, quantity: number) {
+    updateProcurement(requestId, (current) => ({
+      ...current,
+      lines: current.lines.map((line) =>
+        line.itemId === itemId ? { ...line, receivedQty: Math.max(0, round(quantity)) } : line,
+      ),
+    }));
+  }
+
+  function receiveProcurement(request: ProcurementRequest) {
+    setIngredients((current) =>
+      current.map((item) => {
+        const line = request.lines.find((candidate) => candidate.itemId === item.id);
+        if (!line) return item;
+        const agreed = line.agreedQty ?? line.requestedQty;
+        const received = line.receivedQty ?? agreed;
+        return {
+          ...item,
+          current: round(item.current + received),
+          incoming: round(Math.max(0, item.incoming - agreed)),
+        };
+      }),
+    );
+
+    updateProcurement(request.id, (current) => ({ ...current, status: "received" }));
+    log(`${request.id}: delivery received using the actual received quantities. Procurement closed.`);
   }
 
   const tabCounts: Record<PrimaryTab, number> = {
     overview: urgent.length,
     stock: ingredients.length,
     recipes: recipes.length,
-    orders: suggested.length + incoming.length,
+    orders: suggested.length + activeProcurements.length,
     activity: activity.length,
   };
 
