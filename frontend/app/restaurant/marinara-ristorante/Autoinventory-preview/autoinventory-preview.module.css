@@ -1428,3 +1428,240 @@
 .summaryStatePill.summaryTileCritical {
   background: #8a463d;
 }
+
+
+/* Inventory slot redesign: compact pixel-game cases with Jourvis materials. */
+.summaryTile {
+  --slot-a: #214f43;
+  --slot-b: #102c27;
+  --slot-accent: #7fcfb0;
+  --slot-glow: rgba(127, 207, 176, 0.18);
+  aspect-ratio: 1 / 1.04;
+  border: 0;
+  border-radius: 0;
+  clip-path: polygon(
+    7px 0,
+    calc(100% - 7px) 0,
+    100% 7px,
+    100% calc(100% - 7px),
+    calc(100% - 7px) 100%,
+    7px 100%,
+    0 calc(100% - 7px),
+    0 7px
+  );
+  background:
+    linear-gradient(135deg, rgba(255,255,255,0.13) 0 2px, transparent 2px) top left / 12px 12px no-repeat,
+    linear-gradient(315deg, rgba(0,0,0,0.33) 0 2px, transparent 2px) bottom right / 12px 12px no-repeat,
+    linear-gradient(180deg, #34454d, #17262d 48%, #0d171d 100%);
+  box-shadow:
+    inset 0 0 0 1px rgba(214, 239, 228, 0.12),
+    inset 0 -5px 0 rgba(0, 0, 0, 0.22),
+    0 3px 0 rgba(0, 0, 0, 0.42),
+    0 7px 14px rgba(0, 0, 0, 0.18);
+  filter: none;
+}
+
+.summaryTile::before {
+  content: "";
+  position: absolute;
+  inset: 5px;
+  z-index: 0;
+  clip-path: polygon(
+    5px 0,
+    calc(100% - 5px) 0,
+    100% 5px,
+    100% calc(100% - 5px),
+    calc(100% - 5px) 100%,
+    5px 100%,
+    0 calc(100% - 5px),
+    0 5px
+  );
+  border: 0;
+  background:
+    radial-gradient(circle at 64% 28%, rgba(255,255,255,0.13), transparent 34%),
+    linear-gradient(145deg, var(--slot-a), var(--slot-b));
+  box-shadow:
+    inset 0 0 0 2px rgba(7, 18, 23, 0.42),
+    inset 2px 2px 0 rgba(255, 255, 255, 0.055),
+    inset -2px -2px 0 rgba(0, 0, 0, 0.26);
+  pointer-events: none;
+}
+
+.summaryTile::after {
+  content: "";
+  position: absolute;
+  inset: 9px;
+  z-index: 1;
+  width: auto;
+  height: auto;
+  border: 1px solid rgba(247, 244, 238, 0.07);
+  background:
+    linear-gradient(90deg, rgba(255,255,255,0.065) 0 1px, transparent 1px) 0 0 / 8px 8px,
+    linear-gradient(rgba(255,255,255,0.045) 0 1px, transparent 1px) 0 0 / 8px 8px;
+  box-shadow: none;
+  pointer-events: none;
+}
+
+.summaryTileReady {
+  --slot-a: #2f725d;
+  --slot-b: #153b32;
+  --slot-accent: #a7e3c5;
+  --slot-glow: rgba(167, 227, 197, 0.2);
+  background:
+    linear-gradient(180deg, #38544d, #172b27 48%, #0d1917 100%);
+}
+
+.summaryTileWatch {
+  --slot-a: #3c6279;
+  --slot-b: #1a3748;
+  --slot-accent: #9ed6ed;
+  --slot-glow: rgba(158, 214, 237, 0.2);
+  background:
+    linear-gradient(180deg, #3a4e5b, #1a2c36 48%, #101a21 100%);
+}
+
+.summaryTileLow {
+  --slot-a: #9a6938;
+  --slot-b: #54361e;
+  --slot-accent: #f0bd78;
+  --slot-glow: rgba(240, 189, 120, 0.22);
+  background:
+    linear-gradient(180deg, #5b4938, #30261b 48%, #1d1711 100%);
+}
+
+.summaryTileCritical {
+  --slot-a: #9b4f45;
+  --slot-b: #512a27;
+  --slot-accent: #ff9e91;
+  --slot-glow: rgba(255, 158, 145, 0.23);
+  background:
+    linear-gradient(180deg, #60413e, #332321 48%, #1d1514 100%);
+}
+
+.summaryTile:hover {
+  transform: translateY(-3px);
+  filter: none;
+  box-shadow:
+    inset 0 0 0 1px rgba(214, 239, 228, 0.18),
+    inset 0 -5px 0 rgba(0, 0, 0, 0.22),
+    0 3px 0 rgba(0, 0, 0, 0.44),
+    0 0 0 1px var(--slot-accent),
+    0 10px 20px rgba(0, 0, 0, 0.26);
+}
+
+.summaryTileSelected {
+  border-color: transparent;
+  box-shadow:
+    inset 0 0 0 1px rgba(214, 239, 228, 0.18),
+    inset 0 -5px 0 rgba(0, 0, 0, 0.22),
+    0 3px 0 rgba(0, 0, 0, 0.44),
+    0 0 0 2px var(--mint),
+    0 0 0 5px rgba(167, 227, 197, 0.08),
+    0 0 24px rgba(167, 227, 197, 0.18);
+}
+
+.summaryTileSelected::before {
+  box-shadow:
+    inset 0 0 0 2px rgba(8, 20, 31, 0.48),
+    inset 2px 2px 0 rgba(255, 255, 255, 0.075),
+    inset -2px -2px 0 rgba(0, 0, 0, 0.26),
+    0 0 14px var(--slot-glow);
+}
+
+.summaryTileTop {
+  width: calc(100% - 20px);
+  top: 10px;
+  left: 10px;
+  z-index: 4;
+  pointer-events: none;
+}
+
+.summaryTileTop small {
+  padding: 0.16rem 0.28rem;
+  border: 1px solid color-mix(in srgb, var(--slot-accent) 55%, transparent);
+  background: rgba(5, 15, 20, 0.46);
+  color: #f7f4ee;
+  opacity: 0.92;
+  text-shadow: none;
+}
+
+.summaryTileTop strong {
+  min-width: 31px;
+  padding: 0.16rem 0.28rem;
+  border: 1px solid rgba(247, 244, 238, 0.12);
+  background: rgba(5, 15, 20, 0.38);
+  color: var(--slot-accent);
+  text-align: center;
+  text-shadow: none;
+}
+
+.summaryStockIcon {
+  z-index: 3;
+  width: 74%;
+  height: 74%;
+  transform: translateY(3px);
+  filter: none;
+  transition: transform 130ms ease;
+}
+
+.summaryStockIcon img {
+  width: 90%;
+  height: 90%;
+  filter:
+    drop-shadow(0 1px 0 rgba(255, 255, 255, 0.1))
+    drop-shadow(0 3px 0 rgba(0, 0, 0, 0.25))
+    drop-shadow(0 8px 10px rgba(0, 0, 0, 0.28));
+}
+
+.summaryTile:hover .summaryStockIcon,
+.summaryTileSelected .summaryStockIcon {
+  transform: translateY(0) scale(1.045);
+}
+
+.summaryIncoming {
+  right: 9px;
+  bottom: 35px;
+  z-index: 6;
+  border: 1px solid #91bfff;
+  background: #243b63;
+  color: #d9e9ff;
+  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.25);
+}
+
+.summaryTileLabel {
+  left: 5px;
+  right: 5px;
+  bottom: 5px;
+  min-height: 29px;
+  border: 1px solid rgba(247, 244, 238, 0.13);
+  border-bottom-color: rgba(0, 0, 0, 0.22);
+  background: rgba(7, 18, 23, 0.48);
+  -webkit-backdrop-filter: blur(8px) saturate(115%);
+  backdrop-filter: blur(8px) saturate(115%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 2px 0 rgba(0, 0, 0, 0.2);
+  font-size: 0.65rem;
+  font-weight: 700;
+}
+
+@media (max-width: 600px) {
+  .summaryTile {
+    clip-path: polygon(
+      5px 0,
+      calc(100% - 5px) 0,
+      100% 5px,
+      100% calc(100% - 5px),
+      calc(100% - 5px) 100%,
+      5px 100%,
+      0 calc(100% - 5px),
+      0 5px
+    );
+  }
+
+  .summaryTileLabel {
+    left: 4px;
+    right: 4px;
+    bottom: 4px;
+  }
+}
