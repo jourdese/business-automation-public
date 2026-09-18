@@ -38,6 +38,7 @@ import {
   type CommandCenterMenuItem,
   type CommandCenterRecipe,
   type CommandCenterStockAdjustmentReason,
+  type CommandCenterSupplier,
 } from "@/command-center/core/runtime";
 import { useCommandCenterRuntime } from "@/command-center/core/runtime-provider";
 import MenuPhoto from "./MenuPhoto";
@@ -77,6 +78,27 @@ type RecipeEditorDraft = {
   ingredients: RecipeIngredientDraft[];
 };
 
+type InventoryEditorDraft = {
+  name: string;
+  unit: string;
+  zone: string;
+  current: string;
+  fullLevel: string;
+  reorderAt: string;
+  dailyUse: string;
+  supplierId: string;
+  contactId: string;
+  packSize: string;
+  packPrice: string;
+  purchaseUnit: string;
+  leadDays: string;
+  purchasingMode: "fixed" | "quote";
+  automationEnabled: boolean;
+  automationMode: "assist" | "auto_contact" | "autobuy";
+  automationTriggerPercent: string;
+  maxAutoOrderSpend: string;
+};
+
 export default function OperationModuleView({
   businessId,
   moduleId,
@@ -107,6 +129,7 @@ export default function OperationModuleView({
     archiveMenuItem,
     saveRecipe,
     archiveRecipe,
+    createInventoryItem,
     recordRecipeSale,
   } = useCommandCenterRuntime();
 
@@ -1366,7 +1389,9 @@ export default function OperationModuleView({
             setDraft={setRecipeEditor}
             existing={editingRecipe}
             inventory={state.inventory}
+            suppliers={state.suppliers}
             menuItems={state.menuItems}
+            onCreateInventoryItem={createInventoryItem}
             onSave={submitRecipeEditor}
             onCancel={() => setRecipeEditor(null)}
           />
