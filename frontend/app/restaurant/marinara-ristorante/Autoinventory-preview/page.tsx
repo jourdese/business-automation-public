@@ -33,6 +33,7 @@ import {
   initialIngredients,
   loadConfiguredIngredients,
   resetInventoryRuntime,
+  saveConfiguredIngredients,
   saveInventoryRuntime,
   suppliers,
 } from "./inventory-config";
@@ -249,6 +250,8 @@ export default function MarinaraAutoinventoryPreviewPage() {
   const [showSummaryLabels, setShowSummaryLabels] = useState(true);
   const [automationMasterOn, setAutomationMasterOn] = useState(false);
   const [runtimeReady, setRuntimeReady] = useState(false);
+  const [jourvisUpdateItemId, setJourvisUpdateItemId] = useState<string | null>(null);
+  const [jourvisOpenKey, setJourvisOpenKey] = useState(0);
   const [automationAlerts, setAutomationAlerts] = useState<Record<string, string>>({});
   const [automationRejected, setAutomationRejected] = useState<Record<string, string>>({});
   const [contactDraft, setContactDraft] = useState<ContactDraft | null>(null);
@@ -280,6 +283,20 @@ export default function MarinaraAutoinventoryPreviewPage() {
     }
 
     refreshConfiguration();
+
+    const params = new URLSearchParams(window.location.search);
+    const requestedStock = params.get("stock");
+    if (requestedStock && initialIngredients.some((item) => item.id === requestedStock)) {
+      setSelectedId(requestedStock);
+    }
+    if (params.get("jourvis") === "update") {
+      const targetId = requestedStock && initialIngredients.some((item) => item.id === requestedStock)
+        ? requestedStock
+        : "shrimp";
+      setJourvisUpdateItemId(targetId);
+      setJourvisOpenKey((value) => value + 1);
+    }
+
     setRuntimeReady(true);
     window.addEventListener("focus", refreshConfiguration);
     return () => window.removeEventListener("focus", refreshConfiguration);
@@ -781,6 +798,25 @@ export default function MarinaraAutoinventoryPreviewPage() {
 
   function updateIngredient(id: string, updater: (item: Ingredient) => Ingredient) {
     setIngredients((current) => current.map((item) => (item.id === id ? updater(item) : item)));
+  }
+
+  function openJourvisUpdate(item: Ingredient) {
+    setSelectedId(item.id);
+    setJourvisUpdateItemId(item.id);
+    setJourvisOpenKey((value) => value + 1);
+  }
+
+  function updateJourvisConfig(id: string, patch: Partial<Ingredient>) {
+    setIngredients((current) => {
+      const next = current.map((item) => item.id === id ? { ...item, ...patch } : item);
+      saveConfiguredIngredients(next);
+      return next;
+    });
+  }
+
+  function changeJourvisSupplier(item: Ingredient, supplierId: string) {
+    const supplier = suppliers.find((candidate) => candidate.id === supplierId) ?? suppliers[0];
+    updateJourvisConfig(item.id, { supplierId: supplier.id, contactId: supplier.contacts[0].id });
   }
 
   function recordWaste(item: Ingredient) {
