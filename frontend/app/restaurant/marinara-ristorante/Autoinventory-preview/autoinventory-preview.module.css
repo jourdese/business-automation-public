@@ -2109,3 +2109,175 @@
     width: 100%;
   }
 }
+
+
+/* Jourvis purchasing automation */
+.automationMasterSwitch {
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.3rem 0.5rem;
+  border: 1px solid #44535b;
+  border-radius: 2px;
+  background: #07131b;
+  color: var(--slate);
+  font-size: 0.65rem;
+}
+
+.automationMasterSwitch > i {
+  width: 31px;
+  height: 16px;
+  position: relative;
+  display: block;
+  border: 1px solid #48606b;
+  border-radius: 999px;
+  background: #13252e;
+}
+
+.automationMasterSwitch > i > b {
+  width: 10px;
+  height: 10px;
+  position: absolute;
+  left: 2px;
+  top: 2px;
+  border-radius: 50%;
+  background: var(--slate);
+  transition: transform 160ms ease, background 160ms ease;
+}
+
+.automationMasterSwitch > i[data-on="true"] {
+  border-color: var(--mint);
+  background: rgba(46, 107, 87, 0.45);
+}
+
+.automationMasterSwitch > i[data-on="true"] > b {
+  transform: translateX(15px);
+  background: var(--mint);
+}
+
+.automationMasterSwitch > strong {
+  min-width: 20px;
+  color: var(--ivory);
+  font: 0.58rem var(--font-mono);
+}
+
+.automationMasterOn {
+  border-color: var(--mint);
+  color: var(--mint);
+  box-shadow: 0 0 10px rgba(167, 227, 197, 0.08);
+}
+
+.summaryAutomationMark {
+  position: absolute;
+  left: 9px;
+  bottom: 35px;
+  z-index: 6;
+  width: 19px;
+  height: 19px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #677981;
+  background: rgba(8, 20, 31, 0.92);
+  color: #7d8f96;
+  font: 0.55rem var(--font-mono);
+  font-weight: 800;
+  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.24);
+}
+
+.summaryAutomationMark[data-active="true"] {
+  border-color: var(--mint);
+  background: rgba(34, 90, 70, 0.94);
+  color: #e0f8ec;
+  box-shadow:
+    2px 2px 0 rgba(0, 0, 0, 0.24),
+    0 0 8px rgba(167, 227, 197, 0.12);
+}
+
+.summaryAutomationCard {
+  margin-top: 0.8rem;
+  padding: 0.72rem;
+  border: 1px solid #394b54;
+  border-left: 2px solid #5b6b72;
+  background: rgba(18, 35, 46, 0.45);
+}
+
+.summaryAutomationCard[data-enabled="true"] {
+  border-left-color: var(--mint);
+  background:
+    linear-gradient(90deg, rgba(46, 107, 87, 0.13), transparent 62%),
+    rgba(18, 35, 46, 0.45);
+}
+
+.summaryAutomationCard > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.7rem;
+}
+
+.summaryAutomationCard span {
+  color: var(--mint);
+  font: 0.56rem var(--font-mono);
+  letter-spacing: 0.08em;
+}
+
+.summaryAutomationCard strong {
+  font-size: 0.67rem;
+  text-transform: capitalize;
+}
+
+.summaryAutomationCard > small {
+  display: block;
+  margin-top: 0.3rem;
+  color: var(--slate);
+  font-size: 0.59rem;
+  line-height: 1.45;
+}
+
+.summaryAutomationCard > p {
+  margin-top: 0.48rem;
+  padding: 0.45rem 0.5rem;
+  border: 1px solid #7c5b39;
+  background: rgba(100, 63, 27, 0.25);
+  color: #f4c98f;
+  font-size: 0.6rem;
+  line-height: 1.4;
+}
+
+.procurementAutomationNote {
+  margin: 0.55rem 0.85rem 0;
+  padding: 0.5rem 0.6rem;
+  border-left: 2px solid var(--mint);
+  background: rgba(46, 107, 87, 0.09);
+  color: var(--slate);
+  font-size: 0.62rem;
+  line-height: 1.45;
+}
+
+.procurementOriginBadge {
+  display: inline-flex;
+  margin-top: 0.3rem;
+  padding: 0.14rem 0.3rem;
+  border: 1px solid #455861;
+  background: #0b1820;
+  color: var(--slate);
+  font: 0.53rem var(--font-mono);
+  text-transform: uppercase;
+}
+
+.procurementOriginBadge[data-auto="true"] {
+  border-color: var(--mint);
+  color: var(--mint);
+}
+
+@media (max-width: 600px) {
+  .automationMasterSwitch {
+    align-self: flex-start;
+  }
+
+  .summaryAutomationMark {
+    left: 7px;
+    bottom: 32px;
+  }
+}
