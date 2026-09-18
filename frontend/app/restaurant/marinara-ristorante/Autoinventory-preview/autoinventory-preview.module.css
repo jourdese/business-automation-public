@@ -2301,7 +2301,7 @@
 /* One-time automation exception decision */
 .automationDecisionActions {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.45rem;
   margin-top: 0.55rem;
 }
@@ -2342,7 +2342,7 @@
   color: #ffd5cf;
 }
 
-@media (max-width: 420px) {
+@media (max-width: 540px) {
   .automationDecisionActions {
     grid-template-columns: 1fr;
   }
@@ -2587,4 +2587,16 @@
   .jourvisUpdateGrid {
     grid-template-columns: 1fr;
   }
+}
+
+
+.automationUpdate {
+  border: 1px solid #58717b;
+  background: #0b1a24;
+  color: var(--ivory);
+}
+
+.automationUpdate:hover {
+  border-color: var(--mint);
+  color: var(--mint);
 }
