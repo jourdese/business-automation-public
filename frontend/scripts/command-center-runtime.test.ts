@@ -14,6 +14,7 @@ import {
   type CommandCenterRuntimeState,
 } from '../command-center/core/runtime.ts';
 import { deriveJourvisTasks } from '../command-center/core/task-engine.ts';
+import { buildCommandCenterForecast } from '../command-center/core/forecast-engine.ts';
 
 function item(
   patch: Partial<CommandCenterInventoryItem> = {},
@@ -410,4 +411,80 @@ await test('automatic pre-contact violation becomes an owner task when autonomy 
   assert.equal(tasks.length, 1);
   assert.match(tasks[0]?.title ?? '', /blocked/i);
   assert.match(tasks[0]?.whatJourvisDid ?? '', /before contacting/i);
+});
+
+
+await test('Forecast projects lead-time and horizon inventory from configured daily use', () => {
+  const shrimp = item({
+    current: 2,
+    incoming: 1,
+    dailyUse: 1,
+    leadDays: 2,
+    fullLevel: 10,
+    reorderAt: 3,
+    packSize: 5,
+  });
+  const snapshot = buildCommandCenterForecast(state(shrimp), 7);
+  const row = snapshot.inventoryRows[0];
+
+  assert.equal(row?.projectedAtDelivery, 1);
+  assert.equal(row?.projectedAtHorizon, 0);
+  assert.equal(row?.daysCover, 3);
+  assert.equal(row?.recommendedQuantity, 10);
+  assert.equal(row?.risk, 'high');
+  assert.equal(snapshot.leadTimeRiskCount, 1);
+  assert.equal(snapshot.horizonRiskCount, 1);
+});
+
+await test('Forecast marks stockout before supplier arrival as critical', () => {
+  const shrimp = item({
+    current: 1,
+    incoming: 0,
+    dailyUse: 2,
+    leadDays: 1,
+  });
+  const row = buildCommandCenterForecast(state(shrimp), 7).inventoryRows[0];
+
+  assert.equal(row?.risk, 'critical');
+  assert.equal(row?.projectedAtDelivery, 0);
+  assert.equal(row?.daysCover, 0.5);
+});
+
+await test('Forecast explains when an active purchase already protects an ingredient', () => {
+  const shrimp = item();
+  const active = purchase({
+    status: 'in_transit',
+    itemId: shrimp.id,
+  });
+  const row = buildCommandCenterForecast(
+    state(shrimp, [active], true),
+    7,
+  ).inventoryRows[0];
+
+  assert.equal(row?.activePurchaseId, active.id);
+  assert.match(row?.nextAction ?? '', /Track JV-0001/i);
+});
+
+await test('Forecast links ingredient risk to active recipes', () => {
+  const shrimp = item();
+  const runtime = state(shrimp);
+  runtime.recipes = [
+    {
+      id: 'recipe-shrimp',
+      name: 'Shrimp Pasta',
+      description: 'Test recipe',
+      active: true,
+      ingredients: { shrimp: 0.1 },
+    },
+    {
+      id: 'recipe-archived',
+      name: 'Old Shrimp Dish',
+      description: 'Archived',
+      active: false,
+      ingredients: { shrimp: 0.2 },
+    },
+  ];
+
+  const row = buildCommandCenterForecast(runtime, 7).inventoryRows[0];
+  assert.deepEqual(row?.affectedRecipes, ['Shrimp Pasta']);
 });
