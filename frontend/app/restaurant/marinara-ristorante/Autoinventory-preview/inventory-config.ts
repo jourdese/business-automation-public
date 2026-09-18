@@ -220,6 +220,17 @@ export function resetInventoryRuntime() {
   window.localStorage.removeItem(INVENTORY_RUNTIME_STORAGE_KEY);
 }
 
+export function resetInventoryConfiguration() {
+  if (typeof window === "undefined") return;
+  window.localStorage.removeItem(INVENTORY_CONFIG_STORAGE_KEY);
+}
+
+export function resetAutoinventoryCoreStorage() {
+  if (typeof window === "undefined") return;
+  window.localStorage.removeItem(INVENTORY_CONFIG_STORAGE_KEY);
+  window.localStorage.removeItem(INVENTORY_RUNTIME_STORAGE_KEY);
+}
+
 
 export function automationModeLabel(mode: AutomationMode) {
   if (mode === "assist") return "Watch only";
