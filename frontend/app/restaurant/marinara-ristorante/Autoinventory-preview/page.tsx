@@ -576,6 +576,58 @@ export default function MarinaraAutoinventoryPreviewPage() {
     });
   }, [automationMasterOn, ingredients, procurements, automationRejected]);
 
+  useEffect(() => {
+    if (!runtimeReady) return;
+
+    const request = procurements.find((candidate) => {
+      if (candidate.status === "requested") return true;
+      if (candidate.status === "supplier_viewed" && candidate.mode === "quote") return true;
+      if (
+        candidate.status === "supplier_viewed" &&
+        candidate.mode === "fixed" &&
+        candidate.buyerConfirmed
+      ) return true;
+      if (candidate.status === "counter_sent") return true;
+      if (candidate.status === "awaiting_confirmation") return true;
+      if (candidate.status === "confirmed") return true;
+      return false;
+    });
+
+    if (!request) return;
+
+    const timer = window.setTimeout(() => {
+      if (request.status === "requested") {
+        supplierViewsRequest(request);
+        return;
+      }
+      if (request.status === "supplier_viewed" && request.mode === "quote") {
+        supplierSubmitsQuote(request);
+        return;
+      }
+      if (
+        request.status === "supplier_viewed" &&
+        request.mode === "fixed" &&
+        request.buyerConfirmed
+      ) {
+        confirmProcurement(request, "acknowledgment");
+        return;
+      }
+      if (request.status === "counter_sent") {
+        confirmProcurement(request, "counter");
+        return;
+      }
+      if (request.status === "awaiting_confirmation") {
+        confirmProcurement(request, "quote");
+        return;
+      }
+      if (request.status === "confirmed") {
+        markProcurementInTransit(request);
+      }
+    }, request.status === "requested" ? 700 : 900);
+
+    return () => window.clearTimeout(timer);
+  }, [procurements, runtimeReady]);
+
   function log(message: string) {
     setActivity((current) => [message, ...current].slice(0, 12));
   }
