@@ -2409,60 +2409,76 @@ export default function MarinaraAutoinventoryPreviewPage() {
       ) : null}
 
       <JourvisPresence
-        eyebrow={jourvisTasks.length ? `JOURVIS · ${jourvisTasks.length} NEED${jourvisTasks.length === 1 ? "S" : ""} YOU` : "JOURVIS"}
-        status={jourvisTasks.length ? `Needs you · ${jourvisTasks.length}` : jourvisWorkingRequest ? "Working" : automationMasterOn ? "Watching" : "Available"}
-        message={jourvisMessage}
-        detail={jourvisDetail}
-        attention={jourvisAttention}
-        focusTarget={jourvisFocusTarget}
-        focusLabel={jourvisFocusLabel}
+        eyebrow={jourvisUpdateItem ? "JOURVIS · UPDATE" : jourvisTasks.length ? `JOURVIS · ${jourvisTasks.length} NEED${jourvisTasks.length === 1 ? "S" : ""} YOU` : "JOURVIS"}
+        status={jourvisUpdateItem ? `Updating ${jourvisUpdateItem.name}` : jourvisTasks.length ? `Needs you · ${jourvisTasks.length}` : jourvisWorkingRequest ? "Working" : automationMasterOn ? "Watching" : "Available"}
+        message={jourvisUpdateItem ? `Update ${jourvisUpdateItem.name} here.` : jourvisMessage}
+        detail={jourvisUpdateItem ? "All configuration for this supply is inside this chat. Changes save immediately." : jourvisDetail}
+        attention={jourvisUpdateItem ? false : jourvisAttention}
+        focusTarget={jourvisUpdateItem ? undefined : jourvisFocusTarget}
+        focusLabel={jourvisUpdateItem ? undefined : jourvisFocusLabel}
+        wide={Boolean(jourvisUpdateItem)}
+        openRequestKey={jourvisOpenKey}
         actions={
-          jourvisTask && jourvisTaskItem
-            ? jourvisTask.kind === "automation_exception"
+          jourvisUpdateItem
+            ? [
+                { label: "Update", onClick: () => setJourvisUpdateItemId(null), primary: true, keepOpen: true },
+              ]
+            : jourvisTask && jourvisTaskItem
               ? [
-                  { label: "Approve once", onClick: () => approveAutomationException(jourvisTaskItem), primary: true },
-                  { label: "Reject", onClick: () => rejectAutomationException(jourvisTaskItem) },
-                ]
-              : jourvisTask.kind === "quote_approval" && jourvisTaskRequest
-                ? [
-                    { label: "Approve quote", onClick: () => buyerAcceptsQuote(jourvisTaskRequest), primary: true },
-                    { label: "Reject", onClick: () => declineProcurement(jourvisTaskRequest) },
-                    { label: "Review in Orders", onClick: () => { setSelectedId(jourvisTaskItem.id); setActiveTab("orders"); } },
-                  ]
-                : jourvisTask.kind === "fixed_approval" && jourvisTaskRequest
-                  ? [
-                      { label: "Approve order", onClick: () => buyerApprovesFixedAutomation(jourvisTaskRequest), primary: true },
-                      { label: "Reject", onClick: () => declineProcurement(jourvisTaskRequest) },
-                    ]
-                  : jourvisTask.kind === "automation_paused"
-                    ? [
-                        { label: "Turn Jourvis Auto on", onClick: () => {
-                          setAutomationMasterOn(true);
-                          window.localStorage.setItem("jourvis-autoinventory-automation-master", "true");
-                          log(`Jourvis Automation switched ON. Watching ${automationEnabledCount} configured supplies.`);
-                        }, primary: true },
-                        { label: `Review ${jourvisTaskItem.name}`, onClick: () => { setSelectedId(jourvisTaskItem.id); setActiveTab("overview"); } },
-                      ]
-                    : [
-                        { label: "Contact supplier", onClick: () => {
-                          setSelectedId(jourvisTaskItem.id);
-                          openContact([jourvisTaskItem], `Contact ${getSupplier(jourvisTaskItem).name}`);
-                        }, primary: true },
-                        { label: "Configure automation", href: `/restaurant/marinara-ristorante/Autoinventory-preview/configure?stock=${jourvisTaskItem.id}` },
-                      ]
-            : jourvisWorkingRequest
-              ? [
-                  { label: "View purchase flow", onClick: () => setActiveTab("orders"), primary: true },
-                  ...(jourvisWorkingItem
-                    ? [{ label: `View ${jourvisWorkingItem.name}`, onClick: () => setSelectedId(jourvisWorkingItem.id) }]
-                    : []),
+                  {
+                    label: "Approve",
+                    primary: true,
+                    onClick: () => {
+                      if (jourvisTask.kind === "automation_exception") {
+                        approveAutomationException(jourvisTaskItem);
+                        return;
+                      }
+                      if (jourvisTask.kind === "quote_approval" && jourvisTaskRequest) {
+                        buyerAcceptsQuote(jourvisTaskRequest);
+                        return;
+                      }
+                      if (jourvisTask.kind === "fixed_approval" && jourvisTaskRequest) {
+                        buyerApprovesFixedAutomation(jourvisTaskRequest);
+                        return;
+                      }
+                      if (jourvisTask.kind === "automation_paused") {
+                        setAutomationMasterOn(true);
+                        window.localStorage.setItem("jourvis-autoinventory-automation-master", "true");
+                        log(`Jourvis Automation switched ON. Watching ${automationEnabledCount} configured supplies.`);
+                        return;
+                      }
+                      approveRestockItem(jourvisTaskItem);
+                    },
+                  },
+                  {
+                    label: "Reject",
+                    danger: true,
+                    onClick: () => {
+                      if (jourvisTaskRequest) {
+                        declineProcurement(jourvisTaskRequest);
+                        return;
+                      }
+                      rejectItem(jourvisTaskItem);
+                    },
+                  },
+                  {
+                    label: "Update",
+                    keepOpen: true,
+                    onClick: () => openJourvisUpdate(jourvisTaskItem),
+                  },
                 ]
               : [
-                  { label: "Configure automation", href: `/restaurant/marinara-ristorante/Autoinventory-preview/configure?stock=${selected.id}`, primary: true },
-                  { label: "View purchase flow", onClick: () => setActiveTab("orders") },
+                  {
+                    label: "Update",
+                    primary: true,
+                    keepOpen: true,
+                    onClick: () => openJourvisUpdate(jourvisWorkingItem ?? selected),
+                  },
                 ]
         }
-      />
+      >
+        {jourvisUpdatePanel}
+      </JourvisPresence>
     </div>
   );
 }
