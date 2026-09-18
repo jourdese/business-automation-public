@@ -31,6 +31,8 @@ import {
   getSupplier,
   initialIngredients,
   loadConfiguredIngredients,
+  resetInventoryRuntime,
+  saveInventoryRuntime,
   suppliers,
 } from "./inventory-config";
 import StockIcon from "./StockIcon";
@@ -130,6 +132,8 @@ const primaryTabs: ReadonlyArray<{ id: PrimaryTab; label: string }> = [
 
 const zoneOrder: Zone[] = ["Pantry", "Cold storage", "Seafood freezer", "Produce"];
 const stockFilters: StockFilter[] = ["All", ...zoneOrder];
+const PROCUREMENT_RUNTIME_KEY = "jourvis:marinara:procurements:v2";
+const ACTIVITY_RUNTIME_KEY = "jourvis:marinara:activity:v1";
 
 function round(value: number) {
   return Math.round(value * 100) / 100;
@@ -259,6 +263,7 @@ export default function MarinaraAutoinventoryPreviewPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [showSummaryLabels, setShowSummaryLabels] = useState(true);
   const [automationMasterOn, setAutomationMasterOn] = useState(false);
+  const [runtimeReady, setRuntimeReady] = useState(false);
   const [automationAlerts, setAutomationAlerts] = useState<Record<string, string>>({});
   const [automationRejected, setAutomationRejected] = useState<Record<string, string>>({});
   const [contactDraft, setContactDraft] = useState<ContactDraft | null>(null);
@@ -269,13 +274,7 @@ export default function MarinaraAutoinventoryPreviewPage() {
   ]);
 
   useEffect(() => {
-    const refreshConfiguration = () => setIngredients((current) => {
-      const configured = loadConfiguredIngredients();
-      return configured.map((config) => {
-        const live = current.find((item) => item.id === config.id);
-        return live ? { ...config, current: live.current, incoming: live.incoming } : config;
-      });
-    });
+    const refreshConfiguration = () => setIngredients(loadConfiguredIngredients());
 
     const savedLabels = window.localStorage.getItem("jourvis-autoinventory-summary-labels");
     if (savedLabels !== null) setShowSummaryLabels(savedLabels === "true");
@@ -283,10 +282,35 @@ export default function MarinaraAutoinventoryPreviewPage() {
     const savedAutomation = window.localStorage.getItem("jourvis-autoinventory-automation-master");
     if (savedAutomation !== null) setAutomationMasterOn(savedAutomation === "true");
 
+    try {
+      const savedProcurements = window.localStorage.getItem(PROCUREMENT_RUNTIME_KEY);
+      if (savedProcurements) setProcurements(JSON.parse(savedProcurements) as ProcurementRequest[]);
+      const savedActivity = window.localStorage.getItem(ACTIVITY_RUNTIME_KEY);
+      if (savedActivity) setActivity(JSON.parse(savedActivity) as string[]);
+    } catch {
+      // Corrupt demo runtime data falls back to the seeded preview.
+    }
+
     refreshConfiguration();
+    setRuntimeReady(true);
     window.addEventListener("focus", refreshConfiguration);
     return () => window.removeEventListener("focus", refreshConfiguration);
   }, []);
+
+  useEffect(() => {
+    if (!runtimeReady) return;
+    saveInventoryRuntime(ingredients);
+  }, [ingredients, runtimeReady]);
+
+  useEffect(() => {
+    if (!runtimeReady) return;
+    window.localStorage.setItem(PROCUREMENT_RUNTIME_KEY, JSON.stringify(procurements));
+  }, [procurements, runtimeReady]);
+
+  useEffect(() => {
+    if (!runtimeReady) return;
+    window.localStorage.setItem(ACTIVITY_RUNTIME_KEY, JSON.stringify(activity));
+  }, [activity, runtimeReady]);
 
   const selected = ingredients.find((item) => item.id === selectedId) ?? ingredients[0];
   const selectedTone = tone(selected);
@@ -584,6 +608,9 @@ export default function MarinaraAutoinventoryPreviewPage() {
   }
 
   function resetDemo() {
+    resetInventoryRuntime();
+    window.localStorage.removeItem(PROCUREMENT_RUNTIME_KEY);
+    window.localStorage.removeItem(ACTIVITY_RUNTIME_KEY);
     setIngredients(loadConfiguredIngredients());
     setSelectedId("shrimp");
     setActiveTab("overview");
