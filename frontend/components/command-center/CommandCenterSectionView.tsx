@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { type ReactNode, useMemo } from "react";
 import {
   ArrowRight,
   Bot,
@@ -316,7 +316,7 @@ function SectionFrame({
   eyebrow: string;
   title: string;
   description: string;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   return (
     <section className={styles.sectionPage}>
@@ -335,7 +335,7 @@ function PanelHeading({
   eyebrow,
   title,
 }: {
-  icon: React.ReactNode;
+  icon: ReactNode;
   eyebrow: string;
   title: string;
 }) {
