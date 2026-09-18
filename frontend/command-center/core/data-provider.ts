@@ -2,8 +2,8 @@ import type {
   CommandCenterBusiness,
   BusinessMetricSeed,
   JourvisDecision,
-  CommandCenterActivity,
 } from "./types";
+import type { CommandCenterActivity } from "./runtime";
 
 export type CommandCenterForecast = {
   id: string;
