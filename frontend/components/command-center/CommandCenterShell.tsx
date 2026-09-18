@@ -330,18 +330,20 @@ export default function CommandCenterShell({ children }: { children: ReactNode }
               <strong>{Math.round((updateItem.current / Math.max(updateItem.fullLevel, 0.01)) * 100)}% stock</strong>
             </div>
 
-            <label className={styles.ruleToggle}>
+            <label className={styles.ruleToggle} htmlFor={`jourvis-manages-${updateItem.id}`}>
               <span><strong>Jourvis manages this item</strong><small>Allow Jourvis to act automatically according to the rule below.</small></span>
               <input
+                id={`jourvis-manages-${updateItem.id}`}
                 type="checkbox"
                 checked={updateItem.automationEnabled}
                 onChange={(event) => updateDraftItem({ automationEnabled: event.target.checked })}
               />
             </label>
 
-            <label className={styles.ruleToggle}>
+            <label className={styles.ruleToggle} htmlFor="jourvis-global-autonomy">
               <span><strong>Global autonomy</strong><small>Pause or resume autonomous work across this Command Center.</small></span>
               <input
+                id="jourvis-global-autonomy"
                 type="checkbox"
                 checked={state.automationMasterOn}
                 onChange={(event) => setAutomationMasterOn(event.target.checked)}
