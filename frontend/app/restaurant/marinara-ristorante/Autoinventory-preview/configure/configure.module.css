@@ -515,3 +515,18 @@
   width: 44px;
   height: 44px;
 }
+
+.stockIcon img,
+.editorStockIcon img {
+  width: 84%;
+  height: 84%;
+  object-fit: contain;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  user-select: none;
+  pointer-events: none;
+  filter:
+    drop-shadow(0 1px 0 rgba(255, 255, 255, 0.1))
+    drop-shadow(0 3px 4px rgba(0, 0, 0, 0.34));
+}
+
