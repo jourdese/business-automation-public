@@ -1809,8 +1809,17 @@ export default function MarinaraAutoinventoryPreviewPage() {
                             <small>{contact.role} · {contact.channel}</small>
                           </div>
                           <div className={styles.modeStack}>
-                            <b>{formatMoney(total)}</b>
-                            <small>{first.purchasingMode === "quote" ? "Quote required" : "Fixed-price PO"}</small>
+                            {first.purchasingMode === "quote" ? (
+                              <>
+                                <b>Quote needed</b>
+                                <small>Estimate {formatMoney(total)}</small>
+                              </>
+                            ) : (
+                              <>
+                                <b>{formatMoney(total)}</b>
+                                <small>Known fixed-price order</small>
+                              </>
+                            )}
                           </div>
                         </div>
                         {items.map((item) => (
@@ -2129,7 +2138,10 @@ export default function MarinaraAutoinventoryPreviewPage() {
                             <label><span>Quantity to request</span><div><input type="number" min="0" step={item.packSize} value={quantity} onChange={(event) => changeDraftQuantity(item, Number(event.target.value) || 0)} /><b>{item.unit}</b></div></label>
                             <button type="button" onClick={() => changeDraftQuantity(item, quantity + item.packSize)} aria-label={`Increase ${item.name} quantity`}>+</button>
                           </div>
-                          <div className={styles.requestMeta}><span>{quantity > 0 ? `${round(quantity / item.packSize)} purchase unit${quantity / item.packSize === 1 ? "" : "s"}` : "Not included"}</span><strong>{quantity > 0 ? formatMoney(estimatedCost) : "—"}</strong></div>
+                          <div className={styles.requestMeta}>
+                            <span>{quantity > 0 ? `${round(quantity / item.packSize)} purchase unit${quantity / item.packSize === 1 ? "" : "s"}` : "Not included"}</span>
+                            <strong>{quantity > 0 ? (item.purchasingMode === "quote" ? `Est. ${formatMoney(estimatedCost)}` : formatMoney(estimatedCost)) : "—"}</strong>
+                          </div>
                         </div>
                       );
                     })}
