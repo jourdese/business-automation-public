@@ -1,12 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 import {
   ArrowLeft,
   ArrowRight,
   Bot,
   CheckCircle2,
-  PackageCheck,
   Truck,
 } from "lucide-react";
 import { operationCatalog } from "@/command-center/core/business-registry";
@@ -249,7 +248,7 @@ function PanelEmpty({
   title,
   body,
 }: {
-  icon: React.ReactNode;
+  icon: ReactNode;
   title: string;
   body: string;
 }) {
