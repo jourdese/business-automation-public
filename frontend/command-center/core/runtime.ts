@@ -101,11 +101,24 @@ export type CommandCenterSupplier = {
   itemIds: string[];
 };
 
+export type CommandCenterActivityConfiguration = {
+  capturedAt: string;
+  summary: string;
+  values: Record<string, string | number | boolean | null>;
+};
+
 export type CommandCenterActivity = {
   id: string;
   at: string;
   module: string;
+  action: string;
   message: string;
+  actor: "jourvis" | "owner" | "external" | "system";
+  executionMode: "automatic" | "manual" | "system";
+  reason: string;
+  configuration?: CommandCenterActivityConfiguration;
+  relatedEntityId?: string;
+  relatedRequestId?: string;
 };
 
 export type CommandCenterRuntimeState = {
