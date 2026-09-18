@@ -1818,7 +1818,9 @@ function RecipeEditorPanel({
   setDraft,
   existing,
   inventory,
+  suppliers,
   menuItems,
+  onCreateInventoryItem,
   onSave,
   onCancel,
 }: {
@@ -1826,10 +1828,19 @@ function RecipeEditorPanel({
   setDraft: Dispatch<SetStateAction<RecipeEditorDraft | null>>;
   existing?: CommandCenterRecipe;
   inventory: CommandCenterInventoryItem[];
+  suppliers: CommandCenterSupplier[];
   menuItems: CommandCenterMenuItem[];
+  onCreateInventoryItem: (
+    item: Omit<CommandCenterInventoryItem, "id">,
+  ) => string;
   onSave: () => void;
   onCancel: () => void;
 }) {
+  const defaultSupplier = suppliers[0];
+  const defaultContact = defaultSupplier?.contacts[0];
+  const [inventoryEditor, setInventoryEditor] =
+    useState<InventoryEditorDraft | null>(null);
+
   const costFor = (ingredients: Array<{ itemId: string; amount: string }>) =>
     ingredients.reduce((sum, entry) => {
       const item = inventory.find((candidate) => candidate.id === entry.itemId);
@@ -1877,6 +1888,138 @@ function RecipeEditorPanel({
           }
         : current,
     );
+  }
+
+  function openInventoryEditor() {
+    setInventoryEditor({
+      name: "",
+      unit: "kg",
+      zone: "Pantry",
+      current: "0",
+      fullLevel: "5",
+      reorderAt: "1.5",
+      dailyUse: "0",
+      supplierId: defaultSupplier?.id ?? "",
+      contactId: defaultContact?.id ?? "",
+      packSize: "1",
+      packPrice: "0",
+      purchaseUnit: "1 kg pack",
+      leadDays: "1",
+      purchasingMode: "fixed",
+      automationEnabled: false,
+      automationMode: "assist",
+      automationTriggerPercent: "30",
+      maxAutoOrderSpend: "5000",
+    });
+  }
+
+  function submitInventoryEditor() {
+    if (!inventoryEditor) return;
+
+    const name = inventoryEditor.name.trim();
+    const unit = inventoryEditor.unit.trim();
+    const fullLevel = Number(inventoryEditor.fullLevel);
+    const reorderAt = Number(inventoryEditor.reorderAt);
+    const current = Number(inventoryEditor.current);
+    const dailyUse = Number(inventoryEditor.dailyUse);
+    const packSize = Number(inventoryEditor.packSize);
+    const packPrice = Number(inventoryEditor.packPrice);
+    const leadDays = Number(inventoryEditor.leadDays);
+    const automationTriggerPercent = Number(
+      inventoryEditor.automationTriggerPercent,
+    );
+    const maxAutoOrderSpend = Number(inventoryEditor.maxAutoOrderSpend);
+
+    if (
+      !name ||
+      !unit ||
+      !Number.isFinite(fullLevel) ||
+      fullLevel <= 0 ||
+      !Number.isFinite(reorderAt) ||
+      reorderAt < 0 ||
+      !Number.isFinite(current) ||
+      current < 0 ||
+      !Number.isFinite(dailyUse) ||
+      dailyUse < 0 ||
+      !Number.isFinite(packSize) ||
+      packSize <= 0 ||
+      !Number.isFinite(packPrice) ||
+      packPrice < 0 ||
+      !Number.isFinite(leadDays) ||
+      leadDays < 0 ||
+      !Number.isFinite(automationTriggerPercent) ||
+      !Number.isFinite(maxAutoOrderSpend) ||
+      maxAutoOrderSpend < 0
+    ) {
+      return;
+    }
+
+    const selectedSupplier = suppliers.find(
+      (supplier) => supplier.id === inventoryEditor.supplierId,
+    );
+    const selectedContact =
+      selectedSupplier?.contacts.find(
+        (contact) => contact.id === inventoryEditor.contactId,
+      ) ?? selectedSupplier?.contacts[0];
+    const safePackPrice = Math.max(0, packPrice);
+    const autoAcceptPackPrice =
+      Math.round(safePackPrice * 1.05 * 100) / 100;
+    const hardMaxPackPrice =
+      Math.round(safePackPrice * 1.15 * 100) / 100;
+
+    const itemId = onCreateInventoryItem({
+      name,
+      unit,
+      current,
+      fullLevel,
+      reorderAt: Math.min(reorderAt, fullLevel),
+      incoming: 0,
+      supplierId: selectedSupplier?.id ?? "",
+      contactId: selectedContact?.id ?? "",
+      packSize,
+      packPrice: safePackPrice,
+      purchaseUnit:
+        inventoryEditor.purchaseUnit.trim() || `${packSize} ${unit} pack`,
+      leadDays,
+      dailyUse,
+      zone: inventoryEditor.zone.trim() || undefined,
+      purchasingMode: inventoryEditor.purchasingMode,
+      automationEnabled: inventoryEditor.automationEnabled,
+      automationMode: inventoryEditor.automationMode,
+      automationTriggerPercent: Math.max(
+        0,
+        Math.min(100, automationTriggerPercent),
+      ),
+      targetPackPrice: safePackPrice,
+      autoAcceptPackPrice,
+      hardMaxPackPrice,
+      maxAutoOrderQty: Math.max(packSize, packSize * 3),
+      maxAutoOrderSpend,
+      autoNegotiate:
+        inventoryEditor.purchasingMode === "quote" &&
+        inventoryEditor.automationMode === "autobuy",
+      maxCounteroffers:
+        inventoryEditor.purchasingMode === "quote" ? 2 : 0,
+      maxDeliveryFee: 300,
+      maxLeadDays: Math.max(leadDays, 2),
+    });
+
+    setDraft((currentDraft) =>
+      currentDraft
+        ? {
+            ...currentDraft,
+            ingredients: currentDraft.ingredients.some(
+              (entry) => entry.itemId === itemId,
+            )
+              ? currentDraft.ingredients
+              : [
+                  ...currentDraft.ingredients,
+                  { itemId, amount: "" },
+                ],
+          }
+        : currentDraft,
+    );
+    setInventoryEditor(null);
   }
 
   return (
