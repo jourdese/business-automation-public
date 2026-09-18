@@ -3308,6 +3308,113 @@
   font-size: 0.62rem;
 }
 
+.recipeBuilderActions {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.inlineInventoryEditor {
+  display: grid;
+  gap: 0.65rem;
+  padding: 0.65rem;
+  border: 1px solid #53684e;
+  background: rgba(200, 169, 107, 0.04);
+}
+
+.inlineInventoryEditor > header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.7rem;
+}
+
+.inlineInventoryEditor > header span,
+.inlineInventoryEditor > header strong,
+.inlineInventoryEditor > header small {
+  display: block;
+}
+
+.inlineInventoryEditor > header span {
+  color: var(--gold);
+  font: 0.52rem var(--font-mono);
+  letter-spacing: 0.08em;
+}
+
+.inlineInventoryEditor > header strong {
+  margin-top: 0.13rem;
+  font-size: 0.67rem;
+}
+
+.inlineInventoryEditor > header small {
+  margin-top: 0.12rem;
+  color: var(--cc-muted);
+  font-size: 0.52rem;
+  line-height: 1.4;
+}
+
+.inlineInventoryGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.inlineInventoryGrid label {
+  display: grid;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.inlineInventoryGrid label > span {
+  color: var(--cc-muted);
+  font-size: 0.52rem;
+}
+
+.inlineInventoryGrid input,
+.inlineInventoryGrid select {
+  width: 100%;
+  min-width: 0;
+  min-height: 36px;
+  padding: 0.4rem 0.45rem;
+  border: 1px solid #3a5059;
+  background: #07131b;
+  color: var(--ivory);
+  font-size: 0.57rem;
+}
+
+.numberWithUnit {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.35rem;
+  align-items: center;
+}
+
+.numberWithUnit > span {
+  color: var(--cc-muted);
+  font-size: 0.52rem;
+}
+
+.inlineInventoryEditor > footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem;
+}
+
+.inlineInventoryEditor > footer > small {
+  max-width: 680px;
+  color: var(--cc-muted);
+  font-size: 0.5rem;
+  line-height: 1.42;
+}
+
+.inlineInventoryEditor > footer > div {
+  display: flex;
+  gap: 0.4rem;
+  flex: 0 0 auto;
+}
+
 .recipeBuilderLines {
   display: grid;
   gap: 0.4rem;
@@ -3529,6 +3636,10 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .inlineInventoryGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .recipeBuilderLines > div:not(.recipeBuilderEmpty) {
     grid-template-columns: minmax(140px, 1fr) minmax(140px, 1fr) auto;
   }
@@ -3574,6 +3685,27 @@
 
   .entityEditorActions button {
     width: 100%;
+  }
+
+  .recipeBuilderActions,
+  .inlineInventoryEditor > header,
+  .inlineInventoryEditor > footer {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .inlineInventoryGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .inlineInventoryEditor > footer > div,
+  .recipeBuilderActions {
+    width: 100%;
+  }
+
+  .inlineInventoryEditor > footer > div button,
+  .recipeBuilderActions button {
+    flex: 1 1 auto;
   }
 
   .recipeBuilderLines > div:not(.recipeBuilderEmpty) {
