@@ -46,7 +46,11 @@ export function createMarinaraRuntimeSeed(): CommandCenterRuntimeState {
         id: "seed-1",
         at: new Date(0).toISOString(),
         module: "system",
+        action: "runtime_initialized",
         message: "Command Center demo initialized for Marinara Ristorante.",
+        actor: "system",
+        executionMode: "system",
+        reason: "The shared Jourvis Command Center runtime was initialized for this business.",
       },
     ],
   };
