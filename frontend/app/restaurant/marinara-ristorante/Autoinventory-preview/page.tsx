@@ -355,8 +355,10 @@ export default function MarinaraAutoinventoryPreviewPage() {
     ? `I paused ${selected.name}. I need your decision.`
     : selectedProcurement
       ? `${selected.name}: ${procurementStatusLabel(selectedProcurement.status)}.`
-      : selectedAutomationTriggered && automationMasterOn
-        ? `I’m watching ${selected.name}. It reached my ${selected.automationTriggerPercent}% automation trigger.`
+      : selectedAutomationTriggered
+        ? automationMasterOn
+          ? `I’m watching ${selected.name}. It reached my ${selected.automationTriggerPercent}% automation trigger.`
+          : `${selected.name} reached my ${selected.automationTriggerPercent}% trigger, but Jourvis Auto is off.`
         : selectedNeedsRestock
           ? `${selected.name} is low. I can help handle the restock.`
           : `I’m here. ${selected.name} is at ${percent(selected)}%.`;
@@ -1557,7 +1559,7 @@ export default function MarinaraAutoinventoryPreviewPage() {
                 { label: "View purchase flow", onClick: () => setActiveTab("orders"), primary: true },
                 { label: `Configure ${selected.name}`, href: `/restaurant/marinara-ristorante/Autoinventory-preview/configure?stock=${selected.id}` },
               ]
-            : selectedNeedsRestock
+            : selectedNeedsRestock || selectedAutomationTriggered
               ? [
                   ...(automationMasterOn
                     ? []
