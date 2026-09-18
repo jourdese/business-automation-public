@@ -1719,15 +1719,8 @@ export default function MarinaraAutoinventoryPreviewPage() {
                     id="jourvis-auto-master"
                     type="button"
                     className={`${styles.automationMasterSwitch} ${automationMasterOn ? styles.automationMasterOn : ""}`}
-                    role="switch"
-                    aria-checked={automationMasterOn}
-                    onClick={() => {
-                      const next = !automationMasterOn;
-                      setAutomationMasterOn(next);
-                      window.localStorage.setItem("jourvis-autoinventory-automation-master", String(next));
-                      if (next) log(`Jourvis Automation switched ON. Watching ${automationEnabledCount} configured supplies.`);
-                      else log("Jourvis Automation switched OFF. No new automatic supplier contacts will be started.");
-                    }}
+                    onClick={() => openJourvisUpdate(selected)}
+                    aria-label="Update Jourvis automation settings"
                   >
                     <span>Automation</span>
                     <i data-on={automationMasterOn}><b /></i>
@@ -1854,8 +1847,8 @@ export default function MarinaraAutoinventoryPreviewPage() {
                       <div className={styles.automationPausedNotice}>
                         <span>PAUSED BY YOU</span>
                         <p>Jourvis will not create another automatic purchase for {selected.name} until you resume it.</p>
-                        <button type="button" onClick={() => resumeAutomation(selected)}>
-                          Resume Jourvis for {selected.name}
+                        <button type="button" onClick={() => openJourvisUpdate(selected)}>
+                          Update
                         </button>
                       </div>
                     ) : automationAlerts[selected.id] ? (
