@@ -55,6 +55,9 @@ export default function OperationModuleView() {
   const [adjustment, setAdjustment] = useState<AdjustmentDraft | null>(null);
   const [receiveDrafts, setReceiveDrafts] = useState<Record<string, string>>({});
   const [quantityDrafts, setQuantityDrafts] = useState<Record<string, string>>({});
+  const [inventorySearch, setInventorySearch] = useState("");
+  const [inventoryZone, setInventoryZone] = useState("All");
+  const [purchaseFilter, setPurchaseFilter] = useState<"active" | "history" | "all">("active");
 
   const {
     state,
@@ -112,6 +115,28 @@ export default function OperationModuleView() {
   }
 
   if (moduleId === "inventory" && state.inventory.length) {
+    const zones = [
+      "All",
+      ...Array.from(
+        new Set(
+          state.inventory
+            .map((item) => item.zone)
+            .filter((zone): zone is string => Boolean(zone)),
+        ),
+      ),
+    ];
+    const normalizedSearch = inventorySearch.trim().toLowerCase();
+    const visibleInventory = state.inventory.filter((item) => {
+      const matchesZone = inventoryZone === "All" || item.zone === inventoryZone;
+      const matchesSearch =
+        !normalizedSearch ||
+        item.name.toLowerCase().includes(normalizedSearch) ||
+        (supplierById.get(item.supplierId)?.name ?? "")
+          .toLowerCase()
+          .includes(normalizedSearch);
+      return matchesZone && matchesSearch;
+    });
+
     return (
       <section className={styles.sectionPage}>
         <OperationHeader
@@ -137,8 +162,31 @@ export default function OperationModuleView() {
           <Bot size={36} aria-hidden />
         </div>
 
+        <div className={styles.inventoryToolbar}>
+          <input
+            type="search"
+            value={inventorySearch}
+            onChange={(event) => setInventorySearch(event.target.value)}
+            placeholder="Search supply or supplier"
+            aria-label="Search inventory"
+          />
+          <div className={styles.inventoryZoneFilters}>
+            {zones.map((zone) => (
+              <button
+                key={zone}
+                type="button"
+                data-active={inventoryZone === zone}
+                onClick={() => setInventoryZone(zone)}
+              >
+                {zone}
+              </button>
+            ))}
+          </div>
+          <span>{visibleInventory.length} of {state.inventory.length} supplies</span>
+        </div>
+
         <div className={styles.inventoryCardGrid}>
-          {state.inventory.map((item) => {
+          {visibleInventory.map((item) => {
             const percent = inventoryPercent(item);
             const projected = projectedInventoryAtDelivery(item);
             const projectedPercent = projectedInventoryPercentAtDelivery(item);
@@ -293,11 +341,19 @@ export default function OperationModuleView() {
   }
 
   if (moduleId === "purchasing") {
-    const purchases = [...state.purchases].sort((a, b) => {
-      const active = Number(isPurchaseActive(b.status)) - Number(isPurchaseActive(a.status));
-      if (active) return active;
-      return b.createdAt.localeCompare(a.createdAt);
-    });
+    const purchases = [...state.purchases]
+      .filter((purchase) =>
+        purchaseFilter === "all"
+          ? true
+          : purchaseFilter === "active"
+            ? isPurchaseActive(purchase.status)
+            : !isPurchaseActive(purchase.status),
+      )
+      .sort((a, b) => {
+        const active = Number(isPurchaseActive(b.status)) - Number(isPurchaseActive(a.status));
+        if (active) return active;
+        return b.createdAt.localeCompare(a.createdAt);
+      });
 
     return (
       <section className={styles.sectionPage}>
@@ -317,6 +373,26 @@ export default function OperationModuleView() {
             </p>
           </div>
           <Truck size={36} aria-hidden />
+        </div>
+
+        <div className={styles.purchaseToolbar}>
+          <div>
+            {(["active", "history", "all"] as const).map((filter) => (
+              <button
+                key={filter}
+                type="button"
+                data-active={purchaseFilter === filter}
+                onClick={() => setPurchaseFilter(filter)}
+              >
+                {filter === "active"
+                  ? "Active"
+                  : filter === "history"
+                    ? "History"
+                    : "All"}
+              </button>
+            ))}
+          </div>
+          <span>{purchases.length} purchase{purchases.length === 1 ? "" : "s"}</span>
         </div>
 
         <div className={styles.purchaseCardList}>
@@ -462,8 +538,12 @@ export default function OperationModuleView() {
             <article className={styles.panelCard}>
               <PanelEmpty
                 icon={<CheckCircle2 size={17} />}
-                title="No active purchases"
-                body="Jourvis will create purchasing work when an eligible automatic task reaches its trigger."
+                title={purchaseFilter === "active" ? "No active purchases" : "No purchases in this view"}
+                body={
+                  purchaseFilter === "active"
+                    ? "Jourvis will create purchasing work when an eligible automatic task reaches its trigger."
+                    : "Change the filter to review other purchasing activity."
+                }
               />
             </article>
           ) : null}
