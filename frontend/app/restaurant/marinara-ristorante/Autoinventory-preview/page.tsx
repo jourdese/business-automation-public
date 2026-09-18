@@ -785,7 +785,7 @@ export default function MarinaraAutoinventoryPreviewPage() {
                     <div><span>Full level</span><strong>{selected.fullLevel} {selected.unit}</strong></div>
                     <div><span>Reorder at</span><strong>{selected.reorderAt} {selected.unit}</strong></div>
                     <div><span>Days cover</span><strong>{round(daysRemaining)} days</strong></div>
-                    <div><span>Incoming</span><strong>{selected.incoming} {selected.unit}</strong></div>
+                    <div><span>Confirmed incoming</span><strong>{selected.incoming} {selected.unit}</strong></div>
                     <div><span>Stock level</span><strong>{percent(selected)}%</strong></div>
                   </div>
 
@@ -888,7 +888,7 @@ export default function MarinaraAutoinventoryPreviewPage() {
                     <div><span>Full level</span><strong>{selected.fullLevel} {selected.unit}</strong></div>
                     <div><span>Reorder at</span><strong>{selected.reorderAt} {selected.unit}</strong></div>
                     <div><span>Days cover</span><strong>{round(daysRemaining)} days</strong></div>
-                    <div><span>Incoming</span><strong>{selected.incoming} {selected.unit}</strong></div>
+                    <div><span>Confirmed incoming</span><strong>{selected.incoming} {selected.unit}</strong></div>
                     <div><span>After delivery</span><strong>{projectedPercent(selected, selected.incoming)}%</strong></div>
                   </div>
 
