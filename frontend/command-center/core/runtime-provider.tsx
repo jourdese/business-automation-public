@@ -12,6 +12,7 @@ import {
 import { resolveCommandCenterBusiness } from "./business-registry";
 import {
   estimatedPurchaseTotal,
+  evaluatePurchaseAuthority,
   isPurchaseActive,
   suggestedPurchaseQuantity,
   type CommandCenterInventoryItem,
@@ -107,6 +108,7 @@ function createPurchase(
     createdAt: new Date().toISOString(),
     origin,
     automationMode: item.automationMode,
+    counteroffersUsed: 0,
     explanation:
       origin === "jourvis"
         ? "Jourvis started this purchase automatically because stock reached its configured trigger."
@@ -232,13 +234,11 @@ function advanceOneAutonomousStep(
 
     if (candidate.status === "requested") {
       if (candidate.origin === "owner") return true;
-      if (candidate.automationMode !== "autobuy") return false;
-      return (
-        candidate.estimatedTotal <= item.maxAutoOrderSpend &&
-        item.packPrice <= item.autoAcceptPackPrice
-      );
+      if (candidate.automationMode !== "autobuy" || !state.automationMasterOn) return false;
+      return evaluatePurchaseAuthority(item, candidate).withinAutoAccept;
     }
     if (candidate.status === "quote_requested") return true;
+    if (candidate.status === "counter_sent") return true;
     if (candidate.status === "approved") return true;
     if (candidate.status === "confirmed") return true;
     if (
@@ -247,12 +247,8 @@ function advanceOneAutonomousStep(
       candidate.automationMode === "autobuy" &&
       state.automationMasterOn
     ) {
-      const quotedTotal = candidate.quotedTotal ?? candidate.estimatedTotal;
-      const quotedPackPrice = candidate.quotedPackPrice ?? item.packPrice;
-      return (
-        quotedTotal <= item.maxAutoOrderSpend &&
-        quotedPackPrice <= item.autoAcceptPackPrice
-      );
+      const authority = evaluatePurchaseAuthority(item, candidate);
+      return authority.withinAutoAccept || authority.canNegotiate;
     }
     return false;
   });
@@ -265,29 +261,56 @@ function advanceOneAutonomousStep(
   let message = "";
 
   if (purchase.status === "requested") {
-    replacement = { ...purchase, status: "confirmed" };
+    replacement = { ...purchase, status: "confirmed", etaDays: item.leadDays };
     message = `${purchase.id}: supplier confirmed the fixed-price purchase for ${item.name}.`;
   } else if (purchase.status === "quote_requested") {
     const quotedPackPrice = Math.round(item.packPrice * 1.05);
+    const deliveryFee = 150;
+    const etaDays = item.leadDays;
     const quotedTotal =
       Math.ceil(purchase.quantity / Math.max(item.packSize, 0.01)) *
       quotedPackPrice +
-      150;
+      deliveryFee;
     replacement = {
       ...purchase,
       status: "quote_received",
       quotedPackPrice,
       quotedTotal,
+      deliveryFee,
+      etaDays,
+      counteroffersUsed: purchase.counteroffersUsed ?? 0,
     };
     message = `${purchase.id}: supplier returned a quote for ${item.name}.`;
   } else if (purchase.status === "quote_received") {
+    const authority = evaluatePurchaseAuthority(item, purchase);
+    if (authority.withinAutoAccept) {
+      replacement = {
+        ...purchase,
+        status: "approved",
+        explanation:
+          "Jourvis accepted the supplier quote automatically because price, spend, quantity, delivery fee, and lead time stayed inside its authority.",
+      };
+      message = `${purchase.id}: Jourvis accepted the quote automatically within configured limits.`;
+    } else if (authority.canNegotiate) {
+      replacement = {
+        ...purchase,
+        status: "counter_sent",
+        quotedPackPrice: item.targetPackPrice,
+        quotedTotal: authority.negotiatedTotal,
+        counteroffersUsed: authority.counteroffersUsed + 1,
+        explanation:
+          "Jourvis automatically countered at the configured target price because the supplier quote was outside the auto-accept range but still within negotiation authority.",
+      };
+      message = `${purchase.id}: Jourvis automatically countered at ₱${Math.round(item.targetPackPrice).toLocaleString("en-PH")} per pack.`;
+    }
+  } else if (purchase.status === "counter_sent") {
     replacement = {
       ...purchase,
       status: "approved",
       explanation:
-        "Jourvis accepted the supplier quote automatically because the price and total stayed inside its authority.",
+        "The supplier accepted Jourvis' automatic counteroffer within the configured negotiation limits.",
     };
-    message = `${purchase.id}: Jourvis accepted the quote automatically within configured limits.`;
+    message = `${purchase.id}: supplier accepted Jourvis' counteroffer.`;
   } else if (purchase.status === "approved") {
     replacement = { ...purchase, status: "confirmed" };
     message = `${purchase.id}: supplier confirmed the approved purchase.`;
@@ -318,22 +341,32 @@ function advanceOneAutonomousStep(
               : purchase.status === "quote_requested"
                 ? "quote_received"
                 : purchase.status === "quote_received"
-                  ? "quote_auto_approved"
-                  : purchase.status === "approved"
-                    ? "supplier_confirmed"
-                    : "shipment_in_transit",
+                  ? replacement.status === "counter_sent"
+                    ? "quote_auto_countered"
+                    : "quote_auto_approved"
+                  : purchase.status === "counter_sent"
+                    ? "counteroffer_accepted"
+                    : purchase.status === "approved"
+                      ? "supplier_confirmed"
+                      : "shipment_in_transit",
           message,
           actor:
-            purchase.status === "quote_received" ? "jourvis" : "external",
+            purchase.status === "quote_received"
+              ? "jourvis"
+              : "external",
           executionMode: "automatic",
           reason:
             purchase.status === "quote_received"
-              ? `Jourvis accepted the quote automatically because the quoted total ₱${Math.round(purchase.quotedTotal ?? purchase.estimatedTotal).toLocaleString("en-PH")} was within the configured ₱${Math.round(item.maxAutoOrderSpend).toLocaleString("en-PH")} order limit and the quoted pack price ₱${Math.round(purchase.quotedPackPrice ?? item.packPrice).toLocaleString("en-PH")} was within the ₱${Math.round(item.autoAcceptPackPrice).toLocaleString("en-PH")} pack-price limit.`
+              ? replacement.status === "counter_sent"
+                ? `Jourvis automatically negotiated because the quote was outside auto-accept limits, auto-negotiate was enabled, the counteroffer count was below ${item.maxCounteroffers}, and the target price ₱${Math.round(item.targetPackPrice).toLocaleString("en-PH")} kept the resulting order within the configured spending and hard-price limits.`
+                : `Jourvis accepted the quote automatically because total spend, pack price, quantity, delivery fee, and lead time all remained inside the configured authority limits.`
               : purchase.status === "quote_requested"
                 ? "The supplier returned a quote in response to the purchase request. This was recorded automatically because no owner action created the supplier response."
-                : purchase.status === "confirmed"
-                  ? "The supplier changed the purchase to in transit. Jourvis recorded the external status update automatically."
-                  : "The supplier confirmed the purchase after the previous authorized step. Jourvis recorded the supplier response automatically.",
+                : purchase.status === "counter_sent"
+                  ? "The supplier accepted the automatic counteroffer Jourvis had already sent within its negotiation authority."
+                  : purchase.status === "confirmed"
+                    ? "The supplier changed the purchase to in transit. Jourvis recorded the external status update automatically."
+                    : "The supplier confirmed the purchase after the previous authorized step. Jourvis recorded the supplier response automatically.",
           configuration: inventoryRuleSnapshot(item, state.automationMasterOn),
           relatedEntityId: item.id,
           relatedRequestId: purchase.id,
