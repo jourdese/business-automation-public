@@ -582,7 +582,7 @@ export default function MarinaraAutoinventoryPreviewPage() {
           ? `The known order total is ${formatMoney(procurementTotal(jourvisTaskRequest, ingredients))}. Jourvis is waiting for your approval before supplier confirmation.`
           : jourvisTask.kind === "automation_paused"
             ? "Turn Jourvis Auto on if you want me to start handling configured items again."
-            : `Current stock is ${percent(jourvisTaskItem)}%. You can contact the supplier or configure automation.`
+            : `Current stock is ${percent(jourvisTaskItem)}%. Choose Approve, Reject, or Update.`
     : jourvisWorkingRequest?.automationNote
       ? jourvisWorkingRequest.automationNote
       : jourvisWorkingRequest
@@ -591,7 +591,7 @@ export default function MarinaraAutoinventoryPreviewPage() {
           ? `You paused automation for ${selected.name} after rejecting a purchase. I will not try again until you resume it.`
           : selected.automationEnabled
             ? `I act at ${selected.automationTriggerPercent}% or lower in ${selected.automationMode === "assist" ? "watch only" : selected.automationMode === "auto_contact" ? "contact supplier" : "buy within limits"} mode.`
-            : "Configure this supply if you want me to watch it or handle purchasing within your limits.";
+            : "Use Update if you want me to watch this supply or handle purchasing within your limits.";
 
   const automationEnabledCount = ingredients.filter((item) => item.automationEnabled).length;
 
@@ -1944,7 +1944,7 @@ export default function MarinaraAutoinventoryPreviewPage() {
                           : selected.automationMode === "auto_contact"
                             ? `Acts at ${selected.automationTriggerPercent}% · contacts the supplier, then brings purchase decisions to you`
                             : `Watches from ${selected.automationTriggerPercent}% · alerts you but never contacts the supplier automatically`
-                        : "Off for this supply. Configure when Jourvis should act and how much authority it has."}
+                        : "Off for this supply. Use Update to choose when Jourvis should act and how much authority it has."}
                     </small>
                     {selectedAutomationPaused ? (
                       <div className={styles.automationPausedNotice}>
@@ -2396,7 +2396,7 @@ export default function MarinaraAutoinventoryPreviewPage() {
           ) : null}
         </main>
 
-        <div className={styles.previewNotice}><TriangleAlert size={16} aria-hidden /><p><strong>Preview only.</strong> Live stock, purchase flows and approvals persist in this browser so Summary and Configure stay consistent. Supplier replies are simulated automatically; Jourvis brings only owner decisions forward. No real email, SMS, database, purchasing or accounting action occurs.</p></div>
+        <div className={styles.previewNotice}><TriangleAlert size={16} aria-hidden /><p><strong>Preview only.</strong> Live stock, purchase flows and approvals persist in this browser. All configuration now lives inside Jourvis → Update. Supplier replies are simulated automatically; Jourvis brings only owner decisions forward. No real email, SMS, database, purchasing or accounting action occurs.</p></div>
       </div>
 
       {stockAdjustment ? (() => {
