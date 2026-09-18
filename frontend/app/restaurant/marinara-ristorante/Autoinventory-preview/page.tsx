@@ -198,6 +198,77 @@ function procurementTotal(request: ProcurementRequest, ingredients: Ingredient[]
   }, request.deliveryFee);
 }
 
+function quoteDecisionExplanation(
+  request: ProcurementRequest,
+  item: Ingredient,
+  ingredients: Ingredient[],
+) {
+  const line = request.lines.find((candidate) => candidate.itemId === item.id);
+  const quotedTotal = procurementTotal(request, ingredients);
+  const quantity = line?.agreedQty ?? line?.requestedQty ?? 0;
+  const packPrice = line?.quotedPackPrice ?? item.packPrice;
+  const reasons: string[] = [];
+
+  if (request.origin === "manual") {
+    reasons.push("You started this quote manually, so I need you to approve the purchase before I continue.");
+  } else if (request.automationMode === "auto_contact") {
+    reasons.push("Your rule only lets me contact the supplier. It does not let me approve purchases for you.");
+  } else if (request.automationMode === "autobuy") {
+    if (quotedTotal > item.maxAutoOrderSpend) {
+      reasons.push(
+        `The quote total is ${formatMoney(quotedTotal)}, which is ${formatMoney(quotedTotal - item.maxAutoOrderSpend)} above your ${formatMoney(item.maxAutoOrderSpend)} automatic order limit.`,
+      );
+    }
+    if (packPrice > item.autoAcceptPackPrice) {
+      reasons.push(
+        `The supplier price is ${formatMoney(packPrice)} per ${item.purchaseUnit}, above your ${formatMoney(item.autoAcceptPackPrice)} automatic price limit.`,
+      );
+    }
+    if (packPrice > item.hardMaxPackPrice) {
+      reasons.push(
+        `The supplier price is also above your absolute ceiling of ${formatMoney(item.hardMaxPackPrice)}.`,
+      );
+    }
+    if (quantity > item.maxAutoOrderQty) {
+      reasons.push(
+        `The requested quantity is ${quantity} ${item.unit}, above your automatic quantity limit of ${item.maxAutoOrderQty} ${item.unit}.`,
+      );
+    }
+    if (request.deliveryFee > item.maxDeliveryFee) {
+      reasons.push(
+        `The delivery fee is ${formatMoney(request.deliveryFee)}, above your ${formatMoney(item.maxDeliveryFee)} limit.`,
+      );
+    }
+    if (request.etaDays > item.maxLeadDays) {
+      reasons.push(
+        `The supplier ETA is ${request.etaDays} day${request.etaDays === 1 ? "" : "s"}, longer than your ${item.maxLeadDays}-day limit.`,
+      );
+    }
+    if (
+      packPrice > item.autoAcceptPackPrice &&
+      packPrice <= item.hardMaxPackPrice &&
+      !item.autoNegotiate
+    ) {
+      reasons.push("Auto-negotiate is off, so I stopped instead of countering.");
+    }
+    if (
+      packPrice > item.autoAcceptPackPrice &&
+      item.autoNegotiate &&
+      request.counteroffersUsed >= item.maxCounteroffers
+    ) {
+      reasons.push("I already reached the maximum number of automatic counteroffers you allowed.");
+    }
+  }
+
+  if (!reasons.length) {
+    reasons.push("This quote is outside at least one rule you gave me, so I stopped instead of accepting it automatically.");
+  }
+
+  const primary = reasons[0];
+  const detail = reasons.join(" ");
+  return { primary, detail, quotedTotal, packPrice, quantity };
+}
+
 function supplierGroupsForItems(items: Ingredient[]) {
   const grouped = new Map<string, Ingredient[]>();
   items.forEach((item) => {
