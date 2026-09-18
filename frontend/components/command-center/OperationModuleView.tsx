@@ -522,18 +522,17 @@ export default function OperationModuleView() {
         <div className={styles.menuGrid}>
           {state.recipes.map((recipe) => {
             const ingredients = Object.entries(recipe.ingredients)
-              .map(([itemId, amount]) => {
+              .flatMap(([itemId, amount]) => {
                 const item = state.inventory.find((entry) => entry.id === itemId);
-                if (!item) return null;
+                if (!item) return [];
                 const unitCost = item.packPrice / Math.max(item.packSize, 0.01);
-                return {
+                return [{
                   item,
                   amount,
                   cost: unitCost * amount,
                   servings: amount > 0 ? Math.floor(item.current / amount) : 999,
-                };
-              })
-              .filter((entry): entry is NonNullable<typeof entry> => Boolean(entry));
+                }];
+              });
 
             const ingredientCost = ingredients.reduce((sum, entry) => sum + entry.cost, 0);
             const possibleServings = ingredients.length
