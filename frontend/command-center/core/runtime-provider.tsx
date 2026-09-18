@@ -39,12 +39,12 @@ type CommandCenterRuntimeContextValue = {
     itemId: string,
     patch: Partial<CommandCenterInventoryItem>,
   ) => void;
+  applyInventoryConfiguration: (
+    previous: CommandCenterInventoryItem,
+    next: CommandCenterInventoryItem,
+  ) => void;
   setAutomationMasterOn: (enabled: boolean) => void;
   resumeItem: (itemId: string) => void;
-  recordConfigurationUpdate: (
-    itemId: string,
-    previous: CommandCenterInventoryItem,
-  ) => void;
   resetDemo: () => void;
 };
 
@@ -534,29 +534,33 @@ export function CommandCenterRuntimeProvider({
     [],
   );
 
-  const recordConfigurationUpdate = useCallback(
-    (itemId: string, previous: CommandCenterInventoryItem) => {
+  const applyInventoryConfiguration = useCallback(
+    (
+      previous: CommandCenterInventoryItem,
+      next: CommandCenterInventoryItem,
+    ) => {
       setState((current) => {
-        const item = current.inventory.find((entry) => entry.id === itemId);
-        if (!item) return current;
-
-        const changed = (Object.keys(item) as Array<keyof CommandCenterInventoryItem>)
-          .filter((key) => item[key] !== previous[key])
-          .map((key) => `${String(key)}: ${String(previous[key])} → ${String(item[key])}`);
+        const changed = (Object.keys(next) as Array<keyof CommandCenterInventoryItem>)
+          .filter((key) => next[key] !== previous[key])
+          .map((key) => `${String(key)}: ${String(previous[key])} → ${String(next[key])}`);
 
         if (!changed.length) return current;
 
         return {
           ...current,
+          inventory: current.inventory.map((item) =>
+            item.id === next.id ? next : item,
+          ),
+          pausedItemIds: current.pausedItemIds.filter((id) => id !== next.id),
           activity: addActivity(current, {
             module: "inventory",
             action: "configuration_updated",
-            message: `Owner updated Jourvis configuration for ${item.name}.`,
+            message: `Owner updated Jourvis configuration for ${next.name}.`,
             actor: "owner",
             executionMode: "manual",
             reason: `The owner changed the operating rule through Jourvis Update. Changed settings: ${changed.join("; ")}.`,
-            configuration: inventoryRuleSnapshot(item, current.automationMasterOn),
-            relatedEntityId: item.id,
+            configuration: inventoryRuleSnapshot(next, current.automationMasterOn),
+            relatedEntityId: next.id,
           }),
         };
       });
@@ -619,9 +623,9 @@ export function CommandCenterRuntimeProvider({
       loading,
       actOnTask,
       updateInventoryItem,
+      applyInventoryConfiguration,
       setAutomationMasterOn,
       resumeItem,
-      recordConfigurationUpdate,
       resetDemo,
     }),
     [
@@ -630,7 +634,7 @@ export function CommandCenterRuntimeProvider({
       loading,
       resetDemo,
       resumeItem,
-      recordConfigurationUpdate,
+      applyInventoryConfiguration,
       setAutomationMasterOn,
       state,
       tasks,
