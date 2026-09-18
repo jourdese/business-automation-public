@@ -2600,3 +2600,11 @@
   border-color: var(--mint);
   color: var(--mint);
 }
+
+
+.jourvisUpdateHint {
+  margin-top: 0.55rem;
+  color: var(--slate);
+  font-size: 0.58rem;
+  line-height: 1.45;
+}
