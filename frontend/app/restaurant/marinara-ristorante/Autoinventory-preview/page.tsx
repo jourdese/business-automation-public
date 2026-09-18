@@ -923,10 +923,8 @@ export default function MarinaraAutoinventoryPreviewPage() {
       "42 guests are forecast for tonight's dinner service.",
     ]);
 
-    // Remove any old query state left from a Configure → Jourvis redirect.
-    if (window.location.search) {
-      window.history.replaceState({}, "", window.location.pathname);
-    }
+    // Reload from the clean seed so no stale React state can survive the reset.
+    window.location.replace(window.location.pathname);
   }
 
   function chooseFilter(filter: StockFilter) {
