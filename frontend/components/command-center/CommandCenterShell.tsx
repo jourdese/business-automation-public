@@ -11,6 +11,7 @@ import {
   CircleGauge,
   Lightbulb,
   Menu,
+  RefreshCw,
   ShieldCheck,
   WalletCards,
   X,
@@ -20,6 +21,7 @@ import {
   listCommandCenterBusinesses,
   resolveCommandCenterBusiness,
 } from "@/command-center/core/business-registry";
+import { useCommandCenterRuntime } from "@/command-center/core/runtime-provider";
 import {
   commandCenterSections,
   type CommandCenterSectionId,
@@ -61,6 +63,16 @@ export default function CommandCenterShell({ children }: { children: ReactNode }
   const [businessId, setBusinessId] = useState("marinara-ristorante");
   const [activeSection, setActiveSection] = useState<CommandCenterSectionId>("overview");
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [updateTaskId, setUpdateTaskId] = useState<string | null>(null);
+  const [jourvisOpenKey, setJourvisOpenKey] = useState(0);
+  const {
+    state,
+    tasks,
+    actOnTask,
+    updateInventoryItem,
+    setAutomationMasterOn,
+    resetDemo,
+  } = useCommandCenterRuntime();
 
   useEffect(() => {
     const sync = () => {
@@ -79,10 +91,64 @@ export default function CommandCenterShell({ children }: { children: ReactNode }
     [businessId],
   );
   const businesses = listCommandCenterBusinesses();
+  const topTask = tasks[0];
+  const updateTask = updateTaskId
+    ? tasks.find((task) => task.id === updateTaskId)
+    : undefined;
+  const updateItem = updateTask?.entityId
+    ? state.inventory.find((item) => item.id === updateTask.entityId)
+    : undefined;
 
   function switchBusiness(nextBusinessId: string) {
     window.location.href = sectionHref(nextBusinessId, activeSection);
   }
+
+  function openTaskUpdate(taskId: string) {
+    setUpdateTaskId(taskId);
+    setJourvisOpenKey((value) => value + 1);
+  }
+
+  const jourvisActions = updateTask
+    ? [
+        {
+          label: "Done updating",
+          primary: true,
+          keepOpen: true,
+          onClick: () => setUpdateTaskId(null),
+        },
+      ]
+    : topTask
+      ? topTask.actions.map((action) => {
+          if (action === "update") {
+            return {
+              label: "Update",
+              keepOpen: true,
+              onClick: () => openTaskUpdate(topTask.id),
+            };
+          }
+          return {
+            label:
+              action === "approve"
+                ? "Approve"
+                : action === "reject"
+                  ? "Reject"
+                  : action === "receive"
+                    ? "Receive"
+                    : action === "resume"
+                      ? "Resume"
+                      : action === "retry"
+                        ? "Retry"
+                        : "Review",
+            primary: action === "approve" || action === "receive",
+            danger: action === "reject",
+            onClick: () => actOnTask(topTask.id, action),
+          };
+        })
+      : [
+          { label: "View decisions", href: sectionHref(business.id, "decisions"), primary: true },
+          { label: "Latest briefing", href: sectionHref(business.id, "briefings") },
+          { label: "Operations", href: sectionHref(business.id, "operations") },
+        ];
 
   return (
     <div className={styles.commandCenter}>
@@ -133,7 +199,7 @@ export default function CommandCenterShell({ children }: { children: ReactNode }
               >
                 <Icon size={16} aria-hidden />
                 <span>{section.label}</span>
-                {section.id === "decisions" ? <b>2</b> : null}
+                {section.id === "decisions" && tasks.length ? <b>{tasks.length}</b> : null}
               </a>
             );
           })}
@@ -141,9 +207,9 @@ export default function CommandCenterShell({ children }: { children: ReactNode }
 
         <div className={styles.autonomyCard}>
           <div className={styles.autonomyStatus}>
-            <i />
+            <i data-off={!state.automationMasterOn} />
             <span>AUTONOMY</span>
-            <strong>RUNNING</strong>
+            <strong>{state.automationMasterOn ? "RUNNING" : "PAUSED"}</strong>
           </div>
           <p>
             Jourvis operates continuously and brings the owner only exceptions,
@@ -177,9 +243,14 @@ export default function CommandCenterShell({ children }: { children: ReactNode }
             <strong>{business.name}</strong>
           </div>
 
-          <div className={styles.jourvisRunState}>
-            <span><i /> JOURVIS OPERATING</span>
-            <strong>Owner mode: supervise exceptions</strong>
+          <div className={styles.headerRuntimeActions}>
+            <div className={styles.jourvisRunState}>
+              <span><i data-off={!state.automationMasterOn} /> {state.automationMasterOn ? "JOURVIS OPERATING" : "JOURVIS PAUSED"}</span>
+              <strong>{tasks.length ? `${tasks.length} exception${tasks.length === 1 ? "" : "s"} need you` : "Owner mode: supervise exceptions"}</strong>
+            </div>
+            <button type="button" className={styles.resetDemoButton} onClick={resetDemo}>
+              <RefreshCw size={14} aria-hidden /> Reset demo
+            </button>
           </div>
         </header>
 
@@ -189,16 +260,81 @@ export default function CommandCenterShell({ children }: { children: ReactNode }
       </section>
 
       <JourvisPresence
-        eyebrow="JOURVIS · COMMAND CENTER"
-        status="Autonomous · Running"
-        message={`I’m supervising ${business.shortName}. I’ll keep normal work moving and bring you only what truly needs you.`}
-        detail="I observe, forecast, decide, act, verify, explain, and escalate when your authority or business rules require it."
-        actions={[
-          { label: "View decisions", href: sectionHref(business.id, "decisions"), primary: true },
-          { label: "Latest briefing", href: sectionHref(business.id, "briefings") },
-          { label: "Operations", href: sectionHref(business.id, "operations") },
-        ]}
-      />
+        eyebrow={updateTask ? "JOURVIS · UPDATE" : topTask ? `JOURVIS · ${topTask.module.toUpperCase()}` : "JOURVIS · COMMAND CENTER"}
+        status={updateTask ? "Updating rule" : topTask ? "Needs you" : state.automationMasterOn ? "Autonomous · Running" : "Autonomous · Paused"}
+        message={
+          updateTask
+            ? `Update the rule for ${updateItem?.name ?? "this item"} here.`
+            : topTask
+              ? topTask.whatHappened
+              : `I’m supervising ${business.shortName}. Normal work keeps moving automatically.`
+        }
+        detail={
+          updateTask
+            ? "Changing a rule resumes this item and becomes the new instruction Jourvis follows."
+            : topTask
+              ? `${topTask.why} ${topTask.whatJourvisDid}${topTask.whyOwnerIsNeeded ? ` ${topTask.whyOwnerIsNeeded}` : ""}`
+              : "I observe, forecast, decide, act, verify, explain, and escalate only when your authority or safeguards require it."
+        }
+        attention={!updateTask && Boolean(topTask)}
+        actions={jourvisActions}
+        wide={Boolean(updateTask)}
+        openRequestKey={jourvisOpenKey}
+      >
+        {updateTask && updateItem ? (
+          <div className={styles.jourvisRuleEditor}>
+            <div className={styles.ruleEditorHeading}>
+              <span>{updateItem.name.toUpperCase()}</span>
+              <strong>{Math.round((updateItem.current / Math.max(updateItem.fullLevel, 0.01)) * 100)}% stock</strong>
+            </div>
+
+            <label className={styles.ruleToggle}>
+              <span><strong>Jourvis manages this item</strong><small>Allow Jourvis to act automatically according to the rule below.</small></span>
+              <input
+                type="checkbox"
+                checked={updateItem.automationEnabled}
+                onChange={(event) => updateInventoryItem(updateItem.id, { automationEnabled: event.target.checked })}
+              />
+            </label>
+
+            <label className={styles.ruleToggle}>
+              <span><strong>Global autonomy</strong><small>Pause or resume autonomous work across this Command Center.</small></span>
+              <input
+                type="checkbox"
+                checked={state.automationMasterOn}
+                onChange={(event) => setAutomationMasterOn(event.target.checked)}
+              />
+            </label>
+
+            <div className={styles.ruleEditorGrid}>
+              <label>
+                <span>Act at</span>
+                <div><input type="number" min="0" max="100" value={updateItem.automationTriggerPercent} onChange={(event) => updateInventoryItem(updateItem.id, { automationTriggerPercent: Math.max(0, Math.min(100, Number(event.target.value) || 0)) })} /><b>%</b></div>
+              </label>
+              <label>
+                <span>Jourvis may</span>
+                <select value={updateItem.automationMode} onChange={(event) => updateInventoryItem(updateItem.id, { automationMode: event.target.value as typeof updateItem.automationMode })}>
+                  <option value="assist">Watch only</option>
+                  <option value="auto_contact">Contact supplier</option>
+                  <option value="autobuy">Buy within limits</option>
+                </select>
+              </label>
+              <label>
+                <span>Ask me above</span>
+                <div><b>₱</b><input type="number" min="0" value={updateItem.maxAutoOrderSpend} onChange={(event) => updateInventoryItem(updateItem.id, { maxAutoOrderSpend: Math.max(0, Number(event.target.value) || 0) })} /></div>
+              </label>
+              <label>
+                <span>Max pack price</span>
+                <div><b>₱</b><input type="number" min="0" value={updateItem.autoAcceptPackPrice} onChange={(event) => updateInventoryItem(updateItem.id, { autoAcceptPackPrice: Math.max(0, Number(event.target.value) || 0) })} /></div>
+              </label>
+            </div>
+
+            <p className={styles.ruleEditorNote}>
+              This is business-scoped Command Center demo state. Production providers will replace browser storage without changing this UI.
+            </p>
+          </div>
+        ) : null}
+      </JourvisPresence>
     </div>
   );
 }
