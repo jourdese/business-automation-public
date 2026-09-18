@@ -6,6 +6,7 @@ const sharedCapabilities = [
   "forecast",
   "performance",
   "finance",
+  "activity",
   "briefings",
   "insights",
   "decisions",
