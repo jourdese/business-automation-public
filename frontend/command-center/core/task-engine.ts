@@ -26,6 +26,9 @@ export function deriveJourvisTasks(
     if (purchase.status === "requested" && purchase.origin === "jourvis") {
       const authority = evaluatePurchaseAuthority(item, purchase);
       const reasons = [
+        !state.automationMasterOn
+          ? "Global autonomy is paused, so Jourvis will not approve this purchase automatically."
+          : null,
         purchase.automationMode === "auto_contact"
           ? "Your rule lets Jourvis contact the supplier, but not approve the purchase."
           : null,
@@ -43,7 +46,11 @@ export function deriveJourvisTasks(
           : null,
       ].filter(Boolean);
 
-      if (purchase.automationMode === "auto_contact" || !authority.withinAutoAccept) {
+      if (
+        !state.automationMasterOn ||
+        purchase.automationMode === "auto_contact" ||
+        !authority.withinAutoAccept
+      ) {
         tasks.push({
           id: `decision-fixed-${purchase.id}`,
           businessId: state.business.id,
@@ -67,6 +74,7 @@ export function deriveJourvisTasks(
       const autonomousWithinAuthority =
         purchase.origin === "jourvis" &&
         purchase.automationMode === "autobuy" &&
+        state.automationMasterOn &&
         authority.withinAutoAccept;
       const autonomousNegotiationPending =
         purchase.origin === "jourvis" &&
@@ -77,6 +85,9 @@ export function deriveJourvisTasks(
       if (autonomousWithinAuthority || autonomousNegotiationPending) return;
 
       const reasons = [
+        !state.automationMasterOn
+          ? "Global autonomy is paused, so Jourvis will not accept or negotiate this quote automatically."
+          : null,
         authority.total > item.maxAutoOrderSpend
           ? `The quote total is ₱${Math.round(authority.total).toLocaleString("en-PH")}, above your ₱${Math.round(item.maxAutoOrderSpend).toLocaleString("en-PH")} automatic order limit.`
           : null,
