@@ -219,3 +219,10 @@ export function resetInventoryRuntime() {
   if (typeof window === "undefined") return;
   window.localStorage.removeItem(INVENTORY_RUNTIME_STORAGE_KEY);
 }
+
+
+export function automationModeLabel(mode: AutomationMode) {
+  if (mode === "assist") return "Watch only";
+  if (mode === "auto_contact") return "Contact supplier";
+  return "Buy within limits";
+}
