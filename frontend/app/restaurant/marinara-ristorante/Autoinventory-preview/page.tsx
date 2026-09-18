@@ -1218,11 +1218,11 @@ export default function MarinaraAutoinventoryPreviewPage() {
   function buyerApprovesFixedAutomation(request: ProcurementRequest) {
     updateProcurement(request.id, (current) => ({
       ...current,
-      status: "awaiting_confirmation",
+      status: "supplier_viewed",
       buyerConfirmed: true,
-      automationNote: "Owner approved the automatically prepared fixed-price order.",
+      automationNote: "Owner approved the prepared fixed-price order. Jourvis is waiting for supplier acknowledgment.",
     }));
-    log(`${request.id}: owner approved the automatically prepared fixed-price order. Awaiting supplier confirmation.`);
+    log(`${request.id}: owner approved the prepared fixed-price order. Awaiting supplier acknowledgment.`);
   }
 
   function declineProcurement(request: ProcurementRequest) {
