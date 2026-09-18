@@ -530,3 +530,413 @@
     drop-shadow(0 3px 4px rgba(0, 0, 0, 0.34));
 }
 
+
+
+/* Guided Jourvis Automation configuration */
+.automationHero {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr) auto;
+  gap: 1rem;
+  align-items: center;
+  padding: 1rem;
+  border: 1px solid #31464f;
+  border-left: 3px solid #5c6d74;
+  background:
+    linear-gradient(90deg, rgba(46, 107, 87, 0.06), transparent 48%),
+    #081720;
+}
+
+.automationHero[data-enabled="true"] {
+  border-left-color: var(--mint);
+  background:
+    linear-gradient(90deg, rgba(46, 107, 87, 0.16), transparent 52%),
+    #081720;
+}
+
+.automationCompanion {
+  width: 58px;
+}
+
+.automationHero > div:nth-child(2) > span,
+.guideQuestion > span {
+  color: var(--mint);
+  font: 0.62rem var(--font-mono);
+  letter-spacing: 0.1em;
+}
+
+.automationHero h4,
+.guideQuestion h4 {
+  margin-top: 0.25rem;
+  font-size: 1.05rem;
+  letter-spacing: -0.025em;
+}
+
+.automationHero p,
+.guideQuestion > p {
+  margin-top: 0.35rem;
+  color: var(--slate);
+  font-size: 0.74rem;
+  line-height: 1.55;
+}
+
+.automationHeroActions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+}
+
+.automationToggle,
+.guideButton {
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  border: 1px solid #344650;
+  background: #07131b;
+  color: var(--slate);
+  padding: 0.5rem 0.7rem;
+  font-size: 0.68rem;
+}
+
+.automationToggle:hover,
+.guideButton:hover {
+  border-color: var(--mint);
+  color: var(--mint);
+}
+
+.automationToggle i {
+  width: 31px;
+  height: 16px;
+  position: relative;
+  border: 1px solid #50616a;
+  border-radius: 999px;
+  background: #172831;
+}
+
+.automationToggle i b {
+  width: 10px;
+  height: 10px;
+  position: absolute;
+  left: 2px;
+  top: 2px;
+  border-radius: 50%;
+  background: var(--slate);
+  transition: transform 150ms ease, background 150ms ease;
+}
+
+.automationToggle[data-on="true"] {
+  border-color: var(--mint);
+  color: var(--ivory);
+}
+
+.automationToggle[data-on="true"] i {
+  border-color: var(--mint);
+  background: rgba(46, 107, 87, 0.45);
+}
+
+.automationToggle[data-on="true"] i b {
+  transform: translateX(15px);
+  background: var(--mint);
+}
+
+.guideButton {
+  color: var(--ivory);
+}
+
+.guidePanel {
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 1px solid #3a555f;
+  background:
+    linear-gradient(rgba(167, 227, 197, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(167, 227, 197, 0.03) 1px, transparent 1px),
+    #08141f;
+  background-size: 20px 20px;
+}
+
+.guideProgress {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 4px;
+  margin-bottom: 1rem;
+}
+
+.guideProgress i {
+  height: 4px;
+  background: #263943;
+}
+
+.guideProgress i[data-active="true"] {
+  background: var(--mint);
+  box-shadow: 0 0 8px rgba(167, 227, 197, 0.15);
+}
+
+.guideQuestion {
+  min-height: 185px;
+}
+
+.modeChoices {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.65rem;
+  margin-top: 0.9rem;
+}
+
+.modeChoices button {
+  min-height: 112px;
+  padding: 0.8rem;
+  border: 1px solid #324751;
+  background: #0a1821;
+  color: var(--slate);
+  text-align: left;
+}
+
+.modeChoices button:hover,
+.modeChoices button[data-active="true"] {
+  border-color: var(--mint);
+  background: #10262d;
+  color: var(--ivory);
+}
+
+.modeChoices strong,
+.modeChoices small {
+  display: block;
+}
+
+.modeChoices strong {
+  font-size: 0.78rem;
+}
+
+.modeChoices small {
+  margin-top: 0.35rem;
+  color: var(--slate);
+  font-size: 0.65rem;
+  line-height: 1.45;
+}
+
+.guideFields,
+.automationRules {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.7rem;
+  margin-top: 0.9rem;
+}
+
+.guideFields label,
+.automationRules label,
+.negotiationRow label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.75rem;
+  border: 1px solid #324751;
+  background: #0a1821;
+}
+
+.guideFields label > span,
+.automationRules label > span,
+.negotiationRow label > span {
+  color: var(--slate);
+  font-size: 0.66rem;
+}
+
+.guideFields label > div,
+.automationRules label > div {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.guideFields input,
+.automationRules input,
+.automationRules select,
+.negotiationRow input {
+  width: 100%;
+  min-width: 0;
+  min-height: 38px;
+  padding: 0.45rem 0.55rem;
+  border: 1px solid #344650;
+  background: #07131b;
+  color: var(--ivory);
+  outline: 0;
+}
+
+.guideFields input:focus,
+.automationRules input:focus,
+.automationRules select:focus,
+.negotiationRow input:focus {
+  border-color: var(--mint);
+}
+
+.guideFields b,
+.automationRules b {
+  color: var(--slate);
+  font-size: 0.7rem;
+}
+
+.automationRules small {
+  color: var(--slate);
+  font-size: 0.64rem;
+  line-height: 1.45;
+}
+
+.guideHint {
+  margin-top: 0.65rem !important;
+  padding-left: 0.7rem;
+  border-left: 2px solid var(--gold);
+}
+
+.negotiationRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 180px;
+  gap: 0.7rem;
+  margin-top: 0.9rem;
+}
+
+.negotiationRow > button {
+  padding: 0.8rem;
+  border: 1px solid #344650;
+  background: #0a1821;
+  color: var(--slate);
+  text-align: left;
+}
+
+.negotiationRow > button[data-active="true"] {
+  border-color: var(--mint);
+  background: #10262d;
+  color: var(--ivory);
+}
+
+.negotiationRow strong,
+.negotiationRow small {
+  display: block;
+}
+
+.negotiationRow small {
+  margin-top: 0.3rem;
+  color: var(--slate);
+  font-size: 0.65rem;
+}
+
+.ruleSummary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1px;
+  margin-top: 0.9rem;
+  background: var(--border);
+  border: 1px solid var(--border);
+}
+
+.ruleSummary > div {
+  padding: 0.7rem;
+  background: #0a1821;
+}
+
+.ruleSummary span,
+.ruleSummary strong {
+  display: block;
+}
+
+.ruleSummary span {
+  color: var(--slate);
+  font-size: 0.62rem;
+}
+
+.ruleSummary strong {
+  margin-top: 0.15rem;
+  font-size: 0.75rem;
+  text-transform: capitalize;
+}
+
+.previewRule {
+  margin-top: 0.8rem;
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.75rem;
+  border: 1px solid #41515a;
+  background: rgba(18, 35, 46, 0.65);
+}
+
+.previewRule input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--mint);
+}
+
+.previewRule span {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.previewRule strong {
+  font-size: 0.72rem;
+}
+
+.previewRule small {
+  color: var(--slate);
+  font-size: 0.64rem;
+}
+
+.guideNav {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.7rem;
+  margin-top: 1rem;
+  padding-top: 0.8rem;
+  border-top: 1px solid var(--border);
+}
+
+.automationRules {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+@media (max-width: 980px) {
+  .automationHero {
+    grid-template-columns: 56px 1fr;
+  }
+
+  .automationHeroActions {
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+  }
+
+  .guideFields,
+  .automationRules {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .automationHero {
+    grid-template-columns: 48px 1fr;
+  }
+
+  .automationCompanion {
+    width: 44px;
+  }
+
+  .modeChoices,
+  .guideFields,
+  .automationRules,
+  .ruleSummary,
+  .negotiationRow {
+    grid-template-columns: 1fr;
+  }
+
+  .guideQuestion {
+    min-height: 0;
+  }
+
+  .guideNav {
+    flex-direction: column-reverse;
+  }
+
+  .guideNav button {
+    width: 100%;
+  }
+}
