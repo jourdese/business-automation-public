@@ -49,6 +49,7 @@ type CommandCenterRuntimeContextValue = {
     reason: CommandCenterStockAdjustmentReason,
   ) => void;
   receivePurchase: (purchaseId: string, quantity: number) => void;
+  updatePurchaseQuantity: (purchaseId: string, quantity: number) => void;
   recordRecipeSale: (recipeId: string, quantity?: number) => void;
   resumeItem: (itemId: string) => void;
   resetDemo: () => void;
@@ -799,6 +800,80 @@ export function CommandCenterRuntimeProvider({
     [],
   );
 
+  const updatePurchaseQuantity = useCallback(
+    (purchaseId: string, quantity: number) => {
+      if (!Number.isFinite(quantity) || quantity <= 0) return;
+
+      setState((current) => {
+        const purchase = current.purchases.find((entry) => entry.id === purchaseId);
+        if (!purchase) return current;
+        if (
+          ["confirmed", "in_transit", "partial_received", "received", "rejected"].includes(
+            purchase.status,
+          )
+        ) {
+          return current;
+        }
+
+        const item = current.inventory.find((entry) => entry.id === purchase.itemId);
+        if (!item) return current;
+
+        const normalizedQuantity =
+          Math.round(Math.max(item.packSize, quantity) * 100) / 100;
+        if (normalizedQuantity === purchase.quantity) return current;
+
+        const packs = Math.ceil(
+          normalizedQuantity / Math.max(item.packSize, 0.01),
+        );
+        const effectivePackPrice =
+          purchase.quotedPackPrice ?? item.packPrice;
+        const deliveryFee = purchase.deliveryFee ?? 0;
+        const nextTotal = packs * effectivePackPrice + deliveryFee;
+
+        return {
+          ...current,
+          purchases: current.purchases.map((entry) =>
+            entry.id === purchaseId
+              ? {
+                  ...entry,
+                  quantity: normalizedQuantity,
+                  estimatedTotal:
+                    packs * item.packPrice,
+                  quotedTotal:
+                    entry.quotedPackPrice !== undefined
+                      ? nextTotal
+                      : entry.quotedTotal,
+                  status:
+                    entry.status === "quote_received" ||
+                    entry.status === "counter_sent" ||
+                    entry.status === "approved"
+                      ? item.purchasingMode === "quote"
+                        ? "quote_requested"
+                        : "requested"
+                      : entry.status,
+                  explanation:
+                    "The owner changed the requested quantity, so Jourvis recalculated the request and returned it to the supplier workflow.",
+                }
+              : entry,
+          ),
+          activity: addActivity(current, {
+            module: "purchasing",
+            action: "purchase_quantity_updated",
+            message: `${purchase.id}: owner changed ${item.name} quantity from ${purchase.quantity} to ${normalizedQuantity} ${item.unit}.`,
+            actor: "owner",
+            executionMode: "manual",
+            reason:
+              "The owner manually revised the requested quantity before supplier confirmation. Jourvis recalculated the expected total and returned the request to the appropriate supplier step.",
+            configuration: inventoryRuleSnapshot(item, current.automationMasterOn),
+            relatedEntityId: item.id,
+            relatedRequestId: purchase.id,
+          }),
+        };
+      });
+    },
+    [],
+  );
+
   const receivePurchase = useCallback(
     (purchaseId: string, quantity: number) => {
       if (!Number.isFinite(quantity) || quantity <= 0) return;
@@ -974,6 +1049,7 @@ export function CommandCenterRuntimeProvider({
       setItemAutomationEnabled,
       adjustInventory,
       receivePurchase,
+      updatePurchaseQuantity,
       recordRecipeSale,
       resumeItem,
       resetDemo,
@@ -989,6 +1065,7 @@ export function CommandCenterRuntimeProvider({
       setItemAutomationEnabled,
       adjustInventory,
       receivePurchase,
+      updatePurchaseQuantity,
       recordRecipeSale,
       state,
       tasks,
