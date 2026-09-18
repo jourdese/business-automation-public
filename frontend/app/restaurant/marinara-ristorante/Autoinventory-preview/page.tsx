@@ -27,6 +27,7 @@ import CompanionMark from "@/components/jourvis/CompanionMark";
 import {
   type Ingredient,
   type Zone,
+  automationModeLabel,
   getContact,
   getSupplier,
   initialIngredients,
@@ -1592,7 +1593,7 @@ export default function MarinaraAutoinventoryPreviewPage() {
                   <div id="jourvis-automation-card" className={styles.summaryAutomationCard} data-enabled={selected.automationEnabled}>
                     <div>
                       <span>JOURVIS AUTOMATION</span>
-                      <strong>{selected.automationEnabled ? selected.automationMode.replace("_", " ") : "Off for this supply"}</strong>
+                      <strong>{selected.automationEnabled ? automationModeLabel(selected.automationMode) : "Off for this supply"}</strong>
                     </div>
                     <small>
                       {selected.automationEnabled
@@ -1842,7 +1843,7 @@ export default function MarinaraAutoinventoryPreviewPage() {
                             <h3>{supplier.name}</h3>
                             <small>{contact.name} · {contact.role}</small>
                             <b className={styles.procurementOriginBadge} data-auto={request.origin === "automation"}>
-                              {request.origin === "automation" ? `Jourvis ${request.previewOnly ? "preview" : request.automationMode?.replace("_", " ")}` : "Manual"}
+                              {request.origin === "automation" ? `Jourvis ${request.previewOnly ? "preview" : request.automationMode ? automationModeLabel(request.automationMode) : "automation"}` : "Manual"}
                             </b>
                           </div>
                           <div className={styles.procurementStatus}>
