@@ -2,6 +2,7 @@
 
 import { type ReactNode, useMemo, useState } from "react";
 import {
+  Archive,
   ArrowLeft,
   ArrowRight,
   Bot,
@@ -9,10 +10,13 @@ import {
   ChefHat,
   CircleDollarSign,
   PackageCheck,
+  Pencil,
   PlusCircle,
   ReceiptText,
+  Save,
   ShoppingBasket,
   Trash2,
+  X,
   Truck,
 } from "lucide-react";
 import { operationCatalog } from "@/command-center/core/business-registry";
@@ -24,6 +28,9 @@ import {
   purchaseProgressStage,
   projectedInventoryPercentAtDelivery,
   suggestedPurchaseQuantity,
+  type CommandCenterInventoryItem,
+  type CommandCenterMenuItem,
+  type CommandCenterRecipe,
   type CommandCenterStockAdjustmentReason,
 } from "@/command-center/core/runtime";
 import { useCommandCenterRuntime } from "@/command-center/core/runtime-provider";
@@ -36,6 +43,32 @@ type AdjustmentDraft = {
   mode: "adjust" | "waste";
   amount: string;
   reason: CommandCenterStockAdjustmentReason;
+};
+
+type MenuEditorDraft = {
+  id?: string;
+  name: string;
+  category: string;
+  variant: string;
+  currentPrice: string;
+  description: string;
+  active: boolean;
+  available: boolean;
+  recipeId: string;
+};
+
+type RecipeIngredientDraft = {
+  itemId: string;
+  amount: string;
+};
+
+type RecipeEditorDraft = {
+  id?: string;
+  name: string;
+  description: string;
+  notes: string;
+  active: boolean;
+  ingredients: RecipeIngredientDraft[];
 };
 
 export default function OperationModuleView({
@@ -53,6 +86,8 @@ export default function OperationModuleView({
   const [inventoryZone, setInventoryZone] = useState("All");
   const [menuSearch, setMenuSearch] = useState("");
   const [menuCategory, setMenuCategory] = useState("All");
+  const [menuEditor, setMenuEditor] = useState<MenuEditorDraft | null>(null);
+  const [recipeEditor, setRecipeEditor] = useState<RecipeEditorDraft | null>(null);
   const [purchaseFilter, setPurchaseFilter] = useState<"active" | "history" | "all">("active");
 
   const {
@@ -62,6 +97,10 @@ export default function OperationModuleView({
     receivePurchase,
     updatePurchaseQuantity,
     startOwnerPurchase,
+    saveMenuItem,
+    archiveMenuItem,
+    saveRecipe,
+    archiveRecipe,
     recordRecipeSale,
   } = useCommandCenterRuntime();
 
@@ -79,6 +118,112 @@ export default function OperationModuleView({
     () => new Map(state.suppliers.map((supplier) => [supplier.id, supplier])),
     [state.suppliers],
   );
+
+  function openNewMenuItem() {
+    setMenuEditor({
+      name: "",
+      category: "Pasta",
+      variant: "",
+      currentPrice: "",
+      description: "",
+      active: true,
+      available: true,
+      recipeId: "",
+    });
+  }
+
+  function openMenuItemEditor(item: CommandCenterMenuItem) {
+    setMenuEditor({
+      id: item.id,
+      name: item.name,
+      category: item.category,
+      variant: item.variant ?? "",
+      currentPrice:
+        item.currentPrice !== undefined ? String(item.currentPrice) : "",
+      description: item.description ?? "",
+      active: item.active,
+      available: item.available,
+      recipeId: item.recipeId ?? "",
+    });
+  }
+
+  function submitMenuEditor() {
+    if (!menuEditor) return;
+    const currentPrice =
+      menuEditor.currentPrice.trim() === ""
+        ? undefined
+        : Number(menuEditor.currentPrice);
+    if (
+      !menuEditor.name.trim() ||
+      !menuEditor.category.trim() ||
+      (currentPrice !== undefined &&
+        (!Number.isFinite(currentPrice) || currentPrice < 0))
+    ) {
+      return;
+    }
+
+    saveMenuItem({
+      id: menuEditor.id,
+      name: menuEditor.name,
+      category: menuEditor.category,
+      variant: menuEditor.variant || undefined,
+      currentPrice,
+      description: menuEditor.description || undefined,
+      active: menuEditor.active,
+      available: menuEditor.available,
+      recipeId: menuEditor.recipeId || undefined,
+    });
+    setMenuEditor(null);
+  }
+
+  function openNewRecipe() {
+    setRecipeEditor({
+      name: "",
+      description: "",
+      notes: "",
+      active: true,
+      ingredients: [],
+    });
+  }
+
+  function openRecipeEditor(recipe: CommandCenterRecipe) {
+    setRecipeEditor({
+      id: recipe.id,
+      name: recipe.name,
+      description: recipe.description,
+      notes: recipe.notes ?? "",
+      active: recipe.active,
+      ingredients: Object.entries(recipe.ingredients).map(
+        ([itemId, amount]) => ({
+          itemId,
+          amount: String(amount),
+        }),
+      ),
+    });
+  }
+
+  function submitRecipeEditor() {
+    if (!recipeEditor || !recipeEditor.name.trim()) return;
+
+    const ingredients = Object.fromEntries(
+      recipeEditor.ingredients
+        .map((entry) => [entry.itemId, Number(entry.amount)] as const)
+        .filter(
+          ([itemId, amount]) =>
+            Boolean(itemId) && Number.isFinite(amount) && amount > 0,
+        ),
+    );
+
+    saveRecipe({
+      id: recipeEditor.id,
+      name: recipeEditor.name,
+      description: recipeEditor.description,
+      notes: recipeEditor.notes || undefined,
+      active: recipeEditor.active,
+      ingredients,
+    });
+    setRecipeEditor(null);
+  }
 
   function openAdjustment(
     itemId: string,
