@@ -22,6 +22,39 @@ export function deriveJourvisTasks(
     const item = state.inventory.find((candidate) => candidate.id === purchase.itemId);
     if (!item) return;
 
+    if (purchase.status === "requested" && purchase.origin === "jourvis") {
+      const overSpend = purchase.estimatedTotal > item.maxAutoOrderSpend;
+      const overPrice = item.packPrice > item.autoAcceptPackPrice;
+      if (purchase.automationMode === "auto_contact" || overSpend || overPrice) {
+        const why = purchase.automationMode === "auto_contact"
+          ? "Your rule lets Jourvis contact the supplier, but not approve the purchase."
+          : [
+              overSpend
+                ? `The known order total is ₱${Math.round(purchase.estimatedTotal).toLocaleString("en-PH")}, above your ₱${Math.round(item.maxAutoOrderSpend).toLocaleString("en-PH")} automatic limit.`
+                : null,
+              overPrice
+                ? `The pack price is ₱${Math.round(item.packPrice).toLocaleString("en-PH")}, above your ₱${Math.round(item.autoAcceptPackPrice).toLocaleString("en-PH")} automatic price limit.`
+                : null,
+            ].filter(Boolean).join(" ");
+
+        tasks.push({
+          id: `decision-fixed-${purchase.id}`,
+          businessId: state.business.id,
+          module: "purchasing",
+          entityId: item.id,
+          requestId: purchase.id,
+          priority: overSpend || overPrice ? "high" : "medium",
+          state: "needs_owner",
+          title: `${item.name} purchase needs approval`,
+          whatHappened: `Jourvis prepared a fixed-price purchase for ₱${Math.round(purchase.estimatedTotal).toLocaleString("en-PH")}.`,
+          why,
+          whatJourvisDid: "Jourvis prepared the supplier request but stopped before approving terms outside its authority.",
+          whyOwnerIsNeeded: "The owner must approve the purchase or update Jourvis' authority.",
+          actions: ["approve", "reject", "update"],
+        });
+      }
+    }
+
     if (purchase.status === "quote_received") {
       const quotedTotal = purchase.quotedTotal ?? purchase.estimatedTotal;
       const quotedPackPrice = purchase.quotedPackPrice ?? item.packPrice;
@@ -36,6 +69,9 @@ export function deriveJourvisTasks(
           : null,
         purchase.origin === "owner"
           ? "You asked Jourvis to request the quote, but did not authorize Jourvis to accept the final price automatically."
+          : null,
+        purchase.automationMode === "auto_contact"
+          ? "Your rule is Contact supplier, so Jourvis may request the quote but may not approve the purchase automatically."
           : null,
       ].filter(Boolean).join(" ");
 
