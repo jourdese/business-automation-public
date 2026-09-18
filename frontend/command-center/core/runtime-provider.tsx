@@ -81,6 +81,7 @@ function createGenericSeed(businessId: string): CommandCenterRuntimeState {
     purchases: [],
     suppliers: [],
     recipes: [],
+    menuItems: [],
     pausedItemIds: [],
     activity: [],
   };
@@ -141,6 +142,7 @@ function normalizeStoredState(
     })),
     suppliers: stored.suppliers ?? seed.suppliers,
     recipes: stored.recipes ?? seed.recipes,
+    menuItems: stored.menuItems ?? seed.menuItems,
     pausedItemIds: stored.pausedItemIds ?? [],
     purchases: stored.purchases ?? [],
     activity: (stored.activity ?? []).map((entry) => normalizeActivity(entry)),
