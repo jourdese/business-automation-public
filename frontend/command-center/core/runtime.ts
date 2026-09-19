@@ -221,6 +221,28 @@ export type CommandCenterRuntimeState = {
   history: CommandCenterHistorySnapshot[];
 };
 
+export function canMenuItemBeAvailable(
+  item: Pick<CommandCenterMenuItem, "recipeId">,
+  recipes: CommandCenterRecipe[],
+) {
+  if (!item.recipeId) return true;
+  return recipes.some(
+    (recipe) => recipe.id === item.recipeId && recipe.active,
+  );
+}
+
+export function reconcileMenuItemsForRecipeStatus(
+  menuItems: CommandCenterMenuItem[],
+  recipeId: string,
+  recipeActive: boolean,
+) {
+  return menuItems.map((item) =>
+    item.recipeId === recipeId && item.active
+      ? { ...item, available: recipeActive }
+      : item,
+  );
+}
+
 export function inventoryPercent(item: CommandCenterInventoryItem) {
   return Math.max(
     0,
