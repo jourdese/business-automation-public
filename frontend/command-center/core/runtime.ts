@@ -173,6 +173,26 @@ export type CommandCenterActivity = {
   relatedRequestId?: string;
 };
 
+export type CommandCenterHistorySnapshot = {
+  id: string;
+  capturedAt: string;
+  trigger: string;
+  stateSignature: string;
+  inventoryReadinessPercent: number | null;
+  inventoryRiskCount: number;
+  activeWorkflowCount: number;
+  ownerExceptionCount: number;
+  recipeCoveragePercent: number | null;
+  averageFoodCostPercent: number | null;
+  openPurchaseCommitments: number;
+  confirmedIncomingCommitments: number;
+  receivedPurchaseSpend: number;
+  configuredInventoryValue: number;
+  averageMenuGrossMarginPercent: number | null;
+  automaticActivityCount: number;
+  manualActivityCount: number;
+};
+
 export type CommandCenterRuntimeState = {
   version: 1;
   business: CommandCenterBusiness;
@@ -184,6 +204,7 @@ export type CommandCenterRuntimeState = {
   menuItems: CommandCenterMenuItem[];
   pausedItemIds: string[];
   activity: CommandCenterActivity[];
+  history: CommandCenterHistorySnapshot[];
 };
 
 export function inventoryPercent(item: CommandCenterInventoryItem) {
