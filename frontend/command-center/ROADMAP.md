@@ -4,8 +4,6 @@ Branch: `jourvis/command-center-v1`
 
 The Command Center is not only an Operations dashboard. Every top-level tab must become a real business operating surface backed by the same shared Jourvis runtime and, later, production data providers.
 
-Current milestone: **demo-first**. Marinara uses repo seed/config + browser-scoped runtime/localStorage. No Supabase/database migration is required for this demo milestone. Production persistence and external providers remain Phase 9 work.
-
 ## Phase 1 — Marinara operating foundation
 
 Status: in progress / mostly implemented
@@ -38,8 +36,6 @@ Before production:
 
 ## Phase 2 — Forecast
 
-Demo status: runtime-backed implementation complete. Production enrichment remains provider-dependent.
-
 Build Forecast from actual runtime/provider data, not static cards.
 
 Initial runtime-backed forecast:
@@ -71,8 +67,6 @@ Future forecast surfaces:
 - labor
 
 ## Phase 3 — Performance
-
-Demo status: runtime-backed implementation complete for inventory, menu/recipe coverage, automation, purchasing, suppliers, owner exceptions, and waste activity.
 
 Replace illustrative performance numbers with derived business KPIs.
 
@@ -110,8 +104,6 @@ Every KPI should explain:
 
 ## Phase 4 — Finance
 
-Demo status: operational finance is implemented for purchasing commitments, received purchasing spend, configured inventory value, and menu ingredient-margin economics. Formal accounting remains provider-gated.
-
 Shared finance layer:
 - P&L
 - cash flow
@@ -130,8 +122,6 @@ Do not fabricate unavailable accounting data. Show provider/data-source state ex
 
 ## Phase 5 — Briefings
 
-Demo status: current-state, execution, historical movement, and prioritized operating-signal briefings are implemented from the shared runtime.
-
 Generate from the same runtime:
 - daily owner briefing
 - weekly operating review
@@ -149,8 +139,6 @@ Include:
 
 ## Phase 6 — Insights
 
-Demo status: cross-module runtime insights and shared prioritized operating signals are implemented. Production insights will gain more depth as external providers are added.
-
 Cross-module intelligence rather than standalone dashboard observations.
 
 Examples:
@@ -162,8 +150,6 @@ Examples:
 - automation limits are unnecessarily causing manual approvals
 
 ## Phase 7 — Decisions
-
-Demo status: shared human-authority queue is implemented and fed by runtime exceptions.
 
 Decisions remains the human-authority queue for every module:
 - purchasing
@@ -177,8 +163,6 @@ Decisions remains the human-authority queue for every module:
 No separate approval system should be invented per module.
 
 ## Phase 8 — Activity / Audit
-
-Demo status: structured automatic/manual audit history with reasons, configuration snapshots, entities, and requests is implemented in browser-scoped demo storage.
 
 Activity remains the shared audit log:
 - automatic vs manual
