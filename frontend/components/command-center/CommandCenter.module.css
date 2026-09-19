@@ -3407,7 +3407,7 @@
 }
 
 .menuLibraryItem[data-expanded="true"] {
-  grid-column: 1 / -1;
+  grid-column: span 2;
   border-color: #527866;
 }
 
@@ -3423,6 +3423,21 @@
   background: transparent;
   color: inherit;
   text-align: left;
+}
+
+.menuLibraryItem[data-expanded="true"] .menuThumbnailButton {
+  grid-template-columns: 190px minmax(0, 1fr);
+  align-items: stretch;
+}
+
+.menuLibraryItem[data-expanded="true"] .menuThumbnailMedia {
+  aspect-ratio: auto;
+  min-height: 108px;
+}
+
+.menuLibraryItem[data-expanded="true"] .menuThumbnailCopy {
+  min-height: 108px;
+  align-content: center;
 }
 
 .menuThumbnailMedia {
@@ -3540,9 +3555,129 @@
 }
 
 .menuExpandedPanel {
-  padding: 0.75rem;
+  display: grid;
+  gap: 0.48rem;
+  padding: 0.55rem;
   border-top: 1px solid var(--cc-line);
-  background: linear-gradient(180deg, rgba(46, 107, 87, 0.045), transparent 30%), #091820;
+  background: #091820;
+}
+
+.menuQuickStats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.35rem;
+}
+
+.menuQuickStats > span,
+.menuMoreDetailGrid > span {
+  min-width: 0;
+  padding: 0.42rem;
+  border: 1px solid #314750;
+  background: #08161e;
+}
+
+.menuQuickStats small,
+.menuQuickStats strong,
+.menuMoreDetailGrid small,
+.menuMoreDetailGrid strong {
+  display: block;
+}
+
+.menuQuickStats small,
+.menuMoreDetailGrid small {
+  color: var(--cc-muted);
+  font-size: 0.46rem;
+}
+
+.menuQuickStats strong,
+.menuMoreDetailGrid strong {
+  margin-top: 0.08rem;
+  font-size: 0.58rem;
+  overflow-wrap: anywhere;
+}
+
+.menuQuickActions {
+  display: flex;
+  gap: 0.32rem;
+  flex-wrap: wrap;
+}
+
+.menuQuickActions button {
+  min-height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.26rem;
+  padding: 0.3rem 0.44rem;
+  border: 1px solid #3a5059;
+  background: #08161e;
+  color: var(--ivory);
+  font-size: 0.52rem;
+}
+
+.menuQuickActions button[data-primary] {
+  border-color: var(--mint);
+  background: var(--mint);
+  color: var(--ink);
+}
+
+.menuQuickActions button[data-danger] {
+  border-color: #68433f;
+  color: #ffb0a8;
+}
+
+.menuQuickActions button:hover {
+  border-color: var(--mint);
+  color: var(--mint);
+}
+
+.menuQuickActions button[data-primary]:hover {
+  color: var(--ink);
+}
+
+.menuQuickAlerts {
+  display: flex;
+  gap: 0.3rem;
+  flex-wrap: wrap;
+}
+
+.menuQuickAlerts > span {
+  padding: 0.24rem 0.34rem;
+  border: 1px solid #5e593e;
+  background: rgba(200, 169, 107, 0.04);
+  color: var(--gold);
+  font-size: 0.48rem;
+}
+
+.menuQuickAlerts > span[data-level="high"] {
+  border-color: #744640;
+  color: #ffb0a8;
+}
+
+.menuMoreDetails {
+  border-top: 1px solid rgba(49, 71, 80, 0.8);
+  padding-top: 0.4rem;
+}
+
+.menuMoreDetails summary {
+  width: fit-content;
+  cursor: pointer;
+  color: var(--mint);
+  font-size: 0.52rem;
+}
+
+.menuMoreDetailGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.35rem;
+  margin-top: 0.45rem;
+}
+
+.menuDetailDescription {
+  margin-top: 0.45rem;
+  color: var(--cc-muted);
+  font-size: 0.54rem;
+  line-height: 1.45;
 }
 
 .menuExpandedIntro {
@@ -4471,6 +4606,20 @@
 
   .menuLibraryItem[data-expanded="true"] {
     grid-column: 1 / -1;
+  }
+
+  .menuLibraryItem[data-expanded="true"] .menuThumbnailButton {
+    grid-template-columns: 120px minmax(0, 1fr);
+  }
+
+  .menuLibraryItem[data-expanded="true"] .menuThumbnailMedia,
+  .menuLibraryItem[data-expanded="true"] .menuThumbnailCopy {
+    min-height: 78px;
+  }
+
+  .menuQuickStats,
+  .menuMoreDetailGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .menuLibraryToolbar,
