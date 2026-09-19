@@ -3340,6 +3340,22 @@
   color: var(--ink);
 }
 
+.menuScopeBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.55rem;
+  padding: 0.45rem 0.55rem;
+  border: 1px solid var(--cc-line);
+  background: #08161e;
+}
+
+.menuScopeBar > span {
+  color: var(--cc-muted);
+  font: 0.5rem var(--font-mono);
+  white-space: nowrap;
+}
+
 .menuLibraryToolbar {
   display: grid;
   grid-template-columns: minmax(220px, 0.8fr) auto minmax(0, 1.4fr) auto;
@@ -4645,6 +4661,11 @@
 
   .menuModalThumb {
     width: 88px;
+  }
+
+  .menuScopeBar {
+    align-items: flex-start;
+    flex-direction: column;
   }
 
   .menuLibraryToolbar,
