@@ -13,6 +13,7 @@ export type CommandCenterPerformanceSnapshot = {
   automationSharePercent: number | null;
   automaticActivityCount: number;
   manualActivityCount: number;
+  wasteEventCount: number;
   activeMenuItemCount: number;
   recipeMappedMenuCount: number;
   recipeCoveragePercent: number | null;
@@ -49,6 +50,11 @@ export function buildCommandCenterPerformance(
   ).length;
   const manualActivityCount = state.activity.filter(
     (entry) => entry.executionMode === "manual",
+  ).length;
+  const wasteEventCount = state.activity.filter(
+    (entry) =>
+      entry.module === "waste" &&
+      entry.action === "waste_recorded",
   ).length;
   const automationSharePercent = percent(
     automaticActivityCount,
@@ -111,6 +117,7 @@ export function buildCommandCenterPerformance(
     automationSharePercent,
     automaticActivityCount,
     manualActivityCount,
+    wasteEventCount,
     activeMenuItemCount: activeMenuItems.length,
     recipeMappedMenuCount: recipeMappedMenuItems.length,
     recipeCoveragePercent,
