@@ -1543,182 +1543,43 @@ export default function OperationModuleView({
 
                 {expanded ? (
                   <div className={styles.menuExpandedPanel}>
-                    <div className={styles.menuExpandedIntro}>
-                      <div>
-                        <span>MENU ITEM DETAIL</span>
-                        <h3>{menuItem.name}</h3>
-                        <p>
-                          {menuItem.description ||
-                            recipe?.description ||
-                            "No live description configured."}
-                        </p>
-                      </div>
-                      <b>{statusLabel}</b>
+                    <div className={styles.menuQuickStats}>
+                      <span>
+                        <small>Food cost</small>
+                        <strong>
+                          {economics.foodCostPercent !== null
+                            ? economics.foodCostPercent + "%"
+                            : "—"}
+                        </strong>
+                      </span>
+                      <span>
+                        <small>Gross profit</small>
+                        <strong>
+                          {economics.grossProfit !== null
+                            ? "₱" +
+                              Math.round(
+                                economics.grossProfit,
+                              ).toLocaleString("en-PH")
+                            : "—"}
+                        </strong>
+                      </span>
+                      <span>
+                        <small>Gross margin</small>
+                        <strong>
+                          {economics.grossMarginPercent !== null
+                            ? economics.grossMarginPercent + "%"
+                            : "—"}
+                        </strong>
+                      </span>
+                      <span>
+                        <small>Possible servings</small>
+                        <strong>
+                          {economics.possibleServings ?? "—"}
+                        </strong>
+                      </span>
                     </div>
 
-                    <div className={styles.menuEconomics}>
-                      <div>
-                        <ReceiptText size={15} aria-hidden />
-                        <span>
-                          <small>Current price</small>
-                          <strong>
-                            {menuItem.currentPrice !== undefined
-                              ? "₱" +
-                                Math.round(
-                                  menuItem.currentPrice,
-                                ).toLocaleString("en-PH")
-                              : "Not set"}
-                          </strong>
-                        </span>
-                      </div>
-                      <div>
-                        <ReceiptText size={15} aria-hidden />
-                        <span>
-                          <small>Archived reference</small>
-                          <strong>
-                            {menuItem.referencePrice !== undefined
-                              ? "₱" +
-                                Math.round(
-                                  menuItem.referencePrice,
-                                ).toLocaleString("en-PH")
-                              : "None"}
-                          </strong>
-                        </span>
-                      </div>
-                      <div>
-                        <CircleDollarSign size={15} aria-hidden />
-                        <span>
-                          <small>Ingredient cost</small>
-                          <strong>
-                            {economics.ingredientCost !== null
-                              ? "₱" +
-                                Math.round(
-                                  economics.ingredientCost,
-                                ).toLocaleString("en-PH")
-                              : "—"}
-                          </strong>
-                        </span>
-                      </div>
-                      <div>
-                        <CircleDollarSign size={15} aria-hidden />
-                        <span>
-                          <small>Food cost</small>
-                          <strong>
-                            {economics.foodCostPercent !== null
-                              ? economics.foodCostPercent + "%"
-                              : "—"}
-                          </strong>
-                        </span>
-                      </div>
-                      <div>
-                        <CircleDollarSign size={15} aria-hidden />
-                        <span>
-                          <small>Gross profit / item</small>
-                          <strong>
-                            {economics.grossProfit !== null
-                              ? "₱" +
-                                Math.round(
-                                  economics.grossProfit,
-                                ).toLocaleString("en-PH")
-                              : "—"}
-                          </strong>
-                        </span>
-                      </div>
-                      <div>
-                        <CircleDollarSign size={15} aria-hidden />
-                        <span>
-                          <small>Gross margin</small>
-                          <strong>
-                            {economics.grossMarginPercent !== null
-                              ? economics.grossMarginPercent + "%"
-                              : "—"}
-                          </strong>
-                        </span>
-                      </div>
-                      <div>
-                        <ReceiptText size={15} aria-hidden />
-                        <span>
-                          <small>Vs archived price</small>
-                          <strong>
-                            {economics.referencePriceDelta !== null
-                              ? `${economics.referencePriceDelta > 0 ? "+" : ""}₱${Math.round(
-                                  economics.referencePriceDelta,
-                                ).toLocaleString("en-PH")}`
-                              : "—"}
-                          </strong>
-                        </span>
-                      </div>
-                      <div>
-                        <ShoppingBasket size={15} aria-hidden />
-                        <span>
-                          <small>Possible servings</small>
-                          <strong>
-                            {economics.possibleServings ?? "—"}
-                          </strong>
-                        </span>
-                      </div>
-                    </div>
-
-                    {economics.warning !== "none" ||
-                    (economics.costDriftSinceRecipeSavePercent ?? 0) > 0 ||
-                    economics.riskyIngredientIds.length ? (
-                      <div className={styles.menuRecommendationStrip}>
-                        {economics.warning !== "none" ? (
-                          <span data-level={economics.warning}>
-                            Food cost is {economics.foodCostPercent}% against the
-                            current 35% demo warning threshold.
-                          </span>
-                        ) : null}
-                        {(economics.costDriftSinceRecipeSavePercent ?? 0) > 0 ? (
-                          <span>
-                            Ingredient cost increased{" "}
-                            {economics.costDriftSinceRecipeSavePercent}% since
-                            this recipe was last saved.
-                          </span>
-                        ) : null}
-                        {economics.riskyIngredientIds.length ? (
-                          <span>
-                            {economics.riskyIngredientIds.length} mapped
-                            ingredient
-                            {economics.riskyIngredientIds.length === 1 ? "" : "s"}{" "}
-                            currently at/below reorder level.
-                          </span>
-                        ) : null}
-                      </div>
-                    ) : null}
-
-                    {recipe ? (
-                      <div className={styles.menuIngredientStrip}>
-                        {Object.entries(recipe.ingredients).map(
-                          ([itemId, amount]) => {
-                            const item = state.inventory.find(
-                              (entry) => entry.id === itemId,
-                            );
-                            if (!item) return null;
-                            return (
-                              <div
-                                key={item.id}
-                                data-low={item.current <= item.reorderAt}
-                              >
-                                <SupplyPhoto
-                                  supplyId={item.id}
-                                  className={styles.recipeSupplyPhoto}
-                                  size={38}
-                                />
-                                <span>
-                                  <strong>{item.name}</strong>
-                                  <small>
-                                    {amount} {item.unit} / sale
-                                  </small>
-                                </span>
-                              </div>
-                            );
-                          },
-                        )}
-                      </div>
-                    ) : null}
-
-                    <div className={styles.entityActions}>
+                    <div className={styles.menuQuickActions}>
                       {recipe?.active &&
                       menuItem.active &&
                       menuItem.available ? (
@@ -1727,7 +1588,7 @@ export default function OperationModuleView({
                           data-primary
                           onClick={() => recordRecipeSale(recipe.id, 1)}
                         >
-                          Simulate POS sale
+                          Simulate sale
                         </button>
                       ) : null}
                       <button
@@ -1745,14 +1606,16 @@ export default function OperationModuleView({
                       <button
                         type="button"
                         onClick={() => moveMenuItem(menuItem.id, "up")}
+                        aria-label="Move menu item earlier"
                       >
-                        <ArrowUp size={14} aria-hidden /> Earlier
+                        <ArrowUp size={14} aria-hidden />
                       </button>
                       <button
                         type="button"
                         onClick={() => moveMenuItem(menuItem.id, "down")}
+                        aria-label="Move menu item later"
                       >
-                        <ArrowDown size={14} aria-hidden /> Later
+                        <ArrowDown size={14} aria-hidden />
                       </button>
                       {menuItem.active ? (
                         <button
@@ -1784,6 +1647,115 @@ export default function OperationModuleView({
                         </button>
                       )}
                     </div>
+
+                    {economics.warning !== "none" ||
+                    (economics.costDriftSinceRecipeSavePercent ?? 0) > 0 ||
+                    economics.riskyIngredientIds.length ? (
+                      <div className={styles.menuQuickAlerts}>
+                        {economics.warning !== "none" ? (
+                          <span data-level={economics.warning}>
+                            {economics.foodCostPercent}% food cost
+                          </span>
+                        ) : null}
+                        {(economics.costDriftSinceRecipeSavePercent ?? 0) > 0 ? (
+                          <span>
+                            Cost +{economics.costDriftSinceRecipeSavePercent}% since
+                            recipe save
+                          </span>
+                        ) : null}
+                        {economics.riskyIngredientIds.length ? (
+                          <span>
+                            {economics.riskyIngredientIds.length} stock risk
+                          </span>
+                        ) : null}
+                      </div>
+                    ) : null}
+
+                    <details className={styles.menuMoreDetails}>
+                      <summary>More details</summary>
+                      <div className={styles.menuMoreDetailGrid}>
+                        <span>
+                          <small>Current price</small>
+                          <strong>
+                            {menuItem.currentPrice !== undefined
+                              ? "₱" +
+                                Math.round(
+                                  menuItem.currentPrice,
+                                ).toLocaleString("en-PH")
+                              : "Not set"}
+                          </strong>
+                        </span>
+                        <span>
+                          <small>Archived reference</small>
+                          <strong>
+                            {menuItem.referencePrice !== undefined
+                              ? "₱" +
+                                Math.round(
+                                  menuItem.referencePrice,
+                                ).toLocaleString("en-PH")
+                              : "—"}
+                          </strong>
+                        </span>
+                        <span>
+                          <small>Ingredient cost</small>
+                          <strong>
+                            {economics.ingredientCost !== null
+                              ? "₱" +
+                                Math.round(
+                                  economics.ingredientCost,
+                                ).toLocaleString("en-PH")
+                              : "—"}
+                          </strong>
+                        </span>
+                        <span>
+                          <small>Vs archived price</small>
+                          <strong>
+                            {economics.referencePriceDelta !== null
+                              ? `${economics.referencePriceDelta > 0 ? "+" : ""}₱${Math.round(
+                                  economics.referencePriceDelta,
+                                ).toLocaleString("en-PH")}`
+                              : "—"}
+                          </strong>
+                        </span>
+                      </div>
+
+                      <p className={styles.menuDetailDescription}>
+                        {menuItem.description ||
+                          recipe?.description ||
+                          "No live description configured."}
+                      </p>
+
+                      {recipe ? (
+                        <div className={styles.menuIngredientStrip}>
+                          {Object.entries(recipe.ingredients).map(
+                            ([itemId, amount]) => {
+                              const item = state.inventory.find(
+                                (entry) => entry.id === itemId,
+                              );
+                              if (!item) return null;
+                              return (
+                                <div
+                                  key={item.id}
+                                  data-low={item.current <= item.reorderAt}
+                                >
+                                  <SupplyPhoto
+                                    supplyId={item.id}
+                                    className={styles.recipeSupplyPhoto}
+                                    size={38}
+                                  />
+                                  <span>
+                                    <strong>{item.name}</strong>
+                                    <small>
+                                      {amount} {item.unit} / sale
+                                    </small>
+                                  </span>
+                                </div>
+                              );
+                            },
+                          )}
+                        </div>
+                      ) : null}
+                    </details>
                   </div>
                 ) : null}
               </article>
