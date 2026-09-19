@@ -182,6 +182,15 @@ test("n8n auth workflow consumes a capability before Gmail and never saves execu
     });
   assert.equal(run(envelope)[0].json.mail.subject, "Sign in");
   assert.throws(() => run({ ...envelope, unexpected: true }));
+  const bodyExpression = w.nodes.find((n) => n.name === "Consume auth mail capability").parameters.jsonBody;
+  // n8n closes an expression at the first unescaped double closing brace.
+  // Adjacent nested object braces must not terminate the expression early.
+  assert.ok(bodyExpression.startsWith("={{"));
+  assert.equal(bodyExpression.indexOf("}}"), bodyExpression.length - 2);
+  const requestBody = JSON.parse(vm.runInNewContext(bodyExpression.slice(3, -2), {
+    $json: run(envelope)[0].json,
+  }));
+  assert.deepEqual(requestBody, { token: "", op: "begin", p: envelope });
   const gate = w.nodes.find((n) => n.name === "Require capability receipt").parameters.jsCode;
   assert.throws(() =>
     vm.runInNewContext(`(function(){${gate}})()`, {

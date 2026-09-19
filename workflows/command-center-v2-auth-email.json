@@ -50,7 +50,7 @@
         "genericAuthType": "httpHeaderAuth",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({token:'',op:'begin',p:{id:$json.id,lease:$json.lease,messageJson:$json.messageJson}}) }}",
+        "jsonBody": "={{ JSON.stringify({token:'',op:'begin',p:{id:$json.id,lease:$json.lease,messageJson:$json.messageJson} }) }}",
         "options": {
           "timeout": 800
         }
