@@ -18,17 +18,21 @@ Status: in progress / mostly implemented
 - Decisions
 - Activity
 - Menu + Recipe CRUD
-- Recipe → create Inventory Item
+- Compact expandable Menu library + fixed no-scroll editors
+- Menu economics and recipe-impact preview
+- Recipe → create Inventory Item → create/edit Supplier
+- Menu/Recipe duplicate, archive filtering, bulk availability, category rename, and ordering
+- Runtime schema v2, relationship validation, stronger IDs, legal purchase transitions, and action idempotency contract
 - Item-level purchasing authority
 - Supplier lifecycle and physical receiving
 - Structured audit trail
 - Canonical Marinara business configuration
 
 Before production:
-- local full-flow review
+- visual local full-flow review of the new compact Menu/configuration drawers
 - remaining parity sign-off
-- retire legacy Autoinventory
-- harden IDs/state migrations/state-machine enforcement
+- retire legacy Autoinventory after visual sign-off
+- move runtime validation/idempotency enforcement server-side with Jourvis V2
 
 ## Phase 2 — Forecast
 
