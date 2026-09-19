@@ -24,6 +24,7 @@ import {
   buildCommandCenterHistoryTrend,
 } from "@/command-center/core/history-engine";
 import { buildCommandCenterPerformance } from "@/command-center/core/performance-engine";
+import { buildCommandCenterSupplierPerformance } from "@/command-center/core/supplier-performance-engine";
 import {
   estimatedPurchaseTotal,
   inventoryPercent,
@@ -701,6 +702,14 @@ export default function CommandCenterSectionView({
       state,
       tasks.length,
     );
+    const supplierPerformance =
+      buildCommandCenterSupplierPerformance(state);
+    const formatSupplierMinutes = (value: number | null) =>
+      value === null
+        ? "—"
+        : value < 60
+          ? `${value} min`
+          : `${Math.round((value / 60) * 10) / 10} hr`;
     const metricRows = [
       [
         "Inventory readiness",
@@ -753,6 +762,18 @@ export default function CommandCenterSectionView({
           ? "—"
           : performance.purchaseCompletionPercent + "%",
         `${performance.receivedPurchaseCount}/${performance.closedPurchaseCount} closed purchases received`,
+      ],
+      [
+        "Supplier completion",
+        supplierPerformance.completionRatePercent === null
+          ? "—"
+          : supplierPerformance.completionRatePercent + "%",
+        `${supplierPerformance.receivedCount}/${supplierPerformance.closedCount} closed supplier requests received`,
+      ],
+      [
+        "Supplier response",
+        formatSupplierMinutes(supplierPerformance.averageViewMinutes),
+        "average request creation → supplier viewed",
       ],
     ];
 
@@ -874,6 +895,17 @@ export default function CommandCenterSectionView({
                   {performance.closedPurchaseCount
                     ? `${performance.receivedPurchaseCount} of ${performance.closedPurchaseCount} closed purchase workflow${performance.closedPurchaseCount === 1 ? "" : "s"} finished as received. Rejected requests remain visible in Activity instead of being erased.`
                     : "No purchase workflow has reached a closed state yet."}
+                </p>
+              </div>
+            </article>
+            <article>
+              <LineChart size={16} />
+              <div>
+                <strong>Supplier responsiveness</strong>
+                <p>
+                  {supplierPerformance.requestCount
+                    ? `Across ${supplierPerformance.requestCount} observed supplier request${supplierPerformance.requestCount === 1 ? "" : "s"}, average supplier-view time is ${formatSupplierMinutes(supplierPerformance.averageViewMinutes)}, average quote response is ${formatSupplierMinutes(supplierPerformance.averageQuoteMinutes)}, and closed-request completion is ${supplierPerformance.completionRatePercent === null ? "not yet measurable" : supplierPerformance.completionRatePercent + "%"}.`
+                    : "No supplier workflow history exists yet. Timing metrics will populate from recorded supplier-view, quote, confirmation, and receipt events."}
                 </p>
               </div>
             </article>
