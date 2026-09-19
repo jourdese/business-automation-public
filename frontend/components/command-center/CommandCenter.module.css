@@ -3406,11 +3406,6 @@
   border-color: #496b5d;
 }
 
-.menuLibraryItem[data-expanded="true"] {
-  grid-column: span 2;
-  border-color: #527866;
-}
-
 .menuLibraryItem[data-inactive="true"] {
   opacity: 0.68;
 }
@@ -3423,21 +3418,6 @@
   background: transparent;
   color: inherit;
   text-align: left;
-}
-
-.menuLibraryItem[data-expanded="true"] .menuThumbnailButton {
-  grid-template-columns: 190px minmax(0, 1fr);
-  align-items: stretch;
-}
-
-.menuLibraryItem[data-expanded="true"] .menuThumbnailMedia {
-  aspect-ratio: auto;
-  min-height: 108px;
-}
-
-.menuLibraryItem[data-expanded="true"] .menuThumbnailCopy {
-  min-height: 108px;
-  align-content: center;
 }
 
 .menuThumbnailMedia {
@@ -3554,12 +3534,90 @@
   color: var(--cc-muted);
 }
 
-.menuExpandedPanel {
+.menuOpenLabel {
+  padding: 0.14rem 0.26rem;
+  border: 1px solid #344a54;
+  color: var(--cc-muted) !important;
+  font-size: 0.44rem !important;
+  letter-spacing: 0 !important;
+}
+
+.menuModalBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 85;
   display: grid;
-  gap: 0.48rem;
-  padding: 0.55rem;
-  border-top: 1px solid var(--cc-line);
+  place-items: center;
+  padding: 1rem;
+  background: rgba(2, 10, 15, 0.76);
+  backdrop-filter: blur(6px);
+}
+
+.menuDetailModal {
+  width: min(720px, 94vw);
+  max-width: 720px;
+  max-height: min(760px, 90vh);
+  margin: 0;
+  overflow-y: auto;
+  padding: 0.7rem;
+  border: 1px solid #4b6e60;
   background: #091820;
+  color: var(--ivory);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.48);
+}
+
+.menuModalHeader {
+  display: grid;
+  grid-template-columns: 120px minmax(0, 1fr) auto;
+  gap: 0.65rem;
+  align-items: center;
+  margin-bottom: 0.6rem;
+}
+
+.menuModalThumb {
+  width: 120px;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border: 1px solid #314750;
+  background: #08161e;
+}
+
+.menuModalHeader > div:nth-child(2) > span,
+.menuModalHeader > div:nth-child(2) h3,
+.menuModalHeader > div:nth-child(2) small {
+  display: block;
+}
+
+.menuModalHeader > div:nth-child(2) > span {
+  color: var(--mint);
+  font: 0.48rem var(--font-mono);
+  letter-spacing: 0.07em;
+}
+
+.menuModalHeader h3 {
+  margin-top: 0.12rem;
+  font-size: 0.92rem;
+}
+
+.menuModalHeader small {
+  margin-top: 0.1rem;
+  color: var(--cc-muted);
+  font-size: 0.5rem;
+}
+
+.menuModalHeader > button {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #344a54;
+  background: #08161e;
+  color: var(--cc-muted);
+}
+
+.menuModalHeader > button:hover {
+  border-color: var(--mint);
+  color: var(--mint);
 }
 
 .menuQuickStats {
@@ -3678,62 +3736,6 @@
   color: var(--cc-muted);
   font-size: 0.54rem;
   line-height: 1.45;
-}
-
-.menuExpandedIntro {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 0.7rem;
-}
-
-.menuExpandedIntro > div > span {
-  color: var(--mint);
-  font: 0.5rem var(--font-mono);
-  letter-spacing: 0.08em;
-}
-
-.menuExpandedIntro h3 {
-  margin-top: 0.14rem;
-  font-size: 1rem;
-}
-
-.menuExpandedIntro p {
-  margin-top: 0.2rem;
-  max-width: 760px;
-  color: var(--cc-muted);
-  font-size: 0.58rem;
-  line-height: 1.5;
-}
-
-.menuExpandedIntro > b {
-  flex: 0 0 auto;
-  padding: 0.2rem 0.38rem;
-  border: 1px solid #486a5c;
-  color: var(--mint);
-  font: 0.5rem var(--font-mono);
-}
-
-.menuRecommendationStrip {
-  display: flex;
-  gap: 0.4rem;
-  flex-wrap: wrap;
-  margin-top: 0.6rem;
-}
-
-.menuRecommendationStrip > span {
-  padding: 0.34rem 0.44rem;
-  border: 1px solid #5e593e;
-  background: rgba(200, 169, 107, 0.055);
-  color: var(--gold);
-  font-size: 0.52rem;
-  line-height: 1.35;
-}
-
-.menuRecommendationStrip > span[data-level="high"] {
-  border-color: #744640;
-  background: rgba(116, 70, 64, 0.08);
-  color: #ffb0a8;
 }
 
 .entityToolbar {
@@ -4603,23 +4605,27 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 0.45rem;
   }
-
-  .menuLibraryItem[data-expanded="true"] {
-    grid-column: 1 / -1;
-  }
-
-  .menuLibraryItem[data-expanded="true"] .menuThumbnailButton {
-    grid-template-columns: 120px minmax(0, 1fr);
-  }
-
-  .menuLibraryItem[data-expanded="true"] .menuThumbnailMedia,
-  .menuLibraryItem[data-expanded="true"] .menuThumbnailCopy {
-    min-height: 78px;
-  }
-
   .menuQuickStats,
   .menuMoreDetailGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .menuModalBackdrop {
+    padding: 0.45rem;
+  }
+
+  .menuDetailModal {
+    width: 100%;
+    max-width: none;
+    max-height: 94vh;
+  }
+
+  .menuModalHeader {
+    grid-template-columns: 88px minmax(0, 1fr) auto;
+  }
+
+  .menuModalThumb {
+    width: 88px;
   }
 
   .menuLibraryToolbar,
