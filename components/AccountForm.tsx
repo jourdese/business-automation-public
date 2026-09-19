@@ -26,7 +26,7 @@ export default function AccountForm({
       });
       if (error) throw error;
       setMessage(
-        "Check your email for a secure sign-in link. It only grants access to businesses that invited you.",
+        "Check your email for a secure sign-in link. Then open your invited business or create your own private demo.",
       );
     } catch {
       setMessage("The sign-in email could not be sent. Check the address and try again shortly.");

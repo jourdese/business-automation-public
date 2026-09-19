@@ -11,7 +11,7 @@
   padding: 26px 6%;
 }
 .portal-header > a:last-child {
-  font-size: 12px;
+  font-size: 1rem;
 }
 .portal-main {
   max-width: 1120px;
@@ -20,12 +20,12 @@
 }
 .portal-main > h1 {
   max-width: 760px;
-  font-size: 45px;
+  font-size: 2.8125rem;
 }
 .portal-intro {
   max-width: 640px;
-  color: #88907d;
-  font-size: 13px;
+  color: #526458;
+  font-size: 1rem;
   line-height: 1.9;
   margin: 25px 0 38px;
 }
@@ -48,7 +48,7 @@
 }
 .supplier-portal .cc-brand small {
   letter-spacing: 2px;
-  font-size: 12px;
+  font-size: 1rem;
 }
 .companion-mark {
   display: block;
@@ -62,15 +62,15 @@
     padding: 38px 20px;
   }
   .portal-main > h1 {
-    font-size: 35px;
+    font-size: 2.1875rem;
   }
   .form-grid {
     grid-template-columns: 1fr;
   }
   .portal-header .cc-brand {
-    font-size: 23px;
+    font-size: 1.4375rem;
   }
   .portal-header > a:last-child {
-    font-size: 12px;
+    font-size: 1rem;
   }
 }

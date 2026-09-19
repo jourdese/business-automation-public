@@ -1,8 +1,8 @@
 .page {
   --cream: #f7f0e5;
-  --rust: #a85c43;
+  --rust: #91472f;
   --brown: #513b2e;
-  --muted: #9b8674;
+  --muted: #70533f;
   --line: #ddd0bc;
   background: var(--cream);
   color: var(--brown);
@@ -29,16 +29,16 @@
 .header nav {
   display: flex;
   gap: 33px;
-  font-size: 12px;
+  font-size: 1rem;
 }
 .header nav a {
   text-decoration: none;
-  color: #8c7662;
+  color: #70533f;
 }
 .basketButton {
   background: var(--rust);
   border-radius: 3px;
-  font-size: 11px;
+  font-size: 1rem;
   padding: 12px 17px !important;
   gap: 10px !important;
 }
@@ -62,15 +62,15 @@
   align-items: flex-start;
 }
 .eyebrow {
-  font-size: 11px;
+  font-size: 1rem;
   font-weight: 600;
   letter-spacing: 2.3px;
-  color: #aa775a;
+  color: #70533f;
   margin-bottom: 26px;
 }
 .hero h1 {
   font:
-    clamp(54px, 5.1vw, 87px)/1.01 Georgia,
+    clamp(3.375rem, 5.1vw, 5.4375rem)/1.01 Georgia,
     "Times New Roman",
     serif;
   letter-spacing: -3px;
@@ -84,9 +84,9 @@
   color: var(--rust);
 }
 .heroCopy > p:not(.eyebrow) {
-  font-size: 14px;
+  font-size: 1rem;
   line-height: 1.95;
-  color: #99816d;
+  color: #70533f;
   margin-bottom: 32px;
 }
 .primary {
@@ -97,7 +97,7 @@
   background: var(--rust);
   color: #fff7ec;
   padding: 17px 23px;
-  font-size: 11px;
+  font-size: 1rem;
   border: 1px solid var(--rust);
   border-radius: 3px;
   text-decoration: none;
@@ -108,9 +108,9 @@
   display: block;
   margin-top: auto;
   padding-top: 58px;
-  font-size: 11px;
+  font-size: 1rem;
   letter-spacing: 2.1px;
-  color: #b09e83;
+  color: #70533f;
 }
 .heroPhoto {
   position: relative;
@@ -138,10 +138,12 @@
   left: 26px;
   color: #fff6e5;
   font:
-    italic 17px Georgia,
+    italic 1.0625rem Georgia,
     serif;
   z-index: 1;
-  text-shadow: 0 1px 9px #513b2e;
+  background: #382618e8;
+  padding: 8px 12px;
+  border-radius: 4px;
 }
 .roundel {
   position: absolute;
@@ -155,9 +157,9 @@
   flex-direction: column;
   border-radius: 50%;
   background: #e7ce9d;
-  color: #88663f;
+  color: #70533f;
   text-align: center;
-  font-size: 11px;
+  font-size: 1rem;
   line-height: 1.4;
   letter-spacing: 1.2px;
   border: 5px solid var(--cream);
@@ -166,7 +168,7 @@
 }
 .roundel i {
   font:
-    italic 24px Georgia,
+    italic 1.5rem Georgia,
     serif;
   letter-spacing: -0.5px;
 }
@@ -178,15 +180,15 @@
   background: #eadccc;
   border-block: 1px solid #e1d2bd;
   padding: 22px;
-  color: #987860;
+  color: #70533f;
   font:
-    italic 16px Georgia,
+    italic 1rem Georgia,
     serif;
 }
 .ribbon i {
-  font-size: 11px;
+  font-size: 1rem;
   font-style: normal;
-  color: #b27e56;
+  color: #70533f;
 }
 .menuSection {
   max-width: 1450px;
@@ -205,7 +207,7 @@
 .room h2,
 .visit h2 {
   font:
-    43px/1.12 Georgia,
+    2.6875rem/1.12 Georgia,
     "Times New Roman",
     serif;
   letter-spacing: -1.3px;
@@ -215,7 +217,7 @@
   margin-bottom: 18px;
 }
 .sectionTitle > p {
-  font-size: 12px;
+  font-size: 1rem;
   line-height: 1.9;
   color: var(--muted);
   margin: 0 0 3px;
@@ -230,14 +232,14 @@
   margin: 32px 0;
 }
 .demoNote > span {
-  font-size: 11px;
+  font-size: 1rem;
   letter-spacing: 1.8px;
   white-space: nowrap;
-  color: #aa795e;
+  color: #70533f;
 }
 .demoNote p {
-  font-size: 11px;
-  color: #a18b78;
+  font-size: 1rem;
+  color: #70533f;
   margin: 0;
   line-height: 1.7;
 }
@@ -249,9 +251,9 @@
 }
 .categories button {
   background: transparent;
-  color: #9d8871;
+  color: #70533f;
   padding: 10px 16px;
-  font-size: 11px;
+  font-size: 1rem;
   font-weight: 400;
   border: 1px solid #ded1bd;
   border-radius: 3px;
@@ -288,7 +290,7 @@
   position: absolute;
   left: 13px;
   bottom: 13px;
-  font-size: 11px;
+  font-size: 1rem;
   text-transform: uppercase;
   letter-spacing: 1.3px;
   background: #f7f0e5e0;
@@ -307,33 +309,33 @@
 }
 .dish h3 {
   font:
-    22px/1.2 Georgia,
+    1.375rem/1.2 Georgia,
     serif;
   letter-spacing: -0.4px;
   margin: 0;
 }
 .dishDetails > div > strong {
   font:
-    14px Georgia,
+    1rem Georgia,
     serif;
   white-space: nowrap;
-  color: #936b50;
+  color: #70533f;
 }
 .dish p {
-  font-size: 11px;
+  font-size: 1rem;
   line-height: 1.9;
-  color: #a18b78;
+  color: #70533f;
   margin-top: 12px;
   margin-bottom: 12px;
   min-height: 42px;
 }
 .dish details summary {
-  color: #a18d7a;
-  font-size: 11px;
+  color: #70533f;
+  font-size: 1rem;
   cursor: pointer;
 }
 .dish details p {
-  font-size: 11px;
+  font-size: 1rem;
   min-height: 0;
   padding: 10px;
   background: #f0e6d6;
@@ -353,20 +355,20 @@
   align-items: center;
   padding: 0;
   background: none;
-  font-size: 11px;
+  font-size: 1rem;
   font-weight: 400;
-  color: #9e684f;
+  color: #70533f;
 }
 .dish footer > span {
-  font-size: 11px;
+  font-size: 1rem;
   letter-spacing: 1.5px;
-  color: #b7a68e;
+  color: #70533f;
 }
 .quantity {
   display: flex;
   align-items: center;
   gap: 12px;
-  font-size: 12px;
+  font-size: 1rem;
 }
 .quantity button {
   background: transparent;
@@ -376,7 +378,7 @@
   padding: 6px;
 }
 .quantity > span {
-  font-size: 11px;
+  font-size: 1rem;
 }
 .menuClosing {
   display: flex;
@@ -386,14 +388,14 @@
   border-top: 1px solid var(--line);
   padding: 30px 0 0;
   margin-top: 60px;
-  font-size: 11px;
-  color: #a18b78;
+  font-size: 1rem;
+  color: #70533f;
 }
 .linkButton {
   background: none !important;
   border: 0;
   color: var(--rust);
-  font-size: 11px;
+  font-size: 1rem;
   font-weight: 400;
   padding: 8px 0;
 }
@@ -420,20 +422,20 @@
   justify-content: center;
 }
 .room h2 {
-  font-size: 50px;
+  font-size: 3.125rem;
   line-height: 1.12;
   margin-bottom: 30px;
 }
 .roomCopy > p:not(.eyebrow) {
-  font-size: 13px;
+  font-size: 1rem;
   line-height: 1.95;
-  color: #967d66;
+  color: #70533f;
 }
 .handwritten {
   font:
-    italic 23px Georgia,
+    italic 1.4375rem Georgia,
     serif;
-  color: #ad775b;
+  color: #70533f;
   display: block;
   margin-top: 30px;
 }
@@ -443,13 +445,13 @@
   background: radial-gradient(ellipse at center, #f1e3cf00 40%, #e7d5ba50);
 }
 .visit h2 {
-  font-size: 56px;
+  font-size: 3.5rem;
   margin-bottom: 27px;
 }
 .visit > p:not(.eyebrow) {
-  font-size: 13px;
+  font-size: 1rem;
   line-height: 1.9;
-  color: #a08770;
+  color: #70533f;
 }
 .visit .primary {
   margin-top: 20px;
@@ -466,21 +468,21 @@
 }
 .footer > p {
   font:
-    italic 15px/1.7 Georgia,
+    italic 1rem/1.7 Georgia,
     serif;
-  color: #aa8e72;
+  color: #70533f;
   margin: 0;
 }
 .footer > div {
   margin-left: auto;
   text-align: right;
-  font-size: 11px;
-  color: #9e876f;
+  font-size: 1rem;
+  color: #70533f;
 }
 .footer small {
   display: block;
-  font-size: 11px;
-  color: #b4a18a;
+  font-size: 1rem;
+  color: #70533f;
   margin-top: 10px;
 }
 .basket,
@@ -516,19 +518,19 @@
 .basket h2,
 .guide h2 {
   font:
-    35px/1.14 Georgia,
+    2.1875rem/1.14 Georgia,
     serif;
   letter-spacing: -1px;
 }
 .basket .eyebrow,
 .guide .eyebrow {
-  font-size: 11px;
+  font-size: 1rem;
   margin-top: 18px;
 }
 .basket > p {
-  font-size: 13px;
+  font-size: 1rem;
   line-height: 1.8;
-  color: #9b836c;
+  color: #70533f;
 }
 .basketItems {
   padding-top: 20px;
@@ -539,7 +541,7 @@
   gap: 15px;
   border-bottom: 1px solid var(--line);
   padding: 18px 0;
-  font-size: 12px;
+  font-size: 1rem;
 }
 .basketLine img {
   object-fit: cover;
@@ -553,15 +555,15 @@
   display: block;
 }
 .basketLine small {
-  font-size: 11px;
-  color: #a88c72;
+  font-size: 1rem;
+  color: #70533f;
   display: block;
   margin-top: 3px;
   margin-bottom: 6px;
 }
 .basketLine > b {
   font-weight: 400;
-  font-size: 12px;
+  font-size: 1rem;
   white-space: nowrap;
 }
 .total {
@@ -569,38 +571,38 @@
   justify-content: space-between;
   padding: 30px 0;
   border-bottom: 1px solid var(--line);
-  font-size: 15px;
+  font-size: 1rem;
 }
 .total strong {
   font-weight: 400;
 }
 .basket label {
-  font-size: 12px;
+  font-size: 1rem;
   font-weight: 400;
-  color: #917b64;
+  color: #70533f;
   margin-top: 25px;
 }
 .basket textarea {
   background: #fdf8ed;
   border-color: #d9c7ac;
   color: var(--brown);
-  font-size: 12px;
+  font-size: 1rem;
 }
 .basket .primary {
   width: 100%;
   margin-top: 24px;
 }
 .finePrint {
-  font-size: 11px !important;
+  font-size: 1rem !important;
   line-height: 1.8;
   margin-top: 20px;
 }
 .warning {
   background: #ecd3b150;
-  color: #986641 !important;
+  color: #775035 !important;
   border: 1px solid #d2b38d;
   padding: 14px 16px;
-  font-size: 12px;
+  font-size: 1rem;
   border-radius: 4px;
 }
 .orderStatus {
@@ -608,20 +610,20 @@
   flex-direction: column;
   gap: 18px;
   padding: 30px 0;
-  color: #967358;
+  color: #70533f;
 }
 .orderStatus > span {
-  font-size: 11px;
+  font-size: 1rem;
 }
 .orderStatus strong {
   font:
-    32px Georgia,
+    2rem Georgia,
     serif;
   text-transform: capitalize;
   color: #4e6d4e;
 }
 .orderStatus small {
-  font-size: 12px;
+  font-size: 1rem;
   line-height: 1.8;
 }
 .receiptBanner {
@@ -630,13 +632,13 @@
   bottom: 20px;
   z-index: 110;
   padding: 13px 19px !important;
-  font-size: 11px;
+  font-size: 1rem;
   border: 1px solid #b3987350 !important;
   box-shadow: 0 6px 30px #64462020;
 }
 .receiptBanner span {
   text-transform: capitalize;
-  font-size: 11px;
+  font-size: 1rem;
   border-left: 1px solid #f5dbbf66;
   padding-left: 14px;
 }
@@ -660,7 +662,7 @@
   color: #aec6a6;
 }
 .guide > p:not(.eyebrow) {
-  font-size: 12px;
+  font-size: 1rem;
   line-height: 1.85;
   color: #b2c3ac;
 }
@@ -675,7 +677,7 @@
 }
 .guideChoices button {
   background: #294b38 !important;
-  font-size: 11px;
+  font-size: 1rem;
   font-weight: 400;
   color: #c4d3b9;
   padding: 9px 10px;
@@ -692,7 +694,7 @@
   background: transparent;
   border: 0;
   color: #e0e7d4;
-  font-size: 11px;
+  font-size: 1rem;
   border-radius: 0;
   padding: 12px;
 }
@@ -736,10 +738,10 @@
     min-height: 680px;
   }
   .hero h1 {
-    font-size: 95px;
+    font-size: 5.9375rem;
   }
   .sectionTitle h2 {
-    font-size: 50px;
+    font-size: 3.125rem;
   }
 }
 @media (max-width: 1000px) {
@@ -753,7 +755,7 @@
   }
   .header nav {
     gap: 22px;
-    font-size: 11px;
+    font-size: 1rem;
   }
   .hero {
     min-height: 540px;
@@ -762,21 +764,21 @@
     padding: 78px 9% 50px 10%;
   }
   .hero h1 {
-    font-size: 60px;
+    font-size: 3.75rem;
   }
   .heroPhoto {
     min-height: 440px;
     margin-right: 20px;
   }
   .heroCopy > p:not(.eyebrow) {
-    font-size: 12px;
+    font-size: 1rem;
   }
   .heroFootnote {
-    font-size: 11px;
+    font-size: 1rem;
     letter-spacing: 1.5px;
   }
   .hero .primary {
-    font-size: 11px;
+    font-size: 1rem;
     padding: 15px 17px;
     gap: 16px;
   }
@@ -785,23 +787,23 @@
     height: 85px;
     left: -39px;
     bottom: 90px;
-    font-size: 11px;
+    font-size: 1rem;
   }
   .roundel i {
-    font-size: 20px;
+    font-size: 1.25rem;
   }
   .ribbon {
     gap: 25px;
-    font-size: 13px;
+    font-size: 1rem;
   }
   .menuSection {
     padding-top: 70px;
   }
   .sectionTitle h2 {
-    font-size: 35px;
+    font-size: 2.1875rem;
   }
   .sectionTitle > p {
-    font-size: 11px;
+    font-size: 1rem;
   }
   .dishes {
     grid-template-columns: repeat(2, 1fr);
@@ -813,16 +815,16 @@
     padding: 60px 10%;
   }
   .room h2 {
-    font-size: 40px;
+    font-size: 2.5rem;
   }
   .roomCopy > p:not(.eyebrow) {
-    font-size: 12px;
+    font-size: 1rem;
   }
   .room .eyebrow {
-    font-size: 11px;
+    font-size: 1rem;
   }
   .visit h2 {
-    font-size: 48px;
+    font-size: 3rem;
   }
 }
 @media (max-width: 700px) {
@@ -839,7 +841,7 @@
   }
   .basketButton {
     padding: 11px 14px !important;
-    font-size: 11px;
+    font-size: 1rem;
   }
   .hero {
     grid-template-columns: minmax(0, 1fr);
@@ -852,26 +854,26 @@
     text-align: center;
   }
   .heroCopy .eyebrow {
-    font-size: 11px;
+    font-size: 1rem;
     letter-spacing: 1.8px;
     margin-bottom: 22px;
   }
   .hero h1 {
-    font-size: clamp(42px, 12.6vw, 58px);
+    font-size: clamp(2.625rem, 12.6vw, 3.625rem);
     letter-spacing: -2.9px;
     margin-bottom: 22px;
   }
   .heroCopy > p:not(.eyebrow) {
-    font-size: 12px;
+    font-size: 1rem;
     margin-bottom: 25px;
   }
   .hero .primary {
-    font-size: 11px;
+    font-size: 1rem;
     padding: 16px 20px;
   }
   .heroFootnote {
     padding-top: 28px;
-    font-size: 11px;
+    font-size: 1rem;
     letter-spacing: 1.7px;
   }
   .heroPhoto {
@@ -890,21 +892,21 @@
     height: 85px;
   }
   .photoNote {
-    font-size: 13px;
+    font-size: 1rem;
     bottom: 21px;
     left: 23px;
   }
   .ribbon {
     gap: 15px;
     padding: 18px 14px;
-    font-size: 12px;
+    font-size: 1rem;
   }
   .ribbon span:last-child,
   .ribbon i:last-of-type {
     display: none;
   }
   .ribbon i {
-    font-size: 11px;
+    font-size: 1rem;
   }
   .menuSection {
     padding: 58px 22px 45px;
@@ -914,19 +916,19 @@
     display: block;
   }
   .sectionTitle h2 {
-    font-size: 37px;
+    font-size: 2.3125rem;
     line-height: 1.1;
     max-width: 340px;
   }
   .sectionTitle > p {
     margin-top: 19px;
-    font-size: 11px;
+    font-size: 1rem;
   }
   .sectionTitle > p br {
     display: none;
   }
   .sectionTitle .eyebrow {
-    font-size: 11px;
+    font-size: 1rem;
     letter-spacing: 1.8px;
     margin-bottom: 16px;
   }
@@ -936,10 +938,10 @@
     margin: 24px 0;
   }
   .demoNote > span {
-    font-size: 11px;
+    font-size: 1rem;
   }
   .demoNote p {
-    font-size: 11px;
+    font-size: 1rem;
     margin-top: 8px;
     line-height: 1.8;
   }
@@ -954,7 +956,7 @@
   }
   .categories button {
     flex-shrink: 0;
-    font-size: 11px;
+    font-size: 1rem;
     padding: 10px 13px;
   }
   .dishes {
@@ -968,40 +970,40 @@
     padding-top: 20px;
   }
   .dish h3 {
-    font-size: 24px;
+    font-size: 1.5rem;
   }
   .dishDetails > div > strong {
-    font-size: 15px;
+    font-size: 1rem;
   }
   .dish p {
-    font-size: 11px;
+    font-size: 1rem;
     min-height: 0;
     line-height: 1.8;
   }
   .dish details summary {
-    font-size: 11px;
+    font-size: 1rem;
   }
   .dish footer {
     margin-top: 18px;
     padding-top: 16px;
   }
   .dish footer > button {
-    font-size: 11px;
+    font-size: 1rem;
   }
   .dish footer > span {
-    font-size: 11px;
+    font-size: 1rem;
   }
   .dishCategory {
-    font-size: 11px;
+    font-size: 1rem;
   }
   .menuClosing {
     margin-top: 42px;
     gap: 17px;
-    font-size: 11px;
+    font-size: 1rem;
     justify-content: flex-start;
   }
   .menuClosing .linkButton {
-    font-size: 11px;
+    font-size: 1rem;
   }
   .room {
     grid-template-columns: 1fr;
@@ -1014,31 +1016,31 @@
     padding: 48px 29px;
   }
   .room h2 {
-    font-size: 43px;
+    font-size: 2.6875rem;
   }
   .roomCopy > p:not(.eyebrow) {
-    font-size: 12px;
+    font-size: 1rem;
     max-width: 390px;
   }
   .roomCopy .eyebrow {
-    font-size: 11px;
+    font-size: 1rem;
   }
   .handwritten {
-    font-size: 21px;
+    font-size: 1.3125rem;
     margin-top: 18px;
   }
   .visit {
     padding: 64px 26px;
   }
   .visit h2 {
-    font-size: 45px;
+    font-size: 2.8125rem;
   }
   .visit .eyebrow {
-    font-size: 11px;
+    font-size: 1rem;
     letter-spacing: 1.7px;
   }
   .visit > p:not(.eyebrow) {
-    font-size: 11px;
+    font-size: 1rem;
   }
   .visit > p br {
     display: none;
@@ -1053,33 +1055,33 @@
     height: 66px;
   }
   .footer > p {
-    font-size: 12px;
+    font-size: 1rem;
   }
   .footer > div {
     margin: 12px 0 0;
     text-align: left;
     width: 100%;
-    font-size: 11px;
+    font-size: 1rem;
   }
   .footer small {
-    font-size: 11px;
+    font-size: 1rem;
   }
   .basket {
     width: 100%;
     padding: 60px 24px 40px;
   }
   .basket h2 {
-    font-size: 33px;
+    font-size: 2.0625rem;
   }
   .receiptBanner {
     left: 10px;
     bottom: 13px;
     padding: 13px !important;
-    font-size: 11px;
+    font-size: 1rem;
     max-width: calc(100vw - 110px);
   }
   .receiptBanner span {
-    font-size: 11px;
+    font-size: 1rem;
     padding-left: 8px;
   }
   .receiptBanner svg {
@@ -1097,9 +1099,114 @@
     height: 58px;
   }
   .basketLine strong {
-    font-size: 11px;
+    font-size: 1rem;
   }
   .basketLine > b {
-    font-size: 11px;
+    font-size: 1rem;
+  }
+}
+/* Larger readable labels without changing the cream/terracotta character. */
+.page {
+  font-size: 1.125rem;
+}
+.header {
+  min-height: 116px;
+  height: auto;
+  gap: 20px;
+}
+.header nav a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+.primary,
+.basketButton {
+  min-height: 48px;
+}
+.dish footer {
+  flex-wrap: wrap;
+}
+.dish footer > button,
+.categories button,
+.linkButton,
+.quantity button {
+  min-height: 44px;
+}
+.quantity button {
+  min-width: 44px;
+}
+.categories {
+  flex-wrap: wrap;
+}
+.dishDetails > div {
+  flex-wrap: wrap;
+}
+.dish h3 {
+  overflow-wrap: anywhere;
+}
+.guide {
+  overflow-y: auto;
+}
+.page input,
+.page textarea {
+  border-color: #8c705b;
+}
+@media (max-width: 640px) {
+  .header {
+    min-height: 88px;
+    position: static;
+    flex-wrap: wrap;
+  }
+  .basketButton {
+    margin-left: auto;
+  }
+  .ribbon {
+    height: auto;
+    flex-wrap: wrap;
+    padding: 18px;
+    gap: 12px;
+  }
+  .categories {
+    flex-wrap: wrap;
+    overflow: visible;
+    margin-right: 0;
+  }
+  .heroFootnote {
+    letter-spacing: 1px;
+  }
+  .dish footer {
+    gap: 12px;
+  }
+  .basketLine {
+    flex-wrap: wrap;
+  }
+}
+.heroPhoto,
+.roomPhoto,
+.roomCopy {
+  min-width: 0;
+}
+.roundel {
+  width: 8.75rem;
+  height: 8.75rem;
+}
+@media (max-width: 640px) {
+  .hero,
+  .room {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .roundel {
+    width: 7.75rem;
+    height: 7.75rem;
+  }
+}
+.page .guide :focus-visible {
+  outline-color: #f5e2b8;
+}
+@media (max-width: 640px) {
+  .heroPhoto,
+  .roomPhoto {
+    aspect-ratio: auto;
+    width: auto;
   }
 }

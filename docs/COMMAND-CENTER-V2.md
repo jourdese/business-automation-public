@@ -10,6 +10,8 @@ Owner routes use `/command-center/[businessId]` with verified Supabase identity 
 
 The initial Marinara owner is bound only after verifying the Supabase identity requested by the owner. No ownership is inferred from a public URL, browser state or editable auth metadata.
 
+Marinara's invited owner/staff workspace remains the primary product. Verified visitors can optionally create their own seven-day practice copy with simulated supplier correspondence. See [private demo, email behavior and readability](PRIVATE-DEMO-AND-READABILITY.md) for the flow, isolation, limits, expiry and deployment prerequisites.
+
 ## Production approval
 
 The user deploys production manually. Git deployment remains disabled. Do not deploy or promote production from this task. The final application must support this existing command sequence after the reviewed PR is merged:

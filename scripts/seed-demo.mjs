@@ -13,7 +13,13 @@ begin
   insert into platform.businesses(business_key,display_name,status,timezone,locale,metadata)
     values('command-center-demo-marinara-v2','Marinara Ristorante — Command Center demo','active','Asia/Manila','en-PH','{"is_demo":true,"source":"command-center-v2"}') returning id into b;
   insert into cc_private.restaurants(business_id,slug,name,demo,seed_version,seed_date) values(b,'marinara-ristorante','Marinara Ristorante',true,data->>'version',as_of) returning id into r;
-  for ord in 1..8 loop insert into cc_private.stations(restaurant_id,label) values(r,'Table '||ord); end loop;
+${populateDemoSql()}
+end $seed$;`;
+}
+// Shared immutable mock data, never copied from a business's editable records.
+export function populateDemoSql(historyDays = 90) {
+  if (![7, 90].includes(historyDays)) throw new Error("Unsupported demo history size");
+  return `  for ord in 1..8 loop insert into cc_private.stations(restaurant_id,label) values(r,'Table '||ord); end loop;
   for x in select value from jsonb_array_elements(data->'ingredients') loop
     insert into cc_private.ingredients(restaurant_id,code,name,unit,on_hand,average_cost,reorder_at)
       values(r,x->>0,x->>1,x->>2,(x->>4)::numeric,(x->>3)::numeric,(x->>5)::numeric);
@@ -44,7 +50,7 @@ begin
     end loop;
   end loop;
   -- Stable weekday/weekend history with price, recipe and cost snapshots.
-  for day_offset in reverse 90..0 loop
+  for day_offset in reverse ${historyDays}..0 loop
     for ord in 1..case when day_offset=0 then 26 when extract(isodow from as_of-day_offset) in (6,7) then 24 else 16 end loop
       status:=case when day_offset>0 or ord<=20 then 'COMPLETED' when ord=21 then 'NEW' when ord=22 then 'ACCEPTED' when ord=23 then 'PREPARING' when ord=24 then 'READY' else 'CANCELLED' end;
       ts:=((as_of-day_offset)::text||' 11:00:00+08')::timestamptz + (ord*11)*interval '1 minute';
@@ -87,7 +93,7 @@ begin
   -- Weekly bulk-delivery history reconciles every ingredient's consumption. It is separate from today's incoming purchases.
   for g in select * from cc_private.ingredients where restaurant_id=r loop
     insert into cc_private.stock_movements(restaurant_id,ingredient_id,kind,quantity,unit_cost,reference,reason,created_at)
-      values(r,g.id,'opening',g.on_hand,g.average_cost,'seed-opening','Seeded opening balance',(as_of-91)::timestamptz);
+      values(r,g.id,'opening',g.on_hand,g.average_cost,'seed-opening','Seeded opening balance',(as_of-${historyDays + 1})::timestamptz);
     select sp.id,sp.supplier_id into pid,sid from cc_private.supplier_products sp join cc_private.supplier_links sl on sl.supplier_id=sp.supplier_id where sl.restaurant_id=r and sp.sku=g.code;
     for rec in select date_trunc('week',created_at at time zone 'Asia/Manila') as week,-sum(quantity) as quantity from cc_private.stock_movements
       where ingredient_id=g.id and kind='usage' group by 1 order by 1 loop
@@ -112,7 +118,37 @@ begin
       case ord when 1 then 'Tomato sauce confirmed: 12 L incoming; not yet on hand' when 2 then 'Basil quotation requested; waiting for the supplier' else 'Shrimp quote exceeds the pack limit. Owner decision required.' end);
   end loop;
   perform cc_private.record(r,'demo.seeded',r,'Marinara V2 demo is ready. Jourvis is sleeping.',jsonb_build_object('version',data->>'version','asOf',as_of));
-end $seed$;`;
+`;
+}
+export function demoCatalogSql() {
+  return "'" + JSON.stringify(catalog).replaceAll("'", "''") + "'::jsonb";
+}
+export function privateDemoSeedSql() {
+  return `-- Generated private seed from the immutable catalog and shared population routine.
+create function cc_private.start_private_demo() returns jsonb language plpgsql security definer set search_path='' as $seed$
+declare data jsonb:=${demoCatalogSql()}; as_of date:=(now() at time zone 'Asia/Manila')::date;
+  uid uuid:=cc_private.verified_user(); b uuid; r uuid; sid uuid; iid uuid; mid uuid; oid uuid; pid uuid;
+  x jsonb; item jsonb; entry record; g record; po uuid; rec record; line record; day_offset int; ord int; line_index int; ix int; counter int:=0; status text;
+  ts timestamptz; qty numeric; price bigint; food bigint; target numeric; supplier_num int; cost numeric;
+begin
+  if uid is null then raise exception 'Verify your email to start a private demo' using errcode='42501'; end if;
+  -- Serialize double-clicks and concurrent tabs. Never extend expiry or seed a second workspace.
+  perform 1 from auth.users where id=uid for update;
+  if exists(select 1 from cc_private.restaurants where demo_owner_id=uid) then return cc_private.demo_status(); end if;
+  b:=gen_random_uuid(); r:=gen_random_uuid();
+  insert into platform.businesses(id,business_key,display_name,status,timezone,locale,metadata)
+    values(b,'cc-private-demo-'||uid::text,'My Marinara demo','active','Asia/Manila','en-PH','{"is_demo":true,"source":"cc-private-demo"}');
+  insert into cc_private.restaurants(id,business_id,slug,name,demo,seed_version,seed_date,demo_owner_id,demo_expires_at)
+    values(r,b,'private-'||r::text,'My Marinara demo',true,data->>'version',as_of,uid,now()+interval '7 days');
+  insert into platform.business_memberships(business_id,user_id,member_role,status) values(b,uid,'owner','active');
+${populateDemoSql(7)}
+  update cc_private.restaurants set accepting_orders=true where id=r;
+  update cc_private.stations set enabled=true where restaurant_id=r;
+  perform cc_private.demo_correspondence(r);
+  return cc_private.demo_status();
+end $seed$;
+revoke all on function cc_private.start_private_demo() from public,anon,authenticated;
+`;
 }
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const asOf = process.argv[2] || "2026-09-19";

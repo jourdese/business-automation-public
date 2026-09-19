@@ -733,17 +733,50 @@ export function PurchasingArea({
               <hr />
               <button
                 className="secondary"
-                disabled={busy || !data.restaurant.integrations_ready}
+                disabled={
+                  busy || (!data.restaurant.integrations_ready && !data.restaurant.demo_owner_id)
+                }
                 onClick={() => void action("queue_supplier_contact", { id: po.id })}
               >
-                Send through connected integration
+                {data.restaurant.demo_owner_id
+                  ? "Simulate supplier message"
+                  : "Send through connected integration"}
               </button>
-              {!data.restaurant.integrations_ready && (
+              {!data.restaurant.integrations_ready && !data.restaurant.demo_owner_id && (
                 <small>
                   Supplier messaging is not connected. Portal and manual records work independently.
                 </small>
               )}
             </>
+          )}
+          {data.restaurant.demo_owner_id && (
+            <section className="private-demo-messages" aria-label="Simulated supplier conversation">
+              <h3>Practice supplier conversation</h3>
+              <p>These messages stay inside your demo. No supplier email is sent.</p>
+              {[...(data.demoMessages || [])]
+                .reverse()
+                .filter((m) => m.purchase_id === po.id)
+                .map((m) => (
+                  <p className="notice" key={m.id}>
+                    {m.summary}
+                  </p>
+                ))}
+              {owner && ["QUOTE_REQUESTED", "APPROVED"].includes(po.status) && (
+                <button
+                  disabled={busy}
+                  onClick={() =>
+                    void action("simulate_supplier_reply", {
+                      id: po.id,
+                      expectedVersion: po.version,
+                    })
+                  }
+                >
+                  {po.status === "QUOTE_REQUESTED"
+                    ? "Simulate supplier quote"
+                    : "Simulate supplier confirmation"}
+                </button>
+              )}
+            </section>
           )}
           {owner && ["DRAFT", "QUOTE_REQUESTED", "QUOTED", "APPROVED"].includes(po.status) && (
             <button
@@ -923,13 +956,11 @@ export function ReportsArea({ data }: { data: Snapshot }) {
           {days.length === 1 && (
             <circle cx="30" cy={190 - (days[0].sales / max) * 155} r="5" fill="#31755f" />
           )}
-          <text x="30" y="215" fontSize="12" fill="#6d786f">
-            {startDay}
-          </text>
-          <text x="750" y="215" textAnchor="end" fontSize="12" fill="#6d786f">
-            {end}
-          </text>
         </svg>
+        <div className="chart-range">
+          <span>{startDay}</span>
+          <span>{end}</span>
+        </div>
         <details>
           <summary>View daily figures</summary>
           <table>
@@ -1024,10 +1055,16 @@ export function SettingsArea({
                 <select name="mode" defaultValue={data.restaurant.jourvis_mode}>
                   <option value="sleeping">Sleeping — manual operations</option>
                   <option value="watch">Watch only — observations, no external actions</option>
-                  <option value="contact" disabled={!data.restaurant.integrations_ready}>
+                  <option
+                    value="contact"
+                    disabled={!data.restaurant.integrations_ready && !data.restaurant.demo_owner_id}
+                  >
                     Contact suppliers
                   </option>
-                  <option value="buy" disabled={!data.restaurant.integrations_ready}>
+                  <option
+                    value="buy"
+                    disabled={!data.restaurant.integrations_ready && !data.restaurant.demo_owner_id}
+                  >
                     Buy within approved limits
                   </option>
                 </select>
@@ -1056,9 +1093,11 @@ export function SettingsArea({
             </fieldset>
           </form>
           <small>
-            {data.restaurant.integrations_ready
-              ? "Connected integration verified."
-              : "External supplier integration is not connected. Contact and buying modes stay unavailable."}
+            {data.restaurant.demo_owner_id
+              ? "All modes are simulated here. Configure rules and limits, then try a supplier reply in Purchasing. No external messages or purchases."
+              : data.restaurant.integrations_ready
+                ? "Connected integration verified."
+                : "External supplier integration is not connected. Contact and buying modes stay unavailable."}
           </small>
         </section>
         <section className="surface">
@@ -1089,10 +1128,11 @@ export function SettingsArea({
           </p>
         </section>
         <section className="surface">
-          <h2>Invite someone</h2>
+          <h2>{data.restaurant.demo_owner_id ? "Your private access" : "Invite someone"}</h2>
           <p>
-            Invitations expire in seven days and can only be accepted by the matching verified
-            email.
+            {data.restaurant.demo_owner_id
+              ? "This practice space is only for your account. Invitations and real supplier connections are disabled."
+              : "Invitations expire in seven days and can only be accepted by the matching verified email."}
           </p>
           <form
             onSubmit={async (e) => {
@@ -1112,7 +1152,7 @@ export function SettingsArea({
               }
             }}
           >
-            <fieldset disabled={!owner || busy}>
+            <fieldset disabled={!owner || busy || !!data.restaurant.demo_owner_id}>
               <label>
                 Email
                 <input name="email" type="email" required />

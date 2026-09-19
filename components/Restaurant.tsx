@@ -42,7 +42,7 @@ export default function Restaurant({
   const modal = useRef<HTMLDialogElement>(null);
   const guideRef = useRef<HTMLDialogElement>(null);
   const lock = useRef(false);
-  const storage = `marinara-v2:${stationToken || "planning"}`;
+  const storage = `marinara-v2:${menu.slug}:${stationToken || "planning"}`;
   const items = menu.items.filter((i) => (cart[i.id] || 0) > 0);
   const count = items.reduce((n, i) => n + cart[i.id], 0);
   const total = items.reduce((n, i) => n + cart[i.id] * i.price, 0);
@@ -232,6 +232,13 @@ export default function Restaurant({
         </button>
       </header>
       <main id="main">
+        {menu.slug.startsWith("private-") && (
+          <section className="private-demo-banner" aria-label="Private practice menu">
+            <strong>Your private Marinara practice menu</strong>
+            <p>Test orders go only to your own demo workspace. No real payment or food delivery.</p>
+            <a href="/command-center">Return to your workspace →</a>
+          </section>
+        )}
         {!stationToken && (
           <section className={styles.hero}>
             <div className={styles.heroCopy}>

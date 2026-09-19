@@ -53,13 +53,14 @@ const server = createServer(async (req, res) => {
   queue = queue.then(async () => {
     try {
       const { op, p } = JSON.parse(body);
-      const user = ["menu", "place_order", "order_status"].includes(op)
-        ? ""
-        : /supplier_snapshot|register_supplier|save_supplier_product|submit_quote|accept_supplier_invite/.test(
-              op,
-            )
-          ? vendor
-          : owner;
+      const user =
+        ["menu", "place_order", "order_status"].includes(op) && !process.env.CC_FIXTURE_PRIVATE_DEMO
+          ? ""
+          : /supplier_snapshot|register_supplier|save_supplier_product|submit_quote|accept_supplier_invite/.test(
+                op,
+              )
+            ? vendor
+            : owner;
       await db.query("select set_config('request.jwt.claim.sub',$1,false)", [user]);
       const data = (
         await db.query("select public.cc_api($1,$2::jsonb) data", [op, JSON.stringify(p)])

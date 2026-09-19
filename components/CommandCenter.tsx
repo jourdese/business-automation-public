@@ -285,6 +285,33 @@ export default function CommandCenter({
           </div>
         </header>
         <main id="main" className="cc-main" aria-busy={busy}>
+          {data.restaurant.demo_owner_id && (
+            <section className="private-demo-banner" aria-label="Private demo">
+              <strong>Your private Marinara practice space</strong>
+              <p>
+                Orders and supplier replies are simulated. No real emails, payments or deliveries.
+                Available until{" "}
+                {new Date(data.restaurant.demo_expires_at!).toLocaleDateString("en-PH", {
+                  timeZone: "Asia/Manila",
+                  month: "long",
+                  day: "numeric",
+                  year: "numeric",
+                })}
+                .
+              </p>
+              <p>
+                Start with a new order, follow it through the kitchen, then try a mock supplier
+                reply in Purchasing.
+              </p>
+              <a
+                href={`/order/${data.restaurant.slug}/${data.stations[0]?.token}`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Try ordering as a customer ↗
+              </a>
+            </section>
+          )}
           {notice && (
             <div className={`notice ${notice === "Saved." ? "success" : ""}`} role="status">
               {notice}

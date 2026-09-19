@@ -33,8 +33,20 @@ export async function POST(req: Request) {
     )
       throw new CommandError("Invalid command");
     const data = await command(op, p);
-    if (!["menu", "order_status", "snapshot", "my_businesses", "supplier_snapshot"].includes(op))
-      after(drainActions);
+    if (
+      op === "submit_quote" ||
+      (p.restaurantId && !["snapshot", "action_readiness"].includes(op))
+    ) {
+      try {
+        const readiness = await command<{ external: boolean }>(
+          "action_readiness",
+          op === "submit_quote" ? { purchaseId: p.id } : { restaurantId: p.restaurantId },
+        );
+        if (readiness.external) after(drainActions);
+      } catch {
+        // The command has already committed. Keep its truthful result; queued work can be recovered.
+      }
+    }
     return Response.json({ data }, { headers: { "Cache-Control": "private, no-store" } });
   } catch (e) {
     return Response.json(

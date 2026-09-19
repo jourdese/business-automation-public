@@ -31,6 +31,8 @@ export type Restaurant = {
   daily_limit: number;
   integrations_ready: boolean;
   seed_date: string;
+  demo_owner_id?: string | null;
+  demo_expires_at?: string | null;
 };
 export type OrderStatus = "NEW" | "ACCEPTED" | "PREPARING" | "READY" | "COMPLETED" | "CANCELLED";
 export type Order = {
@@ -113,6 +115,13 @@ export type Activity = {
   created_at: string;
 };
 export type Snapshot = {
+  demoMessages?: {
+    id: number;
+    purchase_id: string;
+    kind: string;
+    summary: string;
+    created_at: string;
+  }[];
   rules: {
     ingredient_id: string;
     product_id: string;
@@ -156,6 +165,7 @@ export type Snapshot = {
   }[];
 };
 export type Business = { id: string; businessId: string; name: string; slug: string; role: string };
+export type PrivateDemo = { id: string; businessId: string; expiresAt: string; expired: boolean };
 export type SupplierSnapshot = {
   suppliers: Supplier[];
   products: SupplierProduct[];

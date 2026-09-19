@@ -19,7 +19,10 @@ export default async function Account({
         <br />
         Your place to begin.
       </h1>
-      <p>Sign in to operate your business or manage your supplier catalog.</p>
+      <p>
+        Marinara owners and staff can sign in to their invited workspace. Exploring Jourvis? Use
+        your own email to try a private Marinara demo.
+      </p>
       {error === "expired" && (
         <p role="alert">
           That sign-in link expired or could not be verified. Request a new link and open it in this

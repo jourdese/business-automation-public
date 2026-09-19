@@ -379,6 +379,12 @@ test("supplier catalog and quotes are isolated; changed terms invalidate owner a
     deliveryFee: 10000,
     terms: "Tuesday",
   });
+  assert.deepEqual(await api("action_readiness", { purchaseId: po.id }), { external: false });
+  await signIn(viewer);
+  await assert.rejects(
+    () => api("action_readiness", { purchaseId: po.id }),
+    /Supplier access denied/,
+  );
   await signIn(owner);
   await api("approve_purchase", { restaurantId: restaurant.id, id: po.id, expectedVersion: 2 });
   await signIn(outsider);
@@ -743,4 +749,254 @@ test("owner reconciliation requires evidence and a separate idempotent retry aut
     ).rows[0].n,
     1,
   );
+});
+
+test("private demos are verified, idempotent and isolated even with leaked QR tokens or added memberships", async () => {
+  const users = (
+    await db.query(
+      `insert into auth.users values(gen_random_uuid(),'trial-a@example.invalid',now()),(gen_random_uuid(),'trial-b@example.invalid',now()),(gen_random_uuid(),'trial-unverified@example.invalid',null) returning id`,
+    )
+  ).rows;
+  const [a, b, unverified] = users.map((x) => x.id);
+  await signIn(unverified);
+  await assert.rejects(() => api("start_private_demo"), /Verify your email/);
+  await signIn(null);
+  await assert.rejects(() => api("start_private_demo"), /Verify your email/);
+  const before = (
+    await db.query("select count(*)::int n from cc_private.orders where restaurant_id=$1", [
+      restaurant.id,
+    ])
+  ).rows[0].n;
+  await signIn(a);
+  await db.exec("set role authenticated");
+  const first = await api("start_private_demo");
+  assert.equal(first.expired, false);
+  assert.deepEqual(await api("start_private_demo"), first);
+  assert.deepEqual(
+    (await api("my_businesses")).map((x) => x.businessId),
+    [first.businessId],
+  );
+  const one = await api("snapshot", { restaurantId: first.id });
+  assert.equal(one.menu.length, 12);
+  assert.equal(one.ingredients.length, 38);
+  assert.equal(one.suppliers.length, 6);
+  assert.equal(one.restaurant.integrations_ready, false);
+  assert.ok(one.demoMessages.length);
+  assert.ok(one.daily.length <= 8);
+  assert.ok(one.suppliers.every((x) => x.demo && x.contact_email.endsWith(".invalid")));
+  await assert.rejects(
+    () =>
+      db.query("select cc_private.api_before_private_demo($1,$2)", [
+        "snapshot",
+        JSON.stringify({ restaurantId: restaurant.id }),
+      ]),
+    /permission denied/,
+  );
+  await assert.rejects(
+    () => db.query("select * from cc_private.demo_messages"),
+    /permission denied/,
+  );
+  await assert.rejects(() => api("snapshot", { restaurantId: restaurant.id }), /Access denied/);
+  await db.exec("reset role");
+  await signIn(b);
+  const second = await api("start_private_demo");
+  assert.notEqual(second.businessId, first.businessId);
+  const two = await api("snapshot", { restaurantId: second.id });
+  assert.ok(two.menu.every((x) => !one.menu.some((y) => y.id === x.id)));
+  assert.ok(two.suppliers.every((x) => !one.suppliers.some((y) => y.id === x.id)));
+  await assert.rejects(() => api("menu", { slug: one.restaurant.slug }), /Access denied/);
+  await assert.rejects(
+    () =>
+      api("place_order", {
+        stationToken: one.stations[0].token,
+        requestKey: crypto.randomUUID(),
+        items: [],
+      }),
+    /Access denied/,
+  );
+  await db.query(
+    "insert into platform.business_memberships(business_id,user_id,member_role,status) values($1,$2,'owner','active')",
+    [first.businessId, b],
+  );
+  await assert.rejects(() => api("snapshot", { restaurantId: first.id }), /Access denied/);
+  assert.equal((await api("my_businesses")).length, 1);
+  await signIn(null);
+  await assert.rejects(() => api("menu", { slug: one.restaurant.slug }), /Access denied/);
+  await signIn(a);
+  const orderRequest = {
+    stationToken: one.stations[0].token,
+    requestKey: crypto.randomUUID(),
+    items: [{ id: one.menu[0].id, quantity: 1, price: one.menu[0].price }],
+  };
+  const order = await api("place_order", orderRequest);
+  for (const [status, expectedStatus] of [
+    ["ACCEPTED", "NEW"],
+    ["PREPARING", "ACCEPTED"],
+    ["READY", "PREPARING"],
+    ["COMPLETED", "READY"],
+  ])
+    await api("transition_order", { restaurantId: first.id, id: order.id, status, expectedStatus });
+  const updated = await api("snapshot", { restaurantId: first.id });
+  assert.equal(updated.orders.find((x) => x.id === order.id).status, "COMPLETED");
+  const balance = (
+    await db.query(
+      `select count(*)::int n from cc_private.ingredients i where restaurant_id=$1 and on_hand<>(select coalesce(sum(quantity),0) from cc_private.stock_movements where ingredient_id=i.id)`,
+      [first.id],
+    )
+  ).rows[0].n;
+  assert.equal(balance, 0);
+  assert.equal(
+    (
+      await db.query("select count(*)::int n from cc_private.orders where restaurant_id=$1", [
+        restaurant.id,
+      ])
+    ).rows[0].n,
+    before,
+  );
+  await signIn(b);
+  await assert.rejects(
+    () => api("order_status", { id: order.id, receiptToken: order.receiptToken }),
+    /Access denied/,
+  );
+  await signIn(a);
+  await assert.rejects(
+    () =>
+      api("create_invite", {
+        restaurantId: first.id,
+        email: "trial-b@example.invalid",
+        role: "owner",
+      }),
+    /cannot grant access/,
+  );
+  assert.deepEqual(await api("action_readiness", { restaurantId: first.id }), { external: false });
+  await api("configure", {
+    restaurantId: first.id,
+    mode: "contact",
+    perOrderLimit: 1000000,
+    dailyLimit: 5000000,
+  });
+  const po = updated.purchases.find((x) => x.status === "QUOTE_REQUESTED");
+  await api("simulate_supplier_reply", {
+    restaurantId: first.id,
+    id: po.id,
+    expectedVersion: po.version,
+  });
+  await api("simulate_supplier_reply", {
+    restaurantId: first.id,
+    id: po.id,
+    expectedVersion: po.version,
+  });
+  let snap = await api("snapshot", { restaurantId: first.id });
+  const quoted = snap.purchases.find((x) => x.id === po.id);
+  assert.equal(quoted.status, "QUOTED");
+  assert.equal(quoted.version, po.version + 1);
+  assert.equal(
+    snap.demoMessages.filter((x) => x.purchase_id === po.id && x.kind === "quote_reply").length,
+    1,
+  );
+  await api("approve_purchase", {
+    restaurantId: first.id,
+    id: po.id,
+    expectedVersion: quoted.version,
+    overrideReason: "Practice approval for the demo",
+  });
+  await api("simulate_supplier_reply", {
+    restaurantId: first.id,
+    id: po.id,
+    expectedVersion: quoted.version,
+  });
+  await api("receive_purchase", {
+    restaurantId: first.id,
+    id: po.id,
+    quantity: 0.5,
+    reference: "DEMO-PARTIAL",
+    requestKey: crypto.randomUUID(),
+  });
+  snap = await api("snapshot", { restaurantId: first.id });
+  assert.equal(snap.purchases.find((x) => x.id === po.id).status, "PARTIAL");
+  assert.equal(snap.jobs.length, 0);
+  await assert.rejects(
+    () =>
+      db.query("update cc_private.restaurants set integrations_ready=true where id=$1", [first.id]),
+    /cc_private_demo_boundary/,
+  );
+  await assert.rejects(
+    () =>
+      db.query(
+        "insert into cc_private.runtime_grants(restaurant_id,token_hash) values($1,'test-only')",
+        [first.id],
+      ),
+    /External actions are disabled/,
+  );
+  await assert.rejects(
+    () =>
+      db.query(
+        "insert into cc_private.external_jobs(restaurant_id,kind,idempotency_key,payload) values($1,'staff_notification','trial-forbidden','{}')",
+        [first.id],
+      ),
+    /External actions are disabled/,
+  );
+  const realSupplier = (
+    await db.query(
+      "insert into cc_private.suppliers(name,contact_email,areas,lead_days,minimum_order,demo) values('Not for demo','fake@example.invalid','Test',1,0,false) returning id",
+    )
+  ).rows[0].id;
+  await assert.rejects(
+    () =>
+      db.query("insert into cc_private.supplier_links values($1,$2,'approved')", [
+        first.id,
+        realSupplier,
+      ]),
+    /fictional suppliers only/,
+  );
+  // Full trials still accept retries, but cannot allocate another order or manual purchase.
+  await db.query(
+    "insert into cc_private.orders(restaurant_id,request_key,request_fingerprint,origin) select $1,gen_random_uuid(),'{}','customer' from generate_series(1,99)",
+    [first.id],
+  );
+  assert.equal((await api("place_order", orderRequest)).id, order.id);
+  await assert.rejects(
+    () => api("place_order", { ...orderRequest, requestKey: crypto.randomUUID() }),
+    /100 test-order limit/,
+  );
+  const purchaseRequest = {
+    restaurantId: first.id,
+    productId: po.product_id,
+    ingredientId: po.ingredient_id,
+    packs: 1,
+    requestKey: crypto.randomUUID(),
+  };
+  const manualPurchase = await api("create_purchase", purchaseRequest);
+  await db.query(
+    "insert into cc_private.purchases(restaurant_id,supplier_id,product_id,ingredient_id,request_key,packs,pack_size,pack_price) select restaurant_id,supplier_id,product_id,ingredient_id,gen_random_uuid(),packs,pack_size,pack_price from cc_private.purchases cross join generate_series(1,99) where id=$1",
+    [manualPurchase.id],
+  );
+  assert.equal((await api("create_purchase", purchaseRequest)).id, manualPurchase.id);
+  await assert.rejects(
+    () => api("create_purchase", { ...purchaseRequest, requestKey: crypto.randomUUID() }),
+    /100 test-purchase limit/,
+  );
+  await db.query(
+    "update cc_private.restaurants set demo_expires_at=now()-interval '1 second' where id=$1",
+    [first.id],
+  );
+  assert.equal((await api("start_private_demo")).expired, true);
+  assert.equal((await api("my_businesses")).length, 0);
+  for (const [op, p] of [
+    ["snapshot", { restaurantId: first.id }],
+    ["menu", { slug: one.restaurant.slug }],
+    ["place_order", { stationToken: one.stations[0].token }],
+    ["order_status", { id: order.id, receiptToken: order.receiptToken }],
+    [
+      "simulate_supplier_reply",
+      { restaurantId: first.id, id: po.id, expectedVersion: quoted.version },
+    ],
+  ])
+    await assert.rejects(() => api(op, p), /Access denied/);
+  assert.equal(
+    (await db.query("select cc_private.can_access($1) allowed", [first.businessId])).rows[0]
+      .allowed,
+    false,
+  );
+  await signIn(owner);
 });

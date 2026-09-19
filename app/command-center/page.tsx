@@ -1,12 +1,15 @@
 import SignOut from "@/components/SignOut";
 import { command } from "@/lib/api";
-import type { Business } from "@/lib/types";
+import type { Business, PrivateDemo } from "@/lib/types";
+import PrivateDemoCard from "@/components/PrivateDemoCard";
 export const dynamic = "force-dynamic";
 export default async function Businesses() {
   let businesses: Business[] = [];
   let error = "";
+  let demo: PrivateDemo | null = null;
   try {
     businesses = await command<Business[]>("my_businesses");
+    demo = await command<PrivateDemo | null>("private_demo_status");
   } catch (e) {
     error = e instanceof Error ? e.message : "Sign in to continue.";
   }
@@ -17,7 +20,10 @@ export default async function Businesses() {
       </a>
       <p className="eyebrow">COMMAND-CENTER</p>
       <h1>Where shall we begin?</h1>
-      <p>One account. Only the businesses you have permission to manage.</p>
+      <p>
+        Marinara owners and staff: open your invited workspace below. Your verified account only
+        opens businesses you have permission to manage.
+      </p>
       {error ? (
         <>
           <p role="status">{error}</p>
@@ -34,11 +40,16 @@ export default async function Businesses() {
         ))
       ) : (
         <p>
-          Your verified account has no business memberships yet. Open your owner’s invitation to
-          join.
+          You have no business invitations yet. You can still explore your own private practice
+          space below.
         </p>
       )}
-      {!error && <SignOut />}
+      {!error && (
+        <>
+          <PrivateDemoCard initial={demo} />
+          <SignOut />
+        </>
+      )}
       <a href="/suppliers">Supplier portal →</a>
       <a href="/command-center-v1">Open V1 reference →</a>
     </main>
