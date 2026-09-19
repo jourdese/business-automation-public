@@ -271,6 +271,246 @@
   gap: 0.7rem;
 }
 
+
+.performancePrimaryGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+
+.performancePrimaryGrid article {
+  min-width: 0;
+  padding: 0.8rem;
+  border: 1px solid var(--cc-line);
+  background:
+    linear-gradient(135deg, rgba(167, 227, 197, 0.025), transparent 62%),
+    var(--cc-panel);
+}
+
+.performancePrimaryGrid span,
+.performancePrimaryGrid strong,
+.performancePrimaryGrid small {
+  display: block;
+}
+
+.performancePrimaryGrid span {
+  color: var(--cc-muted);
+  font-size: 0.58rem;
+}
+
+.performancePrimaryGrid strong {
+  margin-top: 0.2rem;
+  font-size: 1.35rem;
+  letter-spacing: -0.035em;
+}
+
+.performancePrimaryGrid small {
+  margin-top: 0.28rem;
+  color: #71838b;
+  font-size: 0.54rem;
+  line-height: 1.4;
+}
+
+.performanceExecutionPanel,
+.performanceSupplierPanel {
+  overflow: hidden;
+  border: 1px solid var(--cc-line);
+  background: var(--cc-panel);
+}
+
+.performanceExecutionPanel > header,
+.performanceSupplierPanel > header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.8rem 0.85rem;
+  border-bottom: 1px solid var(--cc-line);
+}
+
+.performanceExecutionPanel > header span,
+.performanceSupplierPanel > header span {
+  color: var(--mint);
+  font: 0.54rem var(--font-mono);
+  letter-spacing: 0.08em;
+}
+
+.performanceExecutionPanel > header h2,
+.performanceSupplierPanel > header h2 {
+  margin-top: 0.24rem;
+  font-size: 0.9rem;
+}
+
+.performanceSupplierPanel > header p {
+  margin-top: 0.3rem;
+  max-width: 760px;
+  color: var(--cc-muted);
+  font-size: 0.58rem;
+  line-height: 1.5;
+}
+
+.performanceExecutionPanel > header a,
+.performanceSupplierPanel > header a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex: 0 0 auto;
+  color: var(--mint);
+  font-size: 0.57rem;
+}
+
+.performanceExecutionGrid,
+.performanceSupplierSummary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.performanceExecutionGrid > div,
+.performanceSupplierSummary > div {
+  min-width: 0;
+  padding: 0.72rem 0.8rem;
+  border-right: 1px solid var(--cc-line);
+}
+
+.performanceExecutionGrid > div:last-child,
+.performanceSupplierSummary > div:last-child {
+  border-right: 0;
+}
+
+.performanceExecutionGrid > div[data-attention="true"] {
+  background:
+    linear-gradient(135deg, rgba(200, 169, 107, 0.08), transparent 68%),
+    #0e1a20;
+}
+
+.performanceExecutionGrid span,
+.performanceExecutionGrid strong,
+.performanceExecutionGrid small,
+.performanceSupplierSummary span,
+.performanceSupplierSummary strong,
+.performanceSupplierSummary small {
+  display: block;
+}
+
+.performanceExecutionGrid span,
+.performanceSupplierSummary span {
+  color: #71838b;
+  font: 0.49rem var(--font-mono);
+  letter-spacing: 0.07em;
+}
+
+.performanceExecutionGrid strong,
+.performanceSupplierSummary strong {
+  margin-top: 0.16rem;
+  font-size: 0.82rem;
+}
+
+.performanceExecutionGrid small,
+.performanceSupplierSummary small {
+  margin-top: 0.14rem;
+  color: var(--cc-muted);
+  font-size: 0.52rem;
+  line-height: 1.4;
+}
+
+.performanceSupplierRows {
+  display: grid;
+  border-top: 1px solid var(--cc-line);
+}
+
+.performanceSupplierRows > div {
+  display: grid;
+  grid-template-columns: minmax(180px, 1.5fr) repeat(3, minmax(90px, 0.65fr));
+  gap: 0.55rem;
+  align-items: center;
+  padding: 0.58rem 0.7rem;
+  border-bottom: 1px solid rgba(39, 58, 68, 0.65);
+}
+
+.performanceSupplierRows > div:last-child {
+  border-bottom: 0;
+}
+
+.performanceSupplierRows > div > div strong,
+.performanceSupplierRows > div > div small,
+.performanceSupplierRows > div > span small,
+.performanceSupplierRows > div > span strong {
+  display: block;
+}
+
+.performanceSupplierRows > div > div strong {
+  font-size: 0.61rem;
+}
+
+.performanceSupplierRows > div > div small {
+  margin-top: 0.1rem;
+  color: var(--cc-muted);
+  font-size: 0.51rem;
+}
+
+.performanceSupplierRows > div > span small {
+  color: #71838b;
+  font-size: 0.48rem;
+}
+
+.performanceSupplierRows > div > span strong {
+  margin-top: 0.08rem;
+  color: var(--ivory);
+  font-size: 0.56rem;
+}
+
+.performanceEmptyNote {
+  padding: 0.7rem 0.8rem;
+  color: #71838b;
+  font-size: 0.57rem;
+}
+
+.performanceTrendDisclosure {
+  border: 1px solid var(--cc-line);
+  background: var(--cc-panel);
+}
+
+.performanceTrendDisclosure > summary {
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.65rem 0.75rem;
+  cursor: pointer;
+  list-style: none;
+}
+
+.performanceTrendDisclosure > summary::-webkit-details-marker {
+  display: none;
+}
+
+.performanceTrendDisclosure > summary > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--ivory);
+  font-size: 0.64rem;
+  font-weight: 700;
+}
+
+.performanceTrendDisclosure > summary > span svg {
+  color: var(--mint);
+}
+
+.performanceTrendDisclosure > summary > b {
+  margin-left: auto;
+  color: var(--cc-muted);
+  font: 0.54rem var(--font-mono);
+}
+
+.performanceTrendDisclosure[open] > summary {
+  border-bottom: 1px solid var(--cc-line);
+}
+
+.performanceTrendBody {
+  padding: 0.75rem;
+}
+
 .metricCard,
 .moduleCard,
 .operationCard,
@@ -2447,6 +2687,31 @@
     margin-left: auto;
   }
 
+  .performancePrimaryGrid,
+  .performanceExecutionGrid,
+  .performanceSupplierSummary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .performanceExecutionGrid > div,
+  .performanceSupplierSummary > div {
+    border-bottom: 1px solid var(--cc-line);
+  }
+
+  .performanceExecutionGrid > div:nth-child(2n),
+  .performanceSupplierSummary > div:nth-child(2n) {
+    border-right: 0;
+  }
+
+  .performanceExecutionGrid > div:nth-last-child(-n + 2),
+  .performanceSupplierSummary > div:nth-last-child(-n + 2) {
+    border-bottom: 0;
+  }
+
+  .performanceSupplierRows > div {
+    grid-template-columns: minmax(150px, 1.4fr) repeat(3, minmax(72px, 0.6fr));
+  }
+
   .forecastOwnerSummary {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -2511,6 +2776,24 @@
 @media (max-width: 520px) {
   .headerRuntimeActions {
     gap: 0.35rem;
+  }
+
+  .performancePrimaryGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .performanceExecutionPanel > header,
+  .performanceSupplierPanel > header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .performanceSupplierRows > div {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .performanceSupplierRows > div > div {
+    grid-column: 1 / -1;
   }
 
   .forecastOwnerSummary {

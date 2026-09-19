@@ -704,222 +704,274 @@ export default function CommandCenterSectionView({
     );
     const supplierPerformance =
       buildCommandCenterSupplierPerformance(state);
+    const activeSupplierRows = supplierPerformance.suppliers.filter(
+      (supplier) => supplier.requestCount > 0,
+    );
     const formatSupplierMinutes = (value: number | null) =>
       value === null
         ? "—"
         : value < 60
           ? `${value} min`
           : `${Math.round((value / 60) * 10) / 10} hr`;
-    const metricRows = [
-      [
-        "Inventory readiness",
-        performance.inventoryReadinessPercent === null
-          ? "—"
-          : performance.inventoryReadinessPercent + "%",
-        "average on-hand stock vs configured full level",
-      ],
-      [
-        "7-day inventory risk",
-        String(performance.inventoryRiskCount),
-        "Forecast",
-      ],
-      [
-        "Menu recipe coverage",
-        performance.recipeCoveragePercent === null
-          ? "—"
-          : performance.recipeCoveragePercent + "%",
-        `${performance.recipeMappedMenuCount}/${performance.activeMenuItemCount} configured items mapped`,
-      ],
-      [
-        "Average food cost",
-        performance.averageFoodCostPercent === null
-          ? "—"
-          : performance.averageFoodCostPercent + "%",
-        performance.pricedMappedMenuCount
+
+    const performanceHeadline = performance.ownerExceptionCount
+      ? `${performance.ownerExceptionCount} owner exception${performance.ownerExceptionCount === 1 ? " is" : "s are"} the clearest operating constraint right now.`
+      : performance.inventoryRiskCount
+        ? `${performance.inventoryRiskCount} ingredient${performance.inventoryRiskCount === 1 ? " is" : "s are"} carrying 7-day inventory risk.`
+        : performance.activeWorkflowCount
+          ? `Jourvis is managing ${performance.activeWorkflowCount} active purchasing workflow${performance.activeWorkflowCount === 1 ? "" : "s"}.`
+          : "The current operational performance state is stable.";
+
+    const primaryMetrics = [
+      {
+        label: "Inventory readiness",
+        value:
+          performance.inventoryReadinessPercent === null
+            ? "—"
+            : performance.inventoryReadinessPercent + "%",
+        note: "average on-hand stock vs configured full level",
+      },
+      {
+        label: "7-day inventory risk",
+        value: String(performance.inventoryRiskCount),
+        note: "ingredients in a Forecast risk state",
+      },
+      {
+        label: "Menu → Recipe coverage",
+        value:
+          performance.recipeCoveragePercent === null
+            ? "—"
+            : performance.recipeCoveragePercent + "%",
+        note: `${performance.recipeMappedMenuCount}/${performance.activeMenuItemCount} configured active menu items mapped`,
+      },
+      {
+        label: "Average food cost",
+        value:
+          performance.averageFoodCostPercent === null
+            ? "—"
+            : performance.averageFoodCostPercent + "%",
+        note: performance.pricedMappedMenuCount
           ? `${performance.pricedMappedMenuCount} priced recipe-mapped item${performance.pricedMappedMenuCount === 1 ? "" : "s"}`
-          : "live selling prices required",
-      ],
-      [
-        "Active workflows",
-        String(performance.activeWorkflowCount),
-        "live purchasing work",
-      ],
-      [
-        "Owner exceptions",
-        String(performance.ownerExceptionCount),
-        "live Decisions queue",
-      ],
-      [
-        "Automation share",
-        performance.automationSharePercent === null
-          ? "—"
-          : performance.automationSharePercent + "%",
-        `${performance.automaticActivityCount} automatic · ${performance.manualActivityCount} manual actions`,
-      ],
-      [
-        "Purchase completion",
-        performance.purchaseCompletionPercent === null
-          ? "—"
-          : performance.purchaseCompletionPercent + "%",
-        `${performance.receivedPurchaseCount}/${performance.closedPurchaseCount} closed purchases received`,
-      ],
-      [
-        "Supplier completion",
-        supplierPerformance.completionRatePercent === null
-          ? "—"
-          : supplierPerformance.completionRatePercent + "%",
-        `${supplierPerformance.receivedCount}/${supplierPerformance.closedCount} closed supplier requests received`,
-      ],
-      [
-        "Supplier response",
-        formatSupplierMinutes(supplierPerformance.averageViewMinutes),
-        "average request creation → supplier viewed",
-      ],
+          : "current selling prices required",
+      },
     ];
 
     return (
       <SectionFrame
         eyebrow="PERFORMANCE"
-        title="Is the business actually improving?"
-        description="Performance now uses live Command Center operating state where the data exists. Financial KPIs stay unavailable until verified sales/accounting providers are connected."
+        title={performanceHeadline}
+        description="Performance is limited to operating KPIs that the current Command Center runtime can actually support. Revenue, AOV, operating profit, and business-wide financial margins remain provider-gated."
       >
-        <div className={styles.metricGrid}>
-          {metricRows.map(([label, value, note]) => (
-            <article className={styles.metricCard} key={label}>
-              <span>{label}</span>
-              <strong>{value}</strong>
-              <div>
-                <b>Runtime</b>
-                <small>{note}</small>
-              </div>
+        <div className={styles.performancePrimaryGrid}>
+          {primaryMetrics.map((metric) => (
+            <article key={metric.label}>
+              <span>{metric.label}</span>
+              <strong>{metric.value}</strong>
+              <small>{metric.note}</small>
             </article>
           ))}
         </div>
 
-        <article className={styles.panelCard}>
-          <PanelHeading
-            icon={<LineChart size={17} />}
-            eyebrow="PERFORMANCE TREND"
-            title="Observed KPI movement"
-          />
-          <div className={styles.historyTrendGrid}>
+        <article className={styles.performanceExecutionPanel}>
+          <header>
             <div>
-              <span>INVENTORY READINESS</span>
-              <strong>
-                {hasHistoricalComparison
-                  ? formatSigned(historyTrend.inventoryReadinessDelta, " pts")
-                  : "—"}
-              </strong>
-              <small>stock readiness change</small>
+              <span>EXECUTION HEALTH</span>
+              <h2>How much work is moving—and how much still needs you</h2>
             </div>
+            <a href={`/command-center/${business.id}/activity`}>
+              Open activity <ArrowRight size={13} />
+            </a>
+          </header>
+
+          <div className={styles.performanceExecutionGrid}>
             <div>
-              <span>RECIPE COVERAGE</span>
-              <strong>
-                {hasHistoricalComparison
-                  ? formatSigned(historyTrend.recipeCoverageDelta, " pts")
-                  : "—"}
-              </strong>
-              <small>active menu mapping change</small>
+              <span>ACTIVE WORKFLOWS</span>
+              <strong>{performance.activeWorkflowCount}</strong>
+              <small>live purchasing workflows</small>
             </div>
-            <div>
-              <span>FOOD COST</span>
-              <strong>
-                {hasHistoricalComparison
-                  ? formatSigned(historyTrend.foodCostDelta, " pts")
-                  : "—"}
-              </strong>
-              <small>ingredient-cost ratio movement</small>
-            </div>
-            <div>
+            <div data-attention={performance.ownerExceptionCount ? "true" : undefined}>
               <span>OWNER EXCEPTIONS</span>
+              <strong>{performance.ownerExceptionCount}</strong>
+              <small>current Decisions queue</small>
+            </div>
+            <div>
+              <span>AUTOMATION SHARE</span>
               <strong>
-                {hasHistoricalComparison
-                  ? formatSigned(historyTrend.ownerExceptionDelta)
-                  : "—"}
+                {performance.automationSharePercent === null
+                  ? "—"
+                  : performance.automationSharePercent + "%"}
               </strong>
-              <small>human-dependency movement</small>
+              <small>
+                {performance.automaticActivityCount} automatic · {performance.manualActivityCount} manual recorded actions
+              </small>
+            </div>
+            <div>
+              <span>PURCHASE COMPLETION</span>
+              <strong>
+                {performance.purchaseCompletionPercent === null
+                  ? "—"
+                  : performance.purchaseCompletionPercent + "%"}
+              </strong>
+              <small>
+                {performance.closedPurchaseCount
+                  ? `${performance.receivedPurchaseCount}/${performance.closedPurchaseCount} closed purchases received`
+                  : "no closed purchase outcome yet"}
+              </small>
             </div>
           </div>
-          <p className={styles.historyTrendNote}>
-            {hasHistoricalComparison
-              ? `${historyTrend.snapshotCount} operating snapshots are available in the current business history.`
-              : "A baseline snapshot exists; make operational changes to begin measuring performance movement."}
-          </p>
         </article>
 
-        <article className={styles.panelCard}>
-          <PanelHeading
-            icon={<Sparkles size={17} />}
-            eyebrow="JOURVIS EXPLAINS"
-            title="Operational causes behind the numbers"
-          />
-          <div className={styles.insightList}>
-            <article>
-              <LineChart size={16} />
-              <div>
-                <strong>Inventory health</strong>
-                <p>
-                  {performance.inventoryRiskCount
-                    ? `${performance.inventoryRiskCount} ingredient${performance.inventoryRiskCount === 1 ? " is" : "s are"} forecast to enter a risk state within seven days. Forecast identifies the affected recipes and next purchasing action.`
-                    : "No configured ingredient is currently forecast to enter a stock-risk state within seven days."}
-                </p>
-              </div>
-            </article>
-            <article>
-              <CheckCircle2 size={16} />
-              <div>
-                <strong>Menu operating coverage</strong>
-                <p>
-                  {performance.recipeCoveragePercent === null
-                    ? "No active menu items are configured yet."
-                    : `${performance.recipeCoveragePercent}% of active menu items have an active recipe mapping. Items without recipes cannot yet drive ingredient cost or POS inventory deductions.`}
-                </p>
-              </div>
-            </article>
-            <article>
-              <Bot size={16} />
-              <div>
-                <strong>Automation load</strong>
-                <p>
-                  {performance.automationSharePercent === null
-                    ? "No automatic or manual operating actions have been recorded yet."
-                    : `${performance.automationSharePercent}% of recorded owner/Jourvis operating actions are automatic in the current browser runtime. ${performance.ownerExceptionCount} exception${performance.ownerExceptionCount === 1 ? " is" : "s are"} waiting for human authority.`}
-                </p>
-              </div>
-            </article>
-            <article>
-              <CheckCircle2 size={16} />
-              <div>
-                <strong>Purchasing outcomes</strong>
-                <p>
-                  {performance.closedPurchaseCount
-                    ? `${performance.receivedPurchaseCount} of ${performance.closedPurchaseCount} closed purchase workflow${performance.closedPurchaseCount === 1 ? "" : "s"} finished as received. Rejected requests remain visible in Activity instead of being erased.`
-                    : "No purchase workflow has reached a closed state yet."}
-                </p>
-              </div>
-            </article>
-            <article>
-              <LineChart size={16} />
-              <div>
-                <strong>Supplier responsiveness</strong>
-                <p>
-                  {supplierPerformance.requestCount
-                    ? `Across ${supplierPerformance.requestCount} observed supplier request${supplierPerformance.requestCount === 1 ? "" : "s"}, average supplier-view time is ${formatSupplierMinutes(supplierPerformance.averageViewMinutes)}, average quote response is ${formatSupplierMinutes(supplierPerformance.averageQuoteMinutes)}, and closed-request completion is ${supplierPerformance.completionRatePercent === null ? "not yet measurable" : supplierPerformance.completionRatePercent + "%"}.`
-                    : "No supplier workflow history exists yet. Timing metrics will populate from recorded supplier-view, quote, confirmation, and receipt events."}
-                </p>
-              </div>
-            </article>
+        <article className={styles.performanceSupplierPanel}>
+          <header>
+            <div>
+              <span>SUPPLIER PERFORMANCE</span>
+              <h2>Observed supplier workflow outcomes</h2>
+              <p>
+                These metrics come only from request, supplier-view, quote, confirmation, rejection, and receipt events captured in the current runtime.
+              </p>
+            </div>
+            <a href={`/command-center/${business.id}/operations/suppliers`}>
+              Open suppliers <ArrowRight size={13} />
+            </a>
+          </header>
+
+          <div className={styles.performanceSupplierSummary}>
+            <div>
+              <span>REQUESTS</span>
+              <strong>{supplierPerformance.requestCount}</strong>
+              <small>observed supplier workflows</small>
+            </div>
+            <div>
+              <span>COMPLETION</span>
+              <strong>
+                {supplierPerformance.completionRatePercent === null
+                  ? "—"
+                  : supplierPerformance.completionRatePercent + "%"}
+              </strong>
+              <small>
+                {supplierPerformance.closedCount
+                  ? `${supplierPerformance.receivedCount}/${supplierPerformance.closedCount} closed requests received`
+                  : "requires closed requests"}
+              </small>
+            </div>
+            <div>
+              <span>REQUEST → VIEW</span>
+              <strong>{formatSupplierMinutes(supplierPerformance.averageViewMinutes)}</strong>
+              <small>average when supplier-view events exist</small>
+            </div>
+            <div>
+              <span>REQUEST → QUOTE</span>
+              <strong>{formatSupplierMinutes(supplierPerformance.averageQuoteMinutes)}</strong>
+              <small>average observed quote response</small>
+            </div>
           </div>
+
+          {activeSupplierRows.length ? (
+            <div className={styles.performanceSupplierRows}>
+              {activeSupplierRows
+                .slice()
+                .sort((left, right) => right.requestCount - left.requestCount)
+                .map((supplier) => (
+                  <div key={supplier.supplierId}>
+                    <div>
+                      <strong>{supplier.supplierName}</strong>
+                      <small>
+                        {supplier.requestCount} request{supplier.requestCount === 1 ? "" : "s"} · {supplier.activeCount} active
+                      </small>
+                    </div>
+                    <span>
+                      <small>Completion</small>
+                      <strong>
+                        {supplier.completionRatePercent === null
+                          ? "—"
+                          : supplier.completionRatePercent + "%"}
+                      </strong>
+                    </span>
+                    <span>
+                      <small>Viewed</small>
+                      <strong>{formatSupplierMinutes(supplier.averageViewMinutes)}</strong>
+                    </span>
+                    <span>
+                      <small>Quote</small>
+                      <strong>{formatSupplierMinutes(supplier.averageQuoteMinutes)}</strong>
+                    </span>
+                  </div>
+                ))}
+            </div>
+          ) : (
+            <p className={styles.performanceEmptyNote}>
+              No supplier workflow history is available yet.
+            </p>
+          )}
         </article>
+
+        <details className={styles.performanceTrendDisclosure}>
+          <summary>
+            <span>
+              <LineChart size={15} aria-hidden />
+              Observed KPI movement
+            </span>
+            <b>
+              {hasHistoricalComparison
+                ? `${historyTrend.snapshotCount} snapshots`
+                : "Collecting"}
+            </b>
+          </summary>
+          <div className={styles.performanceTrendBody}>
+            <div className={styles.historyTrendGrid}>
+              <div>
+                <span>INVENTORY READINESS</span>
+                <strong>
+                  {hasHistoricalComparison
+                    ? formatSigned(historyTrend.inventoryReadinessDelta, " pts")
+                    : "—"}
+                </strong>
+                <small>stock readiness change</small>
+              </div>
+              <div>
+                <span>RECIPE COVERAGE</span>
+                <strong>
+                  {hasHistoricalComparison
+                    ? formatSigned(historyTrend.recipeCoverageDelta, " pts")
+                    : "—"}
+                </strong>
+                <small>configured menu mapping change</small>
+              </div>
+              <div>
+                <span>FOOD COST</span>
+                <strong>
+                  {hasHistoricalComparison
+                    ? formatSigned(historyTrend.foodCostDelta, " pts")
+                    : "—"}
+                </strong>
+                <small>ingredient-cost ratio movement</small>
+              </div>
+              <div>
+                <span>OWNER EXCEPTIONS</span>
+                <strong>
+                  {hasHistoricalComparison
+                    ? formatSigned(historyTrend.ownerExceptionDelta)
+                    : "—"}
+                </strong>
+                <small>human-dependency movement</small>
+              </div>
+            </div>
+            <p className={styles.historyTrendNote}>
+              {hasHistoricalComparison
+                ? `Observed across ${historyTrend.snapshotCount} captured operating states. This is runtime history, not a claimed weekly/monthly business-performance period.`
+                : "A baseline snapshot exists. Additional meaningful operating-state changes are required before Jourvis reports movement."}
+            </p>
+          </div>
+        </details>
 
         <PendingDataSources
           title="Production performance KPIs"
-          description="These stay hidden in the demo because Jourvis does not invent sales or accounting results."
+          description="These remain unavailable until verified sales and financial providers exist. Jourvis will not estimate them from inventory activity."
           items={[
             ["Revenue", "POS / accounting", "Verified sales by reporting period"],
             ["Operating profit", "Accounting", "Revenue, COGS, labor and expenses"],
-            ["Gross margin", "Sales + accounting", "Business-wide margin"],
-            ["Average order value", "POS", "Real transaction-level AOV"],
+            ["Business-wide gross margin", "Sales + accounting", "Actual sales and COGS"],
+            ["Average order value", "POS", "Transaction-level sales"],
           ]}
         />
       </SectionFrame>
