@@ -60,7 +60,15 @@ export function buildCommandCenterPerformance(
       .filter((recipe) => recipe.active)
       .map((recipe) => [recipe.id, recipe]),
   );
-  const activeMenuItems = state.menuItems.filter((item) => item.active);
+  const activeMenuItems = state.menuItems.filter(
+    (item) =>
+      item.active &&
+      (
+        item.referenceSource === "demo" ||
+        item.recipeId !== undefined ||
+        item.currentPrice !== undefined
+      ),
+  );
   const recipeMappedMenuItems = activeMenuItems.filter(
     (item) => item.recipeId && activeRecipes.has(item.recipeId),
   );
