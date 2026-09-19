@@ -132,6 +132,9 @@ export default function OperationModuleView({
   } | null>(null);
   const [menuEditor, setMenuEditor] = useState<MenuEditorDraft | null>(null);
   const [recipeEditor, setRecipeEditor] = useState<RecipeEditorDraft | null>(null);
+  const [recipeStatus, setRecipeStatus] = useState<
+    "active" | "archived" | "all"
+  >("active");
   const [purchaseFilter, setPurchaseFilter] = useState<"active" | "history" | "all">("active");
 
   const {
@@ -1705,6 +1708,13 @@ export default function OperationModuleView({
     const editingRecipe = recipeEditor?.id
       ? state.recipes.find((recipe) => recipe.id === recipeEditor.id)
       : undefined;
+    const visibleRecipes = state.recipes.filter((recipe) =>
+      recipeStatus === "all"
+        ? true
+        : recipeStatus === "active"
+          ? recipe.active
+          : !recipe.active,
+    );
 
     return (
       <section className={styles.sectionPage}>
@@ -1731,26 +1741,62 @@ export default function OperationModuleView({
             <button type="button" data-primary onClick={openNewRecipe}>
               <PlusCircle size={15} aria-hidden /> Add recipe
             </button>
+            {(
+              [
+                ["active", "Active"],
+                ["archived", "Archived"],
+                ["all", "All"],
+              ] as const
+            ).map(([value, label]) => (
+              <button
+                type="button"
+                key={value}
+                data-active={recipeStatus === value}
+                onClick={() => setRecipeStatus(value)}
+              >
+                {label}
+              </button>
+            ))}
           </div>
-          <span>{state.recipes.filter((recipe) => recipe.active).length} active · {state.recipes.length} total</span>
+          <span>
+            {state.recipes.filter((recipe) => recipe.active).length} active ·{" "}
+            {state.recipes.length} total
+          </span>
         </div>
 
         {recipeEditor ? (
-          <RecipeEditorPanel
-            draft={recipeEditor}
-            setDraft={setRecipeEditor}
-            existing={editingRecipe}
-            inventory={state.inventory}
-            suppliers={state.suppliers}
-            menuItems={state.menuItems}
-            onCreateInventoryItem={createInventoryItem}
-            onSave={submitRecipeEditor}
-            onCancel={() => setRecipeEditor(null)}
-          />
+          <div
+            className={styles.entityDrawerBackdrop}
+            role="presentation"
+            onMouseDown={(event) => {
+              if (event.target === event.currentTarget) {
+                setRecipeEditor(null);
+              }
+            }}
+          >
+            <aside
+              className={styles.entityDrawer}
+              role="dialog"
+              aria-modal="true"
+              aria-label={recipeEditor.id ? "Edit recipe" : "Add recipe"}
+            >
+              <RecipeEditorPanel
+                draft={recipeEditor}
+                setDraft={setRecipeEditor}
+                existing={editingRecipe}
+                inventory={state.inventory}
+                suppliers={state.suppliers}
+                menuItems={state.menuItems}
+                onCreateInventoryItem={createInventoryItem}
+                onSave={submitRecipeEditor}
+                onCancel={() => setRecipeEditor(null)}
+              />
+            </aside>
+          </div>
         ) : null}
 
         <div className={styles.recipeGrid}>
-          {state.recipes.map((recipe) => {
+          {visibleRecipes.map((recipe) => {
             const linkedMenuItems = state.menuItems.filter(
               (item) => item.recipeId === recipe.id,
             );
@@ -1849,6 +1895,12 @@ export default function OperationModuleView({
                   >
                     <Pencil size={14} aria-hidden /> Edit
                   </button>
+                  <button
+                    type="button"
+                    onClick={() => duplicateRecipe(recipe.id)}
+                  >
+                    <Copy size={14} aria-hidden /> Duplicate
+                  </button>
                   {recipe.active ? (
                     <button
                       type="button"
@@ -1879,12 +1931,12 @@ export default function OperationModuleView({
             );
           })}
 
-          {!state.recipes.length ? (
+          {!visibleRecipes.length ? (
             <article className={styles.panelCard}>
               <PanelEmpty
                 icon={<ReceiptText size={17} />}
-                title="No recipes yet"
-                body="Create a recipe and map its ingredients to inventory."
+                title="No recipes in this view"
+                body="Change the recipe status filter or create a new recipe."
               />
             </article>
           ) : null}
