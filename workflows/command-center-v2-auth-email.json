@@ -1,0 +1,191 @@
+{
+  "name": "INTEGRATION | COMMANDCENTER | Auth Email V2",
+  "active": false,
+  "nodes": [
+    {
+      "name": "Authenticated auth mail",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "command-center-auth-mail",
+        "authentication": "headerAuth",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "id": "cc-auth-1",
+      "position": [
+        0,
+        0
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "name": "Command Center auth mail key"
+        }
+      },
+      "retryOnFail": false
+    },
+    {
+      "name": "Validate auth envelope",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "parameters": {
+        "jsCode": "const b=$input.first().json.body;const hex=/^[0-9a-f]{64}$/;const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;if(!b||!hex.test(b.id)||!uuid.test(b.lease)||typeof b.messageJson!=='string'||b.messageJson.length>8000||Object.keys(b).some(k=>!['id','lease','messageJson'].includes(k)))throw new Error('Invalid auth mail envelope');let mail;try{mail=JSON.parse(b.messageJson)}catch{throw new Error('Invalid auth mail envelope')}if(!mail||typeof mail.to!=='string'||mail.to.length>254||!/^\\S+@\\S+\\.\\S+$/.test(mail.to)||typeof mail.subject!=='string'||mail.subject.length>120||/[\\r\\n]/.test(mail.subject)||typeof mail.message!=='string'||mail.message.length>7000||Object.keys(mail).some(k=>!['to','subject','message'].includes(k)))throw new Error('Invalid auth mail envelope');return [{json:{id:b.id,lease:b.lease,messageJson:b.messageJson,mail}}];"
+      },
+      "id": "cc-auth-2",
+      "position": [
+        240,
+        0
+      ],
+      "retryOnFail": false
+    },
+    {
+      "name": "Consume auth mail capability",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "parameters": {
+        "method": "POST",
+        "url": "https://pqdagfmhixblthnrfdcv.supabase.co/rest/v1/rpc/cc_auth_mail",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({token:'',op:'begin',p:{id:$json.id,lease:$json.lease,messageJson:$json.messageJson}}) }}",
+        "options": {
+          "timeout": 800
+        }
+      },
+      "id": "cc-auth-3",
+      "position": [
+        480,
+        0
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "name": "Command Center Supabase publishable apikey"
+        }
+      },
+      "retryOnFail": false
+    },
+    {
+      "name": "Require capability receipt",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "parameters": {
+        "jsCode": "if($input.first().json.state!=='sending')throw new Error('Auth mail capability denied');return [{json:$('Validate auth envelope').first().json}];"
+      },
+      "id": "cc-auth-4",
+      "position": [
+        720,
+        0
+      ],
+      "retryOnFail": false
+    },
+    {
+      "name": "Send verification email",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "parameters": {
+        "sendTo": "={{ $json.mail.to }}",
+        "subject": "={{ $json.mail.subject }}",
+        "emailType": "text",
+        "message": "={{ $json.mail.message }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "cc-auth-5",
+      "position": [
+        960,
+        0
+      ],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "hKXGjgcylbotT9nh",
+          "name": "Gmail account"
+        }
+      },
+      "retryOnFail": false
+    },
+    {
+      "name": "Return provider receipt",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "parameters": {
+        "jsCode": "const r=$input.first().json;if(typeof r.id!=='string'||!/^[a-zA-Z0-9_-]{1,200}$/.test(r.id))throw new Error('Auth mail receipt unavailable');return [{json:{id:$('Validate auth envelope').first().json.id,sent:true,providerMessageId:r.id}}];"
+      },
+      "id": "cc-auth-6",
+      "position": [
+        1200,
+        0
+      ],
+      "retryOnFail": false
+    }
+  ],
+  "connections": {
+    "Authenticated auth mail": {
+      "main": [
+        [
+          {
+            "node": "Validate auth envelope",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate auth envelope": {
+      "main": [
+        [
+          {
+            "node": "Consume auth mail capability",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Consume auth mail capability": {
+      "main": [
+        [
+          {
+            "node": "Require capability receipt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Require capability receipt": {
+      "main": [
+        [
+          {
+            "node": "Send verification email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send verification email": {
+      "main": [
+        [
+          {
+            "node": "Return provider receipt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "none",
+    "saveDataSuccessExecution": "none",
+    "saveExecutionProgress": false,
+    "saveManualExecutions": false,
+    "executionTimeout": 5
+  },
+  "pinData": {}
+}

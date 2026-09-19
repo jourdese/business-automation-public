@@ -20,7 +20,8 @@
     "next": "16.3.5",
     "qrcode": "1.5.4",
     "react": "19.2.6",
-    "react-dom": "19.2.6"
+    "react-dom": "19.2.6",
+    "standardwebhooks": "1.0.0"
   },
   "devDependencies": {
     "@electric-sql/pglite": "0.5.8",

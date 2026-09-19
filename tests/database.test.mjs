@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync, readdirSync } from "node:fs";
 import { PGlite } from "@electric-sql/pglite";
 import { seedSql } from "../scripts/seed-demo.mjs";
+import { createHash } from "node:crypto";
 let db;
 let restaurant, station, menu, owner, outsider, viewer;
 async function api(op, p = {}) {
@@ -49,6 +50,70 @@ before(async () => {
   );
 });
 after(async () => db?.close());
+
+test("auth mail capability is scoped, exact-envelope, one-time and contains no email payload", async () => {
+  const hash = (value) => createHash("sha256").update(value).digest("hex");
+  const token = "local-test-only-".repeat(4),
+    id = hash("webhook-1");
+  const messageJson = JSON.stringify({
+    to: "owner@example.invalid",
+    subject: "Verify",
+    message: "Synthetic code",
+  });
+  const mail = async (op, p, t = token) =>
+    (
+      await db.query("select public.cc_auth_mail($1,$2,$3::jsonb) as result", [
+        t,
+        op,
+        JSON.stringify(p),
+      ])
+    ).rows[0].result;
+  await db.query("insert into cc_private.auth_mail_grant(token_hash,enabled) values($1,true)", [
+    hash(token),
+  ]);
+  await assert.rejects(mail("claim", { id, digest: hash(messageJson) }, "incorrect"), /denied/);
+  await assert.rejects(mail("claim", { id, digest: hash(messageJson) }, null), /denied/);
+  const claim = await mail("claim", { id, digest: hash(messageJson) });
+  assert.equal(claim.state, "claimed");
+  assert.equal((await mail("claim", { id, digest: hash(messageJson) })).state, "uncertain");
+  await assert.rejects(
+    mail("begin", { id, lease: claim.lease, messageJson: "tampered" }, ""),
+    /denied/,
+  );
+  await assert.rejects(mail("finish", { id, lease: claim.lease }), /denied/);
+  assert.equal((await mail("begin", { id, lease: claim.lease, messageJson }, "")).state, "sending");
+  await assert.rejects(mail("begin", { id, lease: claim.lease, messageJson }, ""), /denied/);
+  await assert.rejects(mail("finish", { id, lease: crypto.randomUUID() }), /denied/);
+  assert.equal((await mail("finish", { id, lease: claim.lease })).state, "sent");
+  assert.equal((await mail("claim", { id, digest: hash(messageJson) })).state, "sent");
+  await assert.rejects(mail("claim", { id, digest: hash("different") }), /mismatch/);
+  const next = hash("expired"),
+    nextClaim = await mail("claim", { id: next, digest: hash(messageJson) });
+  await db.query(
+    "update cc_private.auth_mail_deliveries set created_at=now()-interval '1 minute' where id=$1",
+    [next],
+  );
+  await assert.rejects(
+    mail("begin", { id: next, lease: nextClaim.lease, messageJson }, ""),
+    /denied/,
+  );
+  const rows = (await db.query("select * from cc_private.auth_mail_deliveries")).rows;
+  assert.ok(!JSON.stringify(rows).includes("owner@example.invalid"));
+  assert.ok(!JSON.stringify(rows).includes(claim.lease));
+  assert.equal(
+    (
+      await db.query(
+        "select has_table_privilege('anon','cc_private.auth_mail_deliveries','select') as allowed",
+      )
+    ).rows[0].allowed,
+    false,
+  );
+  await db.query("update cc_private.auth_mail_grant set enabled=false");
+  await assert.rejects(
+    mail("claim", { id: hash("disabled"), digest: hash(messageJson) }),
+    /denied/,
+  );
+});
 test("schema applies with no private table grants and public RPC only", async () => {
   const { rows } = await db.query(
     `select has_table_privilege('anon','cc_private.orders','select') as anon_read,has_table_privilege('authenticated','cc_private.orders','insert') as direct_write,has_function_privilege('anon','cc_private.transition_order(jsonb)','execute') as direct_command`,

@@ -118,7 +118,7 @@ The existing Messenger delivery workflow remains Page-scoped and is not repurpos
 4. Set `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` for the Vercel production environment. Leave optional action variables unset until the integration is ready.
 5. In Supabase Auth, allow the exact callback `https://jourvis.ai/account/confirm`. Add explicit localhost or preview callbacks only when needed. Do not use unrestricted production redirect wildcards.
 6. Keep Vercel Git deployment disabled. Vercel's Root Directory must be blank (the repository root), not `frontend`. The root `vercel.json` specifies Next.js, root install/build commands and preserved V1 generation. The old static `outputDirectory` override must not remain in project settings.
-7. The user runs the deployment command above, verifies their email at `/account`, then chooses Marinara. Table QR ordering stays paused until deliberately opened in Settings.
+7. Complete [n8n auth-email preparation](AUTH-EMAIL-N8N.md). The user runs the deployment command above; only then enable the prepared auth hook, verify their email at `/account`, and choose Marinara. Table QR ordering stays paused until deliberately opened in Settings.
 
 ## Rollback
 
@@ -139,9 +139,10 @@ Do not drop the schema to roll back. Retaining V2 orders, receipts and audit dat
 - Local tests cover the actual SQL, the action transport, gateway code and redirect/origin validation. Browser checks covered a real isolated QR order through acceptance, preparation, readiness and completion; owner mobile navigation; 390px restaurant layout; the preserved Jourvis launcher; and V1/home/privacy navigation.
 - The new root dependency audit reports zero known advisories. The preserved V1 build toolchain reports 11 existing advisories (8 high, 2 moderate, 1 low), including vinext and its build dependencies. V1 is statically exported here; its old server is not deployed. Updating that toolchain needs a separate compatibility pass. Do not treat the passing application tests as resolution of these advisories.
 - Supplier external delivery remains disabled until the new gateway is imported, its existing Gmail integration verified, and its scoped worker configured. No supplier emails, auth emails or provider tests were sent by this task.
-- **Email sign-in readiness:** Custom SMTP is not configured. Supabase's default email service restricts delivery to project team members and is insufficient for supplier onboarding. Configure an authorized SMTP provider before public onboarding; do not disable email verification or add suppliers as project administrators to work around this. See [Supabase's SMTP requirements](https://supabase.com/docs/guides/auth/auth-smtp).
+- The additive `20260919161441_command_center_auth_mail` migration is applied. Its grant and delivery tables are empty, with no anonymous table access; no authentication send capability is enabled.
+- **Email sign-in readiness:** The user selected n8n/Gmail. The separate signed Supabase email hook, one-time delivery capability and privacy-preserving n8n workflow are implemented and locally tested. Follow [n8n auth-email setup](AUTH-EMAIL-N8N.md) before public sign-in. Hook activation and live delivery remain unverified. Custom SMTP is not required for this path; identity verification remains mandatory.
 
-The migration directory in this repository contains only the new Command Center migration; the existing platform migrations live in the original backend repository. Do not use a blanket `db push` against this shared project from a fresh frontend clone. Verify migration history and apply only the reviewed additive migration when preparing another environment.
+The migration directory in this repository contains only the new Command Center migrations; the existing platform migrations live in the original backend repository. Do not use a blanket `db push` against this shared project from a fresh frontend clone. Verify migration history and apply only the reviewed additive migration when preparing another environment.
 
 Run `npm run typecheck`, `npm run lint`, `npm test`, `npm --prefix frontend run typecheck`, `npm --prefix frontend run test:frontend`, `npm --prefix frontend run check:policies`, and `npm run build`.
 
