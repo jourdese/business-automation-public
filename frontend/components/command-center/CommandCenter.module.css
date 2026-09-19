@@ -511,6 +511,265 @@
   padding: 0.75rem;
 }
 
+
+.financePrimaryGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+
+.financePrimaryGrid article {
+  min-width: 0;
+  padding: 0.8rem;
+  border: 1px solid var(--cc-line);
+  background: var(--cc-panel);
+}
+
+.financePrimaryGrid article[data-state="active"] {
+  border-color: #6b5738;
+  background:
+    linear-gradient(135deg, rgba(200, 169, 107, 0.075), transparent 65%),
+    var(--cc-panel);
+}
+
+.financePrimaryGrid article[data-state="confirmed"] {
+  border-color: #385e4f;
+  background:
+    linear-gradient(135deg, rgba(46, 107, 87, 0.08), transparent 65%),
+    var(--cc-panel);
+}
+
+.financePrimaryGrid span,
+.financePrimaryGrid strong,
+.financePrimaryGrid small {
+  display: block;
+}
+
+.financePrimaryGrid span {
+  color: var(--cc-muted);
+  font: 0.5rem var(--font-mono);
+  letter-spacing: 0.06em;
+}
+
+.financePrimaryGrid strong {
+  margin-top: 0.2rem;
+  font-size: 1.25rem;
+  letter-spacing: -0.035em;
+}
+
+.financePrimaryGrid small {
+  margin-top: 0.22rem;
+  color: #71838b;
+  font-size: 0.53rem;
+  line-height: 1.4;
+}
+
+.financeCommitmentPanel,
+.financeMenuEconomics {
+  overflow: hidden;
+  border: 1px solid var(--cc-line);
+  background: var(--cc-panel);
+}
+
+.financeCommitmentPanel > header,
+.financeMenuEconomics > header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.8rem 0.85rem;
+  border-bottom: 1px solid var(--cc-line);
+}
+
+.financeCommitmentPanel > header span,
+.financeMenuEconomics > header span {
+  color: var(--mint);
+  font: 0.54rem var(--font-mono);
+  letter-spacing: 0.08em;
+}
+
+.financeCommitmentPanel > header h2,
+.financeMenuEconomics > header h2 {
+  margin-top: 0.24rem;
+  font-size: 0.9rem;
+}
+
+.financeCommitmentPanel > header p,
+.financeMenuEconomics > header p {
+  margin-top: 0.3rem;
+  max-width: 780px;
+  color: var(--cc-muted);
+  font-size: 0.58rem;
+  line-height: 1.5;
+}
+
+.financeCommitmentPanel > header a,
+.financeMenuEconomics > header a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex: 0 0 auto;
+  color: var(--mint);
+  font-size: 0.57rem;
+}
+
+.financeCommitmentSummary,
+.financeMenuEconomicsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.financeCommitmentSummary > div,
+.financeMenuEconomicsGrid > div {
+  min-width: 0;
+  padding: 0.7rem 0.8rem;
+  border-right: 1px solid var(--cc-line);
+}
+
+.financeCommitmentSummary > div:last-child,
+.financeMenuEconomicsGrid > div:last-child {
+  border-right: 0;
+}
+
+.financeCommitmentSummary span,
+.financeCommitmentSummary strong,
+.financeCommitmentSummary small,
+.financeMenuEconomicsGrid span,
+.financeMenuEconomicsGrid strong,
+.financeMenuEconomicsGrid small {
+  display: block;
+}
+
+.financeCommitmentSummary span,
+.financeMenuEconomicsGrid span {
+  color: #71838b;
+  font: 0.49rem var(--font-mono);
+  letter-spacing: 0.07em;
+}
+
+.financeCommitmentSummary strong,
+.financeMenuEconomicsGrid strong {
+  margin-top: 0.15rem;
+  font-size: 0.82rem;
+}
+
+.financeCommitmentSummary small,
+.financeMenuEconomicsGrid small {
+  margin-top: 0.13rem;
+  color: var(--cc-muted);
+  font-size: 0.52rem;
+  line-height: 1.4;
+}
+
+.financeCommitmentRows {
+  display: grid;
+  border-top: 1px solid var(--cc-line);
+}
+
+.financeCommitmentRows > div {
+  display: grid;
+  grid-template-columns: minmax(180px, 1.4fr) minmax(90px, 0.65fr) minmax(90px, 0.65fr) auto;
+  gap: 0.55rem;
+  align-items: center;
+  padding: 0.58rem 0.7rem;
+  border-bottom: 1px solid rgba(39, 58, 68, 0.65);
+}
+
+.financeCommitmentRows > div:last-child {
+  border-bottom: 0;
+}
+
+.financeCommitmentRows > div > div strong,
+.financeCommitmentRows > div > div small,
+.financeCommitmentRows > div > span small,
+.financeCommitmentRows > div > span strong {
+  display: block;
+}
+
+.financeCommitmentRows > div > div strong {
+  font-size: 0.62rem;
+}
+
+.financeCommitmentRows > div > div small,
+.financeCommitmentRows > div > span small {
+  color: var(--cc-muted);
+  font-size: 0.51rem;
+}
+
+.financeCommitmentRows > div > div small {
+  margin-top: 0.1rem;
+}
+
+.financeCommitmentRows > div > span strong {
+  margin-top: 0.08rem;
+  font-size: 0.56rem;
+}
+
+.financeCommitmentRows > div > b {
+  padding: 0.2rem 0.38rem;
+  border: 1px solid #695237;
+  color: var(--gold);
+  font: 0.49rem var(--font-mono);
+  text-align: center;
+}
+
+.financeCommitmentRows > div > b[data-confirmed="true"] {
+  border-color: #3d6554;
+  color: var(--mint);
+}
+
+.financeEmptyNote {
+  padding: 0.72rem 0.8rem;
+  color: #71838b;
+  font-size: 0.57rem;
+}
+
+.financeTrendDisclosure {
+  border: 1px solid var(--cc-line);
+  background: var(--cc-panel);
+}
+
+.financeTrendDisclosure > summary {
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.65rem 0.75rem;
+  cursor: pointer;
+  list-style: none;
+}
+
+.financeTrendDisclosure > summary::-webkit-details-marker {
+  display: none;
+}
+
+.financeTrendDisclosure > summary > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--ivory);
+  font-size: 0.64rem;
+  font-weight: 700;
+}
+
+.financeTrendDisclosure > summary > span svg {
+  color: var(--mint);
+}
+
+.financeTrendDisclosure > summary > b {
+  margin-left: auto;
+  color: var(--cc-muted);
+  font: 0.54rem var(--font-mono);
+}
+
+.financeTrendDisclosure[open] > summary {
+  border-bottom: 1px solid var(--cc-line);
+}
+
+.financeTrendBody {
+  padding: 0.75rem;
+}
+
 .metricCard,
 .moduleCard,
 .operationCard,
@@ -2692,6 +2951,30 @@
     margin-left: auto;
   }
 
+  .financePrimaryGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .financeCommitmentSummary,
+  .financeMenuEconomicsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .financeCommitmentSummary > div,
+  .financeMenuEconomicsGrid > div {
+    border-right: 0;
+    border-bottom: 1px solid var(--cc-line);
+  }
+
+  .financeCommitmentSummary > div:last-child,
+  .financeMenuEconomicsGrid > div:last-child {
+    border-bottom: 0;
+  }
+
+  .financeCommitmentRows > div {
+    grid-template-columns: minmax(150px, 1.25fr) minmax(80px, 0.6fr) minmax(80px, 0.6fr) auto;
+  }
+
   .performancePrimaryGrid,
   .performanceExecutionGrid,
   .performanceSupplierSummary {
@@ -2781,6 +3064,25 @@
 @media (max-width: 520px) {
   .headerRuntimeActions {
     gap: 0.35rem;
+  }
+
+  .financePrimaryGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .financeCommitmentPanel > header,
+  .financeMenuEconomics > header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .financeCommitmentRows > div {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .financeCommitmentRows > div > div,
+  .financeCommitmentRows > div > b {
+    grid-column: 1 / -1;
   }
 
   .performancePrimaryGrid {

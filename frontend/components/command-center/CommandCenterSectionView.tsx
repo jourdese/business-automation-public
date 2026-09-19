@@ -982,132 +982,246 @@ export default function CommandCenterSectionView({
     const finance = buildCommandCenterFinance(state);
     const formatMoney = (value: number) =>
       "₱" + Math.round(value).toLocaleString("en-PH");
+    const confirmedCommitmentStatuses = new Set([
+      "confirmed",
+      "in_transit",
+      "partial_received",
+    ]);
+    const purchaseValue = (
+      purchase: typeof state.purchases[number],
+    ) =>
+      Math.max(
+        0,
+        purchase.quotedTotal ?? purchase.estimatedTotal ?? 0,
+      );
+    const commitmentRows = activePurchases
+      .slice()
+      .sort(
+        (left, right) =>
+          purchaseValue(right) - purchaseValue(left),
+      );
+    const awaitingCommitmentValue = Math.max(
+      0,
+      finance.openPurchaseCommitments -
+        finance.confirmedIncomingCommitments,
+    );
+
+    const financeHeadline = finance.openPurchaseCommitments
+      ? `${formatMoney(finance.openPurchaseCommitments)} is currently committed to active purchasing.`
+      : finance.receivedPurchaseSpend
+        ? `${formatMoney(finance.receivedPurchaseSpend)} of purchasing spend has been received in the current runtime.`
+        : "No purchasing money is currently committed.";
 
     return (
       <SectionFrame
         eyebrow="FINANCE"
-        title="Where the money went—and what is committed next."
-        description="Finance now exposes the operating values Command Center can genuinely derive. Formal P&L, cash flow, expenses, receivables, payables, and reconciliation remain locked behind verified financial providers."
+        title={financeHeadline}
+        description="This is operational finance from the Command Center runtime: purchasing exposure, received purchasing spend, configured on-hand inventory value, and ingredient-only menu economics. It is not a P&L or cash-accounting view."
       >
-        <div className={styles.metricGrid}>
-          {[
-            [
-              "Open purchase commitments",
-              formatMoney(finance.openPurchaseCommitments),
-              "all active purchasing workflows",
-            ],
-            [
-              "Confirmed incoming commitments",
-              formatMoney(finance.confirmedIncomingCommitments),
-              "confirmed / in-transit / partially received purchases",
-            ],
-            [
-              "Received purchasing spend",
-              formatMoney(finance.receivedPurchaseSpend),
-              "closed received purchases in current runtime history",
-            ],
-            [
-              "Configured inventory value",
-              formatMoney(finance.configuredInventoryValue),
-              "on-hand quantity × configured ingredient unit cost",
-            ],
-            [
-              "Avg menu gross profit",
-              finance.averageMenuGrossProfit === null
-                ? "—"
-                : formatMoney(finance.averageMenuGrossProfit),
-              finance.pricedMappedMenuCount
-                ? `${finance.pricedMappedMenuCount} priced recipe-mapped item${finance.pricedMappedMenuCount === 1 ? "" : "s"}`
-                : "live selling prices required",
-            ],
-            [
-              "Avg menu gross margin",
-              finance.averageMenuGrossMarginPercent === null
-                ? "—"
-                : finance.averageMenuGrossMarginPercent + "%",
-              "ingredient cost only; operating expenses not included",
-            ],
-          ].map(([label, value, note]) => (
-            <article className={styles.metricCard} key={label}>
-              <span>{label}</span>
-              <strong>{value}</strong>
-              <div>
-                <b>Runtime</b>
-                <small>{note}</small>
-              </div>
-            </article>
-          ))}
+        <div className={styles.financePrimaryGrid}>
+          <article data-state={finance.openPurchaseCommitments ? "active" : "clear"}>
+            <span>OPEN COMMITMENTS</span>
+            <strong>{formatMoney(finance.openPurchaseCommitments)}</strong>
+            <small>all active purchasing workflows</small>
+          </article>
+          <article data-state={finance.confirmedIncomingCommitments ? "confirmed" : "clear"}>
+            <span>CONFIRMED INCOMING</span>
+            <strong>{formatMoney(finance.confirmedIncomingCommitments)}</strong>
+            <small>confirmed, in-transit, or partially received purchases</small>
+          </article>
+          <article>
+            <span>RECEIVED PURCHASING SPEND</span>
+            <strong>{formatMoney(finance.receivedPurchaseSpend)}</strong>
+            <small>received purchases captured in current runtime history</small>
+          </article>
+          <article>
+            <span>ON-HAND INVENTORY VALUE</span>
+            <strong>{formatMoney(finance.configuredInventoryValue)}</strong>
+            <small>configured on-hand quantity × ingredient unit cost</small>
+          </article>
         </div>
 
-        <article className={styles.panelCard}>
-          <PanelHeading
-            icon={<WalletCards size={17} />}
-            eyebrow="FINANCIAL MOVEMENT"
-            title="What changed in the observed runtime"
-          />
-          <div className={styles.historyTrendGrid}>
+        <article className={styles.financeCommitmentPanel}>
+          <header>
             <div>
-              <span>OPEN COMMITMENTS</span>
-              <strong>
-                {hasHistoricalComparison
-                  ? formatSignedMoney(historyTrend.openCommitmentDelta)
-                  : "—"}
-              </strong>
-              <small>active purchasing movement</small>
+              <span>PURCHASING EXPOSURE</span>
+              <h2>What is committed next</h2>
+              <p>
+                Active requests remain commitments until they are rejected or fully received.
+                Confirmed incoming is tracked separately from stock already on hand.
+              </p>
+            </div>
+            <a href={`/command-center/${business.id}/operations/purchasing`}>
+              Open purchasing <ArrowRight size={13} />
+            </a>
+          </header>
+
+          <div className={styles.financeCommitmentSummary}>
+            <div>
+              <span>ACTIVE REQUESTS</span>
+              <strong>{commitmentRows.length}</strong>
+              <small>current purchasing workflows</small>
             </div>
             <div>
-              <span>RECEIVED SPEND</span>
-              <strong>
-                {hasHistoricalComparison
-                  ? formatSignedMoney(historyTrend.receivedSpendDelta)
-                  : "—"}
-              </strong>
-              <small>received purchasing movement</small>
+              <span>AWAITING CONFIRMATION / DELIVERY</span>
+              <strong>{formatMoney(awaitingCommitmentValue)}</strong>
+              <small>open commitments not yet counted as confirmed incoming</small>
             </div>
             <div>
-              <span>INVENTORY VALUE</span>
-              <strong>
-                {hasHistoricalComparison
-                  ? formatSignedMoney(historyTrend.inventoryValueDelta)
-                  : "—"}
-              </strong>
-              <small>configured on-hand value movement</small>
-            </div>
-            <div>
-              <span>MENU GROSS MARGIN</span>
-              <strong>
-                {hasHistoricalComparison
-                  ? formatSigned(historyTrend.grossMarginDelta, " pts")
-                  : "—"}
-              </strong>
-              <small>ingredient-only margin movement</small>
+              <span>CONFIRMED INCOMING</span>
+              <strong>{formatMoney(finance.confirmedIncomingCommitments)}</strong>
+              <small>financial exposure already tied to confirmed incoming stock</small>
             </div>
           </div>
-          <p className={styles.historyTrendNote}>
-            These are changes in Command Center operating values only. They do not represent accounting-period cash flow or P&amp;L until verified financial providers are connected.
-          </p>
+
+          {commitmentRows.length ? (
+            <div className={styles.financeCommitmentRows}>
+              {commitmentRows.map((purchase) => {
+                const item = state.inventory.find(
+                  (entry) => entry.id === purchase.itemId,
+                );
+                const confirmed = confirmedCommitmentStatuses.has(
+                  purchase.status,
+                );
+                return (
+                  <div key={purchase.id}>
+                    <div>
+                      <strong>{item?.name ?? purchase.itemId}</strong>
+                      <small>
+                        {purchase.id} · {humanizeAction(purchase.status)}
+                      </small>
+                    </div>
+                    <span>
+                      <small>Quantity</small>
+                      <strong>
+                        {purchase.quantity} {item?.unit ?? ""}
+                      </strong>
+                    </span>
+                    <span>
+                      <small>{purchase.quotedTotal !== undefined ? "Quoted" : "Estimated"}</small>
+                      <strong>{formatMoney(purchaseValue(purchase))}</strong>
+                    </span>
+                    <b data-confirmed={confirmed ? "true" : undefined}>
+                      {confirmed ? "CONFIRMED INCOMING" : "OPEN COMMITMENT"}
+                    </b>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <p className={styles.financeEmptyNote}>
+              No active purchasing commitment is currently open.
+            </p>
+          )}
         </article>
 
-        <article className={styles.panelCard}>
-          <PanelHeading
-            icon={<WalletCards size={17} />}
-            eyebrow="WHAT THESE NUMBERS MEAN"
-            title="Operational finance, not accounting fiction"
-          />
-          <div className={styles.explainer}>
-            <p>
-              Purchase commitments and configured inventory value come from the current Command Center operating state. Menu gross profit/margin uses current selling price minus configured recipe ingredient cost only. It does not claim to include labor, rent, taxes, payment fees, utilities, or other operating expenses.
+        <article className={styles.financeMenuEconomics}>
+          <header>
+            <div>
+              <span>MENU UNIT ECONOMICS</span>
+              <h2>Ingredient contribution—not full accounting profit</h2>
+              <p>
+                These values use current selling prices and configured recipe ingredient costs only.
+                Labor, rent, utilities, taxes, payment fees, waste, discounts, and other operating expenses are not included.
+              </p>
+            </div>
+            <a href={`/command-center/${business.id}/operations/menu`}>
+              Open menu <ArrowRight size={13} />
+            </a>
+          </header>
+
+          <div className={styles.financeMenuEconomicsGrid}>
+            <div>
+              <span>PRICED + RECIPE-MAPPED ITEMS</span>
+              <strong>{finance.pricedMappedMenuCount}</strong>
+              <small>items eligible for configured unit economics</small>
+            </div>
+            <div>
+              <span>AVG INGREDIENT CONTRIBUTION</span>
+              <strong>
+                {finance.averageMenuGrossProfit === null
+                  ? "—"
+                  : formatMoney(finance.averageMenuGrossProfit)}
+              </strong>
+              <small>selling price − configured recipe ingredient cost</small>
+            </div>
+            <div>
+              <span>AVG INGREDIENT-ONLY MARGIN</span>
+              <strong>
+                {finance.averageMenuGrossMarginPercent === null
+                  ? "—"
+                  : finance.averageMenuGrossMarginPercent + "%"}
+              </strong>
+              <small>ingredient contribution ÷ selling price</small>
+            </div>
+          </div>
+        </article>
+
+        <details className={styles.financeTrendDisclosure}>
+          <summary>
+            <span>
+              <WalletCards size={15} aria-hidden />
+              Observed financial movement
+            </span>
+            <b>
+              {hasHistoricalComparison
+                ? `${historyTrend.snapshotCount} snapshots`
+                : "Collecting"}
+            </b>
+          </summary>
+          <div className={styles.financeTrendBody}>
+            <div className={styles.historyTrendGrid}>
+              <div>
+                <span>OPEN COMMITMENTS</span>
+                <strong>
+                  {hasHistoricalComparison
+                    ? formatSignedMoney(historyTrend.openCommitmentDelta)
+                    : "—"}
+                </strong>
+                <small>active purchasing movement</small>
+              </div>
+              <div>
+                <span>RECEIVED SPEND</span>
+                <strong>
+                  {hasHistoricalComparison
+                    ? formatSignedMoney(historyTrend.receivedSpendDelta)
+                    : "—"}
+                </strong>
+                <small>received purchasing movement</small>
+              </div>
+              <div>
+                <span>INVENTORY VALUE</span>
+                <strong>
+                  {hasHistoricalComparison
+                    ? formatSignedMoney(historyTrend.inventoryValueDelta)
+                    : "—"}
+                </strong>
+                <small>configured on-hand value movement</small>
+              </div>
+              <div>
+                <span>MENU MARGIN</span>
+                <strong>
+                  {hasHistoricalComparison
+                    ? formatSigned(historyTrend.grossMarginDelta, " pts")
+                    : "—"}
+                </strong>
+                <small>ingredient-only margin movement</small>
+              </div>
+            </div>
+            <p className={styles.historyTrendNote}>
+              {hasHistoricalComparison
+                ? `Observed across ${historyTrend.snapshotCount} captured operating states. These are runtime value changes, not an accounting-period cash flow or P&L.`
+                : "Jourvis needs another meaningful captured operating state before reporting movement."}
             </p>
           </div>
-        </article>
+        </details>
 
         <PendingDataSources
-          title="Production accounting views"
-          description="Operational purchasing values are live in this demo. Formal accounting remains unavailable until verified financial providers are connected."
+          title="Formal accounting"
+          description="Operational purchasing values are available now. These remain unavailable until verified financial providers are connected."
           items={[
             ["Profit & Loss", "Accounting + sales", "Revenue, COGS and operating expenses"],
             ["Cash Flow", "Bank / accounting", "Balances, inflows and scheduled outflows"],
-            ["Expenses", "Accounting / expense", "Categories, recurring costs and anomalies"],
             ["Payables", "Accounting / AP", "Invoices, due dates and payment status"],
             ["Receivables", "Sales / accounting", "Expected collections and payment status"],
             ["Reconciliation", "Bank + accounting", "Business records vs actual payments"],
