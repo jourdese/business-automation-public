@@ -245,7 +245,10 @@ function normalizeStoredState(
       };
     }),
     activity: (stored.activity ?? []).map((entry) => normalizeActivity(entry)),
-    history: stored.history ?? [],
+    history: (stored.history ?? []).map((snapshot) => ({
+      ...snapshot,
+      inventoryForecast7d: snapshot.inventoryForecast7d ?? [],
+    })),
   };
 }
 
