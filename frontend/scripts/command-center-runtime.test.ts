@@ -19,6 +19,7 @@ import { buildCommandCenterPerformance } from '../command-center/core/performanc
 import { buildCommandCenterFinance } from '../command-center/core/finance-engine.ts';
 import {
   appendCommandCenterHistorySnapshot,
+  buildCommandCenterForecastAccuracy,
   buildCommandCenterHistoryTrend,
 } from '../command-center/core/history-engine.ts';
 
@@ -777,4 +778,57 @@ await test('History preserves finance movement across snapshots', () => {
 
   assert.equal(trend.openCommitmentDelta, 6000);
   assert.equal(trend.activeWorkflowDelta, 1);
+});
+
+
+await test('Forecast accuracy stays collecting until the horizon has matured', () => {
+  const initial = appendCommandCenterHistorySnapshot(
+    state(item({ current: 10, dailyUse: 1, fullLevel: 10 })),
+    0,
+    '2026-09-19T00:00:00.000Z',
+  );
+  const changed: CommandCenterRuntimeState = {
+    ...initial,
+    inventory: initial.inventory.map((entry) => ({
+      ...entry,
+      current: 8,
+    })),
+  };
+  const recent = appendCommandCenterHistorySnapshot(
+    changed,
+    0,
+    '2026-09-20T00:00:00.000Z',
+  );
+  const accuracy = buildCommandCenterForecastAccuracy(recent, 7);
+
+  assert.equal(accuracy.matured, false);
+  assert.equal(accuracy.itemCount, 0);
+});
+
+await test('Forecast accuracy compares matured prediction with later actual stock', () => {
+  const initial = appendCommandCenterHistorySnapshot(
+    state(item({ current: 10, dailyUse: 1, fullLevel: 10 })),
+    0,
+    '2026-09-01T00:00:00.000Z',
+  );
+  const changed: CommandCenterRuntimeState = {
+    ...initial,
+    inventory: initial.inventory.map((entry) => ({
+      ...entry,
+      current: 4,
+    })),
+  };
+  const matured = appendCommandCenterHistorySnapshot(
+    changed,
+    0,
+    '2026-09-08T00:00:00.000Z',
+  );
+  const accuracy = buildCommandCenterForecastAccuracy(matured, 7);
+
+  assert.equal(accuracy.matured, true);
+  assert.equal(accuracy.itemCount, 1);
+  assert.equal(accuracy.rows[0]?.predicted, 3);
+  assert.equal(accuracy.rows[0]?.actual, 4);
+  assert.equal(accuracy.rows[0]?.absoluteError, 1);
+  assert.equal(accuracy.meanNormalizedErrorPercent, 10);
 });
