@@ -103,6 +103,7 @@ function state(
     menuItems: [],
     pausedItemIds: [],
     activity: [],
+    history: [],
   };
 }
 
