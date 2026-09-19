@@ -1124,90 +1124,229 @@ export default function CommandCenterSectionView({
 
   if (section === "briefings") {
     const briefingForecast = buildCommandCenterForecast(state, 7);
-    const briefingPerformance = buildCommandCenterPerformance(
-      state,
-      tasks.length,
-    );
     const briefingFinance = buildCommandCenterFinance(state);
+    const recentActivity = state.activity.slice(0, 4);
+    const incomingItems = state.inventory
+      .filter((item) => item.incoming > 0)
+      .sort((a, b) => b.incoming - a.incoming)
+      .slice(0, 3);
+    const nextMoves = briefingForecast.inventoryRows
+      .filter(
+        (row) =>
+          row.activePurchaseId ||
+          row.risk !== "covered" ||
+          row.recommendedQuantity > 0,
+      )
+      .slice(0, 3);
     const formatMoney = (value: number) =>
       "₱" + Math.round(value).toLocaleString("en-PH");
+
+    const briefingHeadline = tasks.length
+      ? `${tasks.length} owner decision${tasks.length === 1 ? "" : "s"} currently shape what happens next.`
+      : activePurchases.length
+        ? `Jourvis is managing ${activePurchases.length} active workflow${activePurchases.length === 1 ? "" : "s"} without an owner blocker.`
+        : briefingForecast.horizonRiskCount
+          ? `${briefingForecast.horizonRiskCount} ingredient${briefingForecast.horizonRiskCount === 1 ? " needs" : "s need"} watching over the next seven days.`
+          : "The current operating state is stable.";
 
     return (
       <SectionFrame
         eyebrow="BRIEFINGS"
-        title="The business, summarized by Jourvis."
-        description="Briefings now summarize the same live runtime used by Forecast, Performance, Finance, Decisions, and Activity. Historical weekly/monthly trend analysis will activate only after durable production history exists."
+        title="Your current business briefing."
+        description="One concise owner briefing from the live Command Center state. No invented daily, weekly, or monthly reporting."
       >
-        <div className={styles.briefingList}>
-          <article>
-            <span>CURRENT STATE</span>
-            <h3>Owner briefing</h3>
-            <p>
-              Jourvis is handling {activePurchases.length} active workflow{activePurchases.length === 1 ? "" : "s"}, {tasks.length} owner exception{tasks.length === 1 ? "" : "s"} need authority, and {briefingForecast.horizonRiskCount} ingredient{briefingForecast.horizonRiskCount === 1 ? " is" : "s are"} forecast to enter a risk state within seven days.
-            </p>
-            <b><CheckCircle2 size={13} /> Generated from live runtime</b>
-          </article>
-          <article>
-            <span>OPERATING HEALTH</span>
-            <h3>Performance briefing</h3>
-            <p>
-              Inventory readiness is {briefingPerformance.inventoryReadinessPercent === null ? "not available" : briefingPerformance.inventoryReadinessPercent + "%"}, menu recipe coverage is {briefingPerformance.recipeCoveragePercent === null ? "not available" : briefingPerformance.recipeCoveragePercent + "%"}, and automation accounts for {briefingPerformance.automationSharePercent === null ? "no recorded action mix yet" : briefingPerformance.automationSharePercent + "% of recorded automatic/manual actions"}.
-            </p>
-            <b><CheckCircle2 size={13} /> Performance engine</b>
-          </article>
-          <article>
-            <span>FINANCIAL OPERATIONS</span>
-            <h3>Commitment briefing</h3>
-            <p>
-              Open purchasing commitments total {formatMoney(briefingFinance.openPurchaseCommitments)}; received purchasing spend in the current runtime is {formatMoney(briefingFinance.receivedPurchaseSpend)}. Formal P&amp;L and cash reporting still require accounting providers.
-            </p>
-            <b><CheckCircle2 size={13} /> Finance engine</b>
-          </article>
-        </div>
-
-        <article className={styles.panelCard}>
-          <PanelHeading
-            icon={<Bot size={17} />}
-            eyebrow="RECENT EXECUTION"
-            title="What Jourvis and the owner have been doing"
-          />
-          {state.activity.length ? (
-            <div className={styles.autonomyLoop}>
-              {state.activity.slice(0, 6).map((entry, index) => (
-                <div key={entry.id}>
-                  <span>{String(index + 1).padStart(2, "0")}</span>
-                  <div>
-                    <strong>{entry.executionMode.toUpperCase()} · {entry.module}</strong>
-                    <small>{entry.message} Why: {entry.reason}</small>
-                  </div>
-                </div>
-              ))}
+        <article className={styles.executiveBriefing}>
+          <header className={styles.executiveBriefingHeader}>
+            <div>
+              <span>JOURVIS · CURRENT BRIEFING</span>
+              <h2>{briefingHeadline}</h2>
+              <p>
+                Jourvis is {state.automationMasterOn ? "running" : "paused"}.
+                {" "}{activePurchases.length} purchasing workflow{activePurchases.length === 1 ? "" : "s"} are active,
+                {" "}{tasks.length} exception{tasks.length === 1 ? "" : "s"} require owner authority,
+                and {briefingForecast.horizonRiskCount} ingredient{briefingForecast.horizonRiskCount === 1 ? " is" : "s are"} in a configured seven-day risk state.
+              </p>
             </div>
-          ) : (
-            <p className={styles.demoNote}>
-              No operating activity has been recorded yet.
-            </p>
-          )}
-        </article>
+            <div className={styles.executiveBriefingFacts}>
+              <span><b>{activePurchases.length}</b> active workflows</span>
+              <span><b>{tasks.length}</b> need owner</span>
+              <span><b>{briefingForecast.horizonRiskCount}</b> 7-day risks</span>
+              <span><b>{formatMoney(briefingFinance.openPurchaseCommitments)}</b> open commitments</span>
+            </div>
+          </header>
 
-        <article className={styles.panelCard}>
-          <PanelHeading
-            icon={<LineChart size={17} />}
-            eyebrow="OBSERVED HISTORY"
-            title={hasHistoricalComparison ? "Jourvis can now compare operating states" : "Building the first comparison"}
-          />
-          <div className={styles.explainer}>
-            <p>
-              {hasHistoricalComparison
-                ? `Across ${historyTrend.snapshotCount} captured operating snapshots, inventory readiness changed ${formatSigned(historyTrend.inventoryReadinessDelta, " points")}, seven-day inventory risk changed ${formatSigned(historyTrend.inventoryRiskDelta)}, and open purchasing commitments changed ${formatSignedMoney(historyTrend.openCommitmentDelta)}.`
-                : "Jourvis is now capturing deduplicated, timestamped business snapshots. A second meaningful state change will unlock observed-period trend comparisons."}
-            </p>
+          <div className={styles.executiveBriefingSections}>
+            <section>
+              <div className={styles.executiveBriefingSectionHeading}>
+                <span>01</span>
+                <div>
+                  <strong>What happened</strong>
+                  <small>The latest recorded operating events</small>
+                </div>
+              </div>
+              <div className={styles.executiveBriefingRows}>
+                {recentActivity.length ? (
+                  recentActivity.map((entry) => (
+                    <div key={entry.id}>
+                      <span>{humanizeAction(entry.action)}</span>
+                      <p>{entry.message}</p>
+                    </div>
+                  ))
+                ) : (
+                  <p className={styles.executiveBriefingEmpty}>
+                    No operating activity has been recorded yet.
+                  </p>
+                )}
+              </div>
+            </section>
+
+            <section>
+              <div className={styles.executiveBriefingSectionHeading}>
+                <span>02</span>
+                <div>
+                  <strong>What Jourvis did</strong>
+                  <small>Work already handled or currently in motion</small>
+                </div>
+              </div>
+              <div className={styles.executiveBriefingRows}>
+                {activePurchases.length ? (
+                  activePurchases.slice(0, 4).map((purchase) => {
+                    const item = state.inventory.find(
+                      (candidate) => candidate.id === purchase.itemId,
+                    );
+                    return (
+                      <div key={purchase.id}>
+                        <span>{item?.name ?? purchase.itemId}</span>
+                        <p>
+                          {purchase.origin === "jourvis"
+                            ? "Jourvis"
+                            : "Owner"} started {purchase.id}; it is now {humanizeAction(purchase.status).toLowerCase()}.
+                          {" "}{purchase.explanation}
+                        </p>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <p className={styles.executiveBriefingEmpty}>
+                    No purchasing workflow is active right now.
+                  </p>
+                )}
+              </div>
+            </section>
+
+            <section>
+              <div className={styles.executiveBriefingSectionHeading}>
+                <span>03</span>
+                <div>
+                  <strong>What changed</strong>
+                  <small>Only changes the current runtime can support</small>
+                </div>
+              </div>
+              <div className={styles.executiveBriefingRows}>
+                {hasHistoricalComparison ? (
+                  <>
+                    <div>
+                      <span>Inventory readiness</span>
+                      <p>
+                        Changed {formatSigned(historyTrend.inventoryReadinessDelta, " points")} across {historyTrend.snapshotCount} captured operating states.
+                      </p>
+                    </div>
+                    <div>
+                      <span>7-day risk</span>
+                      <p>
+                        Changed {formatSigned(historyTrend.inventoryRiskDelta)} ingredient{Math.abs(historyTrend.inventoryRiskDelta ?? 0) === 1 ? "" : "s"} across the observed states.
+                      </p>
+                    </div>
+                    <div>
+                      <span>Open commitments</span>
+                      <p>
+                        Changed {formatSignedMoney(historyTrend.openCommitmentDelta)} across the observed states.
+                      </p>
+                    </div>
+                  </>
+                ) : incomingItems.length ? (
+                  incomingItems.map((item) => (
+                    <div key={item.id}>
+                      <span>{item.name}</span>
+                      <p>
+                        {item.incoming} {item.unit} is confirmed incoming and remains separate from on-hand stock until receiving.
+                      </p>
+                    </div>
+                  ))
+                ) : (
+                  <p className={styles.executiveBriefingEmpty}>
+                    There is not enough captured history yet to claim a trend or period-over-period change.
+                  </p>
+                )}
+              </div>
+            </section>
+
+            <section data-attention={tasks.length ? "true" : undefined}>
+              <div className={styles.executiveBriefingSectionHeading}>
+                <span>04</span>
+                <div>
+                  <strong>What needs attention</strong>
+                  <small>Only exceptions requiring human authority</small>
+                </div>
+              </div>
+              <div className={styles.executiveBriefingRows}>
+                {tasks.length ? (
+                  tasks.slice(0, 3).map((task) => (
+                    <div key={task.id}>
+                      <span>{task.title}</span>
+                      <p>{task.whyOwnerIsNeeded ?? task.why}</p>
+                    </div>
+                  ))
+                ) : (
+                  <div>
+                    <span>No owner decision waiting</span>
+                    <p>Jourvis is operating inside the configured authority and safeguards.</p>
+                  </div>
+                )}
+              </div>
+              {tasks.length ? (
+                <a
+                  className={styles.cardLink}
+                  href={`/command-center/${business.id}/decisions`}
+                >
+                  Open decisions <ArrowRight size={14} />
+                </a>
+              ) : null}
+            </section>
+
+            <section>
+              <div className={styles.executiveBriefingSectionHeading}>
+                <span>05</span>
+                <div>
+                  <strong>What happens next</strong>
+                  <small>The next expected operating moves</small>
+                </div>
+              </div>
+              <div className={styles.executiveBriefingRows}>
+                {nextMoves.length ? (
+                  nextMoves.map((row) => (
+                    <div key={row.itemId}>
+                      <span>{row.name}</span>
+                      <p>{row.nextAction}</p>
+                    </div>
+                  ))
+                ) : (
+                  <p className={styles.executiveBriefingEmpty}>
+                    No immediate replenishment move is currently required.
+                  </p>
+                )}
+              </div>
+            </section>
           </div>
-        </article>
 
-        <p className={styles.demoNote}>
-          Browser history now supports observed-state comparisons. True weekly/monthly business reporting still requires durable server-side history plus dated POS/accounting/provider records.
-        </p>
+          <footer className={styles.executiveBriefingFooter}>
+            <CheckCircle2 size={14} aria-hidden />
+            <span>
+              Generated from current Inventory, Purchasing, Forecast, Decisions, Finance, and Activity runtime state.
+              Formal accounting and true weekly/monthly reporting remain provider-gated.
+            </span>
+          </footer>
+        </article>
       </SectionFrame>
     );
   }

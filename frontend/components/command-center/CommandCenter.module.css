@@ -847,6 +847,180 @@
   font-size: 0.6rem;
 }
 
+
+.executiveBriefing {
+  overflow: hidden;
+  border: 1px solid var(--cc-line);
+  background:
+    linear-gradient(135deg, rgba(167, 227, 197, 0.035), transparent 32%),
+    var(--cc-panel);
+}
+
+.executiveBriefingHeader {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(260px, 0.75fr);
+  gap: 1rem;
+  padding: 1rem;
+  border-bottom: 1px solid var(--cc-line);
+}
+
+.executiveBriefingHeader > div:first-child > span {
+  color: var(--mint);
+  font: 0.56rem var(--font-mono);
+  letter-spacing: 0.1em;
+}
+
+.executiveBriefingHeader h2 {
+  margin-top: 0.35rem;
+  max-width: 760px;
+  font-size: clamp(1.25rem, 2.4vw, 2rem);
+  line-height: 1.15;
+}
+
+.executiveBriefingHeader p {
+  margin-top: 0.55rem;
+  max-width: 800px;
+  color: var(--cc-muted);
+  font-size: 0.66rem;
+  line-height: 1.6;
+}
+
+.executiveBriefingFacts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.45rem;
+  align-content: start;
+}
+
+.executiveBriefingFacts span {
+  min-height: 64px;
+  padding: 0.55rem;
+  border: 1px solid #314650;
+  background: #091720;
+  color: var(--cc-muted);
+  font-size: 0.56rem;
+  line-height: 1.35;
+}
+
+.executiveBriefingFacts b {
+  display: block;
+  margin-bottom: 0.18rem;
+  color: var(--ivory);
+  font-size: 0.9rem;
+}
+
+.executiveBriefingSections {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.executiveBriefingSections > section {
+  min-width: 0;
+  padding: 0.9rem 1rem 1rem;
+  border-right: 1px solid var(--cc-line);
+  border-bottom: 1px solid var(--cc-line);
+}
+
+.executiveBriefingSections > section:nth-child(2n) {
+  border-right: 0;
+}
+
+.executiveBriefingSections > section:nth-last-child(-n + 1) {
+  grid-column: 1 / -1;
+  border-right: 0;
+}
+
+.executiveBriefingSections > section[data-attention="true"] {
+  background:
+    linear-gradient(90deg, rgba(200, 169, 107, 0.07), transparent 62%),
+    rgba(20, 17, 12, 0.34);
+}
+
+.executiveBriefingSectionHeading {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr);
+  gap: 0.55rem;
+  align-items: start;
+  padding-bottom: 0.6rem;
+  border-bottom: 1px solid rgba(39, 58, 68, 0.7);
+}
+
+.executiveBriefingSectionHeading > span {
+  color: var(--mint);
+  font: 0.56rem var(--font-mono);
+}
+
+.executiveBriefingSectionHeading strong,
+.executiveBriefingSectionHeading small {
+  display: block;
+}
+
+.executiveBriefingSectionHeading strong {
+  font-size: 0.74rem;
+}
+
+.executiveBriefingSectionHeading small {
+  margin-top: 0.12rem;
+  color: #71838b;
+  font-size: 0.56rem;
+}
+
+.executiveBriefingRows {
+  display: grid;
+  gap: 0.55rem;
+  margin-top: 0.65rem;
+}
+
+.executiveBriefingRows > div {
+  padding-bottom: 0.52rem;
+  border-bottom: 1px solid rgba(39, 58, 68, 0.48);
+}
+
+.executiveBriefingRows > div:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.executiveBriefingRows span {
+  display: block;
+  color: var(--ivory);
+  font-size: 0.65rem;
+  font-weight: 700;
+}
+
+.executiveBriefingRows p {
+  margin-top: 0.18rem;
+  color: var(--cc-muted);
+  font-size: 0.6rem;
+  line-height: 1.5;
+}
+
+.executiveBriefingEmpty {
+  color: #71838b;
+  font-size: 0.6rem;
+  line-height: 1.5;
+}
+
+.executiveBriefingSections .cardLink {
+  margin-top: 0.7rem;
+}
+
+.executiveBriefingFooter {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.45rem;
+  padding: 0.7rem 1rem;
+  color: #73858d;
+  font-size: 0.56rem;
+  line-height: 1.5;
+}
+
+.executiveBriefingFooter svg {
+  flex: 0 0 auto;
+  margin-top: 1px;
+  color: var(--mint);
+}
+
 .insightList article {
   display: grid;
   grid-template-columns: 28px minmax(0, 1fr);
@@ -1494,6 +1668,21 @@
 @media (max-width: 820px) {
   .headerRuntimeActions {
     margin-left: auto;
+  }
+
+  .executiveBriefingHeader {
+    grid-template-columns: 1fr;
+  }
+
+  .executiveBriefingSections {
+    grid-template-columns: 1fr;
+  }
+
+  .executiveBriefingSections > section,
+  .executiveBriefingSections > section:nth-child(2n),
+  .executiveBriefingSections > section:nth-last-child(-n + 1) {
+    grid-column: auto;
+    border-right: 0;
   }
 
   .resetDemoButton span {
