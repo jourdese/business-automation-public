@@ -15,7 +15,7 @@ const recipeIdByMenuItemId: Readonly<Record<string, string>> = {
 
 export function createMarinaraRuntimeSeed(): CommandCenterRuntimeState {
   return {
-    version: 1,
+    version: 2,
     business: marinaraRistoranteBusiness,
     automationMasterOn: false,
     inventory: initialIngredients.map((item) => ({
