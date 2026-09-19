@@ -1320,6 +1320,282 @@
   gap: 0.7rem;
 }
 
+
+.overviewStatusLine {
+  display: flex;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+  margin-top: 0.5rem;
+}
+
+.overviewStatusLine span {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.18rem;
+  padding: 0.18rem 0.35rem;
+  border: 1px solid rgba(52, 74, 84, 0.78);
+  color: var(--cc-muted);
+  font-size: 0.51rem;
+}
+
+.overviewStatusLine b {
+  color: var(--ivory);
+  font-size: 0.57rem;
+}
+
+.overviewBusinessMetrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+
+.overviewBusinessMetrics article {
+  min-width: 0;
+  padding: 0.8rem;
+  border: 1px solid var(--cc-line);
+  background:
+    linear-gradient(135deg, rgba(167, 227, 197, 0.025), transparent 64%),
+    var(--cc-panel);
+}
+
+.overviewBusinessMetrics span,
+.overviewBusinessMetrics strong,
+.overviewBusinessMetrics small {
+  display: block;
+}
+
+.overviewBusinessMetrics span {
+  color: var(--cc-muted);
+  font: 0.5rem var(--font-mono);
+  letter-spacing: 0.065em;
+}
+
+.overviewBusinessMetrics strong {
+  margin-top: 0.18rem;
+  font-size: 1.25rem;
+  letter-spacing: -0.035em;
+}
+
+.overviewBusinessMetrics small {
+  margin-top: 0.18rem;
+  color: #71838b;
+  font-size: 0.53rem;
+  line-height: 1.4;
+}
+
+.overviewSalesPanel {
+  overflow: hidden;
+  border: 1px solid var(--cc-line);
+  background:
+    linear-gradient(135deg, rgba(200, 169, 107, 0.035), transparent 50%),
+    var(--cc-panel);
+}
+
+.overviewSalesPanel > header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+  padding: 0.75rem 0.8rem 0.5rem;
+}
+
+.overviewSalesPanel > header span {
+  color: var(--gold);
+  font: 0.51rem var(--font-mono);
+  letter-spacing: 0.08em;
+}
+
+.overviewSalesPanel > header h2 {
+  margin-top: 0.18rem;
+  font-size: 0.83rem;
+}
+
+.overviewSalesPanel > header p {
+  margin-top: 0.2rem;
+  color: var(--cc-muted);
+  font-size: 0.55rem;
+}
+
+.overviewSalesPanel > header a {
+  flex: 0 0 auto;
+  color: var(--mint);
+  font-size: 0.56rem;
+}
+
+.overviewSalesChart {
+  min-height: 198px;
+  padding: 0 0.45rem 0.35rem;
+}
+
+.overviewCommandGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+
+.overviewCommandPanel,
+.overviewNextPanel {
+  overflow: hidden;
+  border: 1px solid var(--cc-line);
+  background: var(--cc-panel);
+}
+
+.overviewCommandPanel > header,
+.overviewNextPanel > header {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.7rem;
+  align-items: flex-start;
+  padding: 0.7rem 0.75rem;
+  border-bottom: 1px solid var(--cc-line);
+}
+
+.overviewCommandPanel > header span,
+.overviewNextPanel > header span {
+  color: var(--mint);
+  font: 0.5rem var(--font-mono);
+  letter-spacing: 0.075em;
+}
+
+.overviewCommandPanel > header h2,
+.overviewNextPanel > header h2 {
+  margin-top: 0.18rem;
+  font-size: 0.78rem;
+}
+
+.overviewNextPanel > header p {
+  margin-top: 0.2rem;
+  color: var(--cc-muted);
+  font-size: 0.54rem;
+}
+
+.overviewCommandPanel > header a,
+.overviewNextPanel > header a {
+  flex: 0 0 auto;
+  color: var(--mint);
+  font-size: 0.53rem;
+}
+
+.overviewCommandRows {
+  display: grid;
+}
+
+.overviewCommandRows > div {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  gap: 0.42rem;
+  padding: 0.58rem 0.65rem;
+  border-bottom: 1px solid rgba(39, 58, 68, 0.65);
+}
+
+.overviewCommandRows > div:last-child {
+  border-bottom: 0;
+}
+
+.overviewCommandRows > div[data-attention="true"] {
+  background: rgba(200, 169, 107, 0.055);
+}
+
+.overviewCommandRows svg {
+  margin-top: 1px;
+  color: var(--mint);
+}
+
+.overviewCommandRows > div[data-attention="true"] svg,
+.overviewCommandRows > div[data-severity="critical"] svg,
+.overviewCommandRows > div[data-severity="high"] svg,
+.overviewCommandRows > div[data-severity="attention"] svg {
+  color: var(--gold);
+}
+
+.overviewCommandRows strong,
+.overviewCommandRows small {
+  display: block;
+}
+
+.overviewCommandRows strong {
+  font-size: 0.6rem;
+}
+
+.overviewCommandRows small {
+  margin-top: 0.1rem;
+  color: var(--cc-muted);
+  font-size: 0.5rem;
+  line-height: 1.4;
+}
+
+.overviewNextRows {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.overviewNextRows > a {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 16px;
+  gap: 0.35rem 0.5rem;
+  padding: 0.62rem 0.7rem;
+  border-right: 1px solid var(--cc-line);
+  border-bottom: 1px solid var(--cc-line);
+}
+
+.overviewNextRows > a:nth-child(2n) {
+  border-right: 0;
+}
+
+.overviewNextRows > a span {
+  color: var(--ivory);
+  font-size: 0.6rem;
+  font-weight: 700;
+}
+
+.overviewNextRows > a p {
+  grid-column: 1;
+  color: var(--cc-muted);
+  font-size: 0.52rem;
+  line-height: 1.4;
+}
+
+.overviewNextRows > a svg {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  align-self: center;
+  color: var(--mint);
+}
+
+.overviewNextRows > div {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  gap: 0.45rem;
+  padding: 0.7rem;
+}
+
+.overviewNextRows > div svg {
+  color: var(--mint);
+}
+
+.overviewNextRows > div strong,
+.overviewNextRows > div small {
+  display: block;
+}
+
+.overviewNextRows > div strong {
+  font-size: 0.6rem;
+}
+
+.overviewNextRows > div small {
+  margin-top: 0.1rem;
+  color: var(--cc-muted);
+  font-size: 0.52rem;
+}
+
+.overviewDemoDisclosure {
+  color: #64747c;
+  font-size: 0.5rem;
+  line-height: 1.45;
+}
+
 .panelCard {
   padding: 0.85rem;
 }
@@ -3443,6 +3719,14 @@
     margin-left: auto;
   }
 
+  .overviewBusinessMetrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .overviewCommandGrid {
+    grid-template-columns: 1fr;
+  }
+
   .salesAnalyticsHeader {
     flex-direction: column;
   }
@@ -3600,6 +3884,24 @@
 @media (max-width: 520px) {
   .headerRuntimeActions {
     gap: 0.35rem;
+  }
+
+  .overviewBusinessMetrics {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .overviewSalesPanel > header,
+  .overviewCommandPanel > header,
+  .overviewNextPanel > header {
+    flex-direction: column;
+  }
+
+  .overviewNextRows {
+    grid-template-columns: 1fr;
+  }
+
+  .overviewNextRows > a {
+    border-right: 0;
   }
 
   .performanceSalesPulse > header {

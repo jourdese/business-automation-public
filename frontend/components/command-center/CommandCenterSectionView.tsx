@@ -17,6 +17,7 @@ import {
 import CompanionMark from "@/components/jourvis/CompanionMark";
 import SupplyPhoto from "./SupplyPhoto";
 import SalesAnalyticsPanel from "./SalesAnalyticsPanel";
+import OverviewSalesTrend from "./OverviewSalesTrend";
 import { operationCatalog } from "@/command-center/core/business-registry";
 import { buildCommandCenterFinance } from "@/command-center/core/finance-engine";
 import { buildCommandCenterForecast } from "@/command-center/core/forecast-engine";
@@ -93,9 +94,73 @@ export default function CommandCenterSectionView({
       state,
       tasks.length,
     );
+    const overviewForecast = buildCommandCenterForecast(state, 7);
+    const overviewInsights = buildCommandCenterInsights(state, tasks);
+    const overviewDailySales = buildCommandCenterSalesAnalytics(
+      state.sales,
+      business.timezone,
+      "daily",
+    );
+    const overviewWeeklySales = buildCommandCenterSalesAnalytics(
+      state.sales,
+      business.timezone,
+      "weekly",
+    );
     const highPriorityTaskCount = tasks.filter(
       (task) => task.priority === "high",
     ).length;
+    const formatMoney = (value: number) =>
+      "₱" + Math.round(value).toLocaleString("en-PH");
+    const todaySales = overviewDailySales.current;
+    const yesterdaySales = overviewDailySales.previous;
+    const todaySalesChange =
+      yesterdaySales && yesterdaySales.revenue > 0
+        ? Math.round(
+            ((todaySales.revenue - yesterdaySales.revenue) /
+              yesterdaySales.revenue) *
+              1000,
+          ) / 10
+        : null;
+    const topInsights = overviewInsights.slice(0, 3);
+    const nextForecastMoves = overviewForecast.inventoryRows
+      .filter(
+        (row) =>
+          row.risk !== "covered" ||
+          row.activePurchaseId ||
+          row.recommendedQuantity > 0,
+      )
+      .slice(0, 3);
+    const nextUp = [
+      ...activePurchases
+        .filter((purchase) => (purchase.etaDays ?? 99) <= 2)
+        .slice(0, 2)
+        .map((purchase) => {
+          const item = state.inventory.find(
+            (candidate) => candidate.id === purchase.itemId,
+          );
+          return {
+            id: `purchase-${purchase.id}`,
+            label: item?.name ?? purchase.itemId,
+            detail:
+              purchase.etaDays === 0
+                ? `${humanizeAction(purchase.status)} · due today`
+                : purchase.etaDays === 1
+                  ? `${humanizeAction(purchase.status)} · expected within 1 day`
+                  : `${humanizeAction(purchase.status)} · expected within ${purchase.etaDays} days`,
+            href: `/command-center/${business.id}/operations/purchasing`,
+          };
+        }),
+      ...nextForecastMoves.map((row) => ({
+        id: `forecast-${row.itemId}`,
+        label: row.name,
+        detail: row.nextAction,
+        href: `/command-center/${business.id}/forecast`,
+      })),
+    ].filter(
+      (item, index, items) =>
+        items.findIndex((candidate) => candidate.label === item.label) ===
+        index,
+    ).slice(0, 4);
 
     const operatingCondition = highPriorityTaskCount
       ? {
@@ -136,36 +201,6 @@ export default function CommandCenterSectionView({
                   "No owner exceptions or projected 7-day inventory risks are currently active.",
               };
 
-    const overviewMetrics = [
-      {
-        label: "Needs owner",
-        value: String(tasks.length),
-        note: highPriorityTaskCount
-          ? highPriorityTaskCount +
-            " high-priority exception" +
-            (highPriorityTaskCount === 1 ? "" : "s")
-          : "no high-priority exceptions",
-      },
-      {
-        label: "Jourvis working",
-        value: String(activePurchases.length),
-        note: "active purchasing workflows",
-      },
-      {
-        label: "7-day inventory risk",
-        value: String(overviewPerformance.inventoryRiskCount),
-        note: "configured usage plus incoming stock",
-      },
-      {
-        label: "Inventory readiness",
-        value:
-          overviewPerformance.inventoryReadinessPercent === null
-            ? "—"
-            : overviewPerformance.inventoryReadinessPercent + "%",
-        note: "average stock vs configured full level",
-      },
-    ];
-
     return (
       <SectionFrame
         eyebrow="OWNER OVERVIEW"
@@ -199,6 +234,17 @@ export default function CommandCenterSectionView({
             <span>CURRENT OPERATING CONDITION</span>
             <h2>{operatingCondition.title}</h2>
             <p>{operatingCondition.detail}</p>
+            <div className={styles.overviewStatusLine}>
+              <span>
+                <b>{tasks.length}</b> need owner
+              </span>
+              <span>
+                <b>{activePurchases.length}</b> Jourvis working
+              </span>
+              <span>
+                <b>{overviewPerformance.inventoryRiskCount}</b> 7-day risks
+              </span>
+            </div>
           </div>
 
           <label className={styles.masterAutomationSwitch}>
@@ -226,92 +272,123 @@ export default function CommandCenterSectionView({
           </label>
         </section>
 
-        <div className={styles.metricGrid}>
-          {overviewMetrics.map((metric) => (
-            <article className={styles.metricCard} key={metric.label}>
-              <span>{metric.label}</span>
-              <strong>{metric.value}</strong>
-              <div>
-                <b>Runtime</b>
-                <small>{metric.note}</small>
-              </div>
-            </article>
-          ))}
+        <div className={styles.overviewBusinessMetrics}>
+          <article>
+            <span>TODAY SALES</span>
+            <strong>{formatMoney(todaySales.revenue)}</strong>
+            <small>
+              {todaySalesChange === null
+                ? "no prior-day comparison"
+                : `${todaySalesChange > 0 ? "+" : ""}${todaySalesChange}% vs yesterday`}
+            </small>
+          </article>
+          <article>
+            <span>THIS WEEK SALES</span>
+            <strong>{formatMoney(overviewWeeklySales.current.revenue)}</strong>
+            <small>
+              {overviewWeeklySales.revenueChangePercent === null
+                ? "no prior-week comparison"
+                : `${overviewWeeklySales.revenueChangePercent > 0 ? "+" : ""}${overviewWeeklySales.revenueChangePercent}% vs previous week`}
+            </small>
+          </article>
+          <article>
+            <span>REMAINING AFTER FOOD COST</span>
+            <strong>{formatMoney(todaySales.ingredientContribution)}</strong>
+            <small>
+              {todaySales.ingredientMarginPercent === null
+                ? "margin unavailable"
+                : `${todaySales.ingredientMarginPercent}% of today's demo sales`}
+            </small>
+          </article>
+          <article>
+            <span>INVENTORY READINESS</span>
+            <strong>
+              {overviewPerformance.inventoryReadinessPercent === null
+                ? "—"
+                : overviewPerformance.inventoryReadinessPercent + "%"}
+            </strong>
+            <small>
+              {overviewPerformance.inventoryRiskCount} ingredient
+              {overviewPerformance.inventoryRiskCount === 1 ? "" : "s"} in 7-day risk
+            </small>
+          </article>
         </div>
 
-        <div className={styles.overviewColumns}>
-          <article className={styles.panelCard}>
-            <PanelHeading
-              icon={<ShieldCheck size={17} />}
-              eyebrow="NEEDS YOU"
-              title={
-                tasks.length
-                  ? tasks.length +
-                    " exception" +
-                    (tasks.length === 1 ? "" : "s") +
-                    " need the owner"
-                  : "No owner decisions waiting"
-              }
-            />
-            <div className={styles.decisionPreview}>
+        <OverviewSalesTrend
+          buckets={overviewDailySales.buckets}
+          businessId={business.id}
+        />
+
+        <div className={styles.overviewCommandGrid}>
+          <article className={styles.overviewCommandPanel}>
+            <header>
+              <div>
+                <span>NEEDS YOU</span>
+                <h2>
+                  {tasks.length
+                    ? `${tasks.length} decision${tasks.length === 1 ? "" : "s"} waiting`
+                    : "Nothing needs your authority"}
+                </h2>
+              </div>
+              <a href={`/command-center/${business.id}/decisions`}>
+                Open decisions <ArrowRight size={13} />
+              </a>
+            </header>
+            <div className={styles.overviewCommandRows}>
               {tasks.slice(0, 3).map((task) => (
                 <div
                   key={task.id}
-                  data-priority={
-                    task.priority === "high" ? "high" : undefined
-                  }
+                  data-attention={task.priority === "high" ? "true" : undefined}
                 >
-                  <CircleAlert size={16} />
+                  <CircleAlert size={15} aria-hidden />
                   <span>
                     <strong>{task.title}</strong>
-                    <small>{task.why}</small>
+                    <small>{task.whyOwnerIsNeeded ?? task.why}</small>
                   </span>
                 </div>
               ))}
               {!tasks.length ? (
                 <div>
-                  <CheckCircle2 size={16} />
+                  <CheckCircle2 size={15} aria-hidden />
                   <span>
-                    <strong>Jourvis is inside its authority.</strong>
-                    <small>
-                      Normal work can continue without an owner decision.
-                    </small>
+                    <strong>Jourvis is operating inside its authority.</strong>
+                    <small>No owner decision is currently blocking normal work.</small>
                   </span>
                 </div>
               ) : null}
             </div>
-            <a
-              className={styles.cardLink}
-              href={"/command-center/" + business.id + "/decisions"}
-            >
-              Open decisions <ArrowRight size={14} />
-            </a>
           </article>
 
-          <article className={styles.panelCard}>
-            <PanelHeading
-              icon={<Bot size={17} />}
-              eyebrow="JOURVIS NOW"
-              title={
-                activePurchases.length
-                  ? activePurchases.length +
-                    " active purchasing workflow" +
-                    (activePurchases.length === 1 ? "" : "s")
-                  : "No active purchasing workflow"
-              }
-            />
-            <div className={styles.decisionPreview}>
+          <article className={styles.overviewCommandPanel}>
+            <header>
+              <div>
+                <span>JOURVIS IS WORKING</span>
+                <h2>
+                  {activePurchases.length
+                    ? `${activePurchases.length} live workflow${activePurchases.length === 1 ? "" : "s"}`
+                    : "No active purchasing work"}
+                </h2>
+              </div>
+              <a href={`/command-center/${business.id}/operations/purchasing`}>
+                Open purchasing <ArrowRight size={13} />
+              </a>
+            </header>
+            <div className={styles.overviewCommandRows}>
               {activePurchases.slice(0, 3).map((purchase) => {
                 const item = state.inventory.find(
                   (candidate) => candidate.id === purchase.itemId,
                 );
                 return (
                   <div key={purchase.id}>
-                    <Sparkles size={16} />
+                    <Sparkles size={15} aria-hidden />
                     <span>
                       <strong>{item?.name ?? purchase.itemId}</strong>
                       <small>
-                        {humanizeAction(purchase.status)} · {purchase.id}
+                        {humanizeAction(purchase.status)}
+                        {purchase.etaDays !== undefined
+                          ? ` · ETA ${purchase.etaDays} day${purchase.etaDays === 1 ? "" : "s"}`
+                          : ""}
+                        {" · "}{purchase.id}
                       </small>
                     </span>
                   </div>
@@ -319,29 +396,89 @@ export default function CommandCenterSectionView({
               })}
               {!activePurchases.length ? (
                 <div>
-                  <CheckCircle2 size={16} />
+                  <CheckCircle2 size={15} aria-hidden />
                   <span>
-                    <strong>No replenishment work is active.</strong>
-                    <small>
-                      Jourvis will start new work only when a configured trigger
-                      is reached and its authority allows it.
-                    </small>
+                    <strong>No purchasing workflow is active.</strong>
+                    <small>Jourvis will start work when a configured trigger is reached.</small>
                   </span>
                 </div>
               ) : null}
             </div>
-            <a
-              className={styles.cardLink}
-              href={
-                "/command-center/" +
-                business.id +
-                "/operations/purchasing"
-              }
-            >
-              Open purchasing <ArrowRight size={14} />
-            </a>
+          </article>
+
+          <article className={styles.overviewCommandPanel}>
+            <header>
+              <div>
+                <span>WHAT JOURVIS NOTICED</span>
+                <h2>
+                  {topInsights.length
+                    ? `${topInsights.length} useful signal${topInsights.length === 1 ? "" : "s"}`
+                    : "No material insight right now"}
+                </h2>
+              </div>
+              <a href={`/command-center/${business.id}/insights`}>
+                Open insights <ArrowRight size={13} />
+              </a>
+            </header>
+            <div className={styles.overviewCommandRows}>
+              {topInsights.map((insight) => (
+                <div key={insight.id} data-severity={insight.severity}>
+                  <LineChart size={15} aria-hidden />
+                  <span>
+                    <strong>{insight.title}</strong>
+                    <small>{insight.summary}</small>
+                  </span>
+                </div>
+              ))}
+              {!topInsights.length ? (
+                <div>
+                  <CheckCircle2 size={15} aria-hidden />
+                  <span>
+                    <strong>No material runtime insight needs surfacing.</strong>
+                    <small>Jourvis will surface a signal when the current data supports one.</small>
+                  </span>
+                </div>
+              ) : null}
+            </div>
           </article>
         </div>
+
+        <article className={styles.overviewNextPanel}>
+          <header>
+            <div>
+              <span>NEXT UP</span>
+              <h2>What is most likely to matter next</h2>
+              <p>
+                Upcoming supplier movement and forecast actions derived from the current runtime.
+              </p>
+            </div>
+            <a href={`/command-center/${business.id}/forecast`}>
+              Open forecast <ArrowRight size={13} />
+            </a>
+          </header>
+          <div className={styles.overviewNextRows}>
+            {nextUp.map((item) => (
+              <a href={item.href} key={item.id}>
+                <span>{item.label}</span>
+                <p>{item.detail}</p>
+                <ArrowRight size={12} aria-hidden />
+              </a>
+            ))}
+            {!nextUp.length ? (
+              <div>
+                <CheckCircle2 size={15} aria-hidden />
+                <span>
+                  <strong>No immediate next move is currently required.</strong>
+                  <small>Jourvis will update this when purchasing or forecast state changes.</small>
+                </span>
+              </div>
+            ) : null}
+          </div>
+        </article>
+
+        <p className={styles.overviewDemoDisclosure}>
+          Sales figures on this demo Overview come from the synthetic dated POS ledger and are not verified production revenue.
+        </p>
       </SectionFrame>
     );
   }
