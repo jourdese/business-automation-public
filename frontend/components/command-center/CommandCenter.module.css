@@ -3554,6 +3554,10 @@
 }
 
 .menuDetailModal {
+  position: relative;
+  inset: auto;
+  align-self: center;
+  justify-self: center;
   width: min(720px, 94vw);
   max-width: 720px;
   max-height: min(760px, 90vh);
