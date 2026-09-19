@@ -18,7 +18,7 @@ Status: in progress / mostly implemented
 - Decisions
 - Activity
 - Menu + Recipe CRUD
-- Compact function-first Menu library + fixed no-scroll editors
+- Compact function-first Menu library with detail modal + fixed no-scroll editors
 - Menu economics and recipe-impact preview
 - Recipe → create Inventory Item → create/edit Supplier
 - Menu/Recipe duplicate, archive filtering, bulk availability, category rename, and ordering
