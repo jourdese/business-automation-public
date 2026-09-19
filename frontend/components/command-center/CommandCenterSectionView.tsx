@@ -661,38 +661,16 @@ export default function CommandCenterSectionView({
           </p>
         </article>
 
-        <div className={styles.cardGrid}>
-          {[
-            [
-              "Revenue",
-              "POS / accounting provider required",
-              "Revenue forecasting will activate when real sales history is connected.",
-            ],
-            [
-              "Customer demand",
-              "POS / reservations provider required",
-              "Covers and order demand will use real historical and forward demand signals.",
-            ],
-            [
-              "Cash",
-              "Finance provider required",
-              "Cash forecasting will use actual receivables, payables, balances, and scheduled outflows.",
-            ],
-            [
-              "Labor",
-              "Scheduling / timeclock provider required",
-              "Labor demand will connect forecasted workload to staffing and labor cost.",
-            ],
-          ].map(([title, source, description]) => (
-            <article className={styles.moduleCard} key={title}>
-              <LineChart size={19} />
-              <span>DATA SOURCE PENDING</span>
-              <h3>{title}</h3>
-              <p>{description}</p>
-              <small>{source}</small>
-            </article>
-          ))}
-        </div>
+        <PendingDataSources
+          title="Production forecast inputs"
+          description="The demo forecast is intentionally inventory-led. These expand only when real providers are connected."
+          items={[
+            ["Revenue", "POS / accounting", "Real sales history"],
+            ["Customer demand", "POS / reservations", "Covers and forward demand"],
+            ["Cash", "Finance", "Balances, payables and receivables"],
+            ["Labor", "Scheduling / timeclock", "Staffing and labor cost"],
+          ]}
+        />
       </SectionFrame>
     );
   }
@@ -912,38 +890,16 @@ export default function CommandCenterSectionView({
           </div>
         </article>
 
-        <div className={styles.cardGrid}>
-          {[
-            [
-              "Revenue",
-              "POS / accounting provider required",
-              "Real revenue performance needs verified sales history and a defined reporting period.",
-            ],
-            [
-              "Operating profit",
-              "Accounting provider required",
-              "Profit will activate from actual revenue, COGS, labor, and operating expense data.",
-            ],
-            [
-              "Gross margin",
-              "Sales + accounting provider required",
-              "Menu ingredient cost alone is not enough to represent business-wide gross margin.",
-            ],
-            [
-              "Average order value",
-              "POS provider required",
-              "AOV will be calculated from real transactions rather than illustrative demo seeds.",
-            ],
-          ].map(([title, source, description]) => (
-            <article className={styles.moduleCard} key={title}>
-              <LineChart size={19} />
-              <span>DATA SOURCE PENDING</span>
-              <h3>{title}</h3>
-              <p>{description}</p>
-              <small>{source}</small>
-            </article>
-          ))}
-        </div>
+        <PendingDataSources
+          title="Production performance KPIs"
+          description="These stay hidden in the demo because Jourvis does not invent sales or accounting results."
+          items={[
+            ["Revenue", "POS / accounting", "Verified sales by reporting period"],
+            ["Operating profit", "Accounting", "Revenue, COGS, labor and expenses"],
+            ["Gross margin", "Sales + accounting", "Business-wide margin"],
+            ["Average order value", "POS", "Real transaction-level AOV"],
+          ]}
+        />
       </SectionFrame>
     );
   }
@@ -1071,48 +1027,18 @@ export default function CommandCenterSectionView({
           </div>
         </article>
 
-        <div className={styles.cardGrid}>
-          {[
-            [
-              "Profit & Loss",
-              "Accounting + sales provider required",
-              "Revenue, COGS, gross profit, operating expenses, and net profit need a verified accounting period.",
-            ],
-            [
-              "Cash Flow",
-              "Bank/accounting provider required",
-              "Cash forecasting requires balances, inflows, scheduled outflows, and actual payment timing.",
-            ],
-            [
-              "Expenses",
-              "Accounting/expense provider required",
-              "Expense categories, recurring costs, and anomalies will activate from real ledger/receipt data.",
-            ],
-            [
-              "Payables",
-              "Accounting/AP provider required",
-              "Supplier obligations need invoice amount, due date, payment status, and counterparty records.",
-            ],
-            [
-              "Receivables",
-              "Sales/accounting provider required",
-              "Expected collections require invoices, channels, counterparties, and payment status.",
-            ],
-            [
-              "Reconciliation",
-              "Bank + accounting provider required",
-              "Jourvis will compare business records with actual payment and bank activity once both sources are connected.",
-            ],
-          ].map(([title, source, description]) => (
-            <article className={styles.moduleCard} key={title}>
-              <WalletCards size={19} />
-              <span>DATA SOURCE PENDING</span>
-              <h3>{title}</h3>
-              <p>{description}</p>
-              <small>{source}</small>
-            </article>
-          ))}
-        </div>
+        <PendingDataSources
+          title="Production accounting views"
+          description="Operational purchasing values are live in this demo. Formal accounting remains unavailable until verified financial providers are connected."
+          items={[
+            ["Profit & Loss", "Accounting + sales", "Revenue, COGS and operating expenses"],
+            ["Cash Flow", "Bank / accounting", "Balances, inflows and scheduled outflows"],
+            ["Expenses", "Accounting / expense", "Categories, recurring costs and anomalies"],
+            ["Payables", "Accounting / AP", "Invoices, due dates and payment status"],
+            ["Receivables", "Sales / accounting", "Expected collections and payment status"],
+            ["Reconciliation", "Bank + accounting", "Business records vs actual payments"],
+          ]}
+        />
       </SectionFrame>
     );
   }
@@ -1503,6 +1429,37 @@ export default function CommandCenterSectionView({
         ) : null}
       </div>
     </SectionFrame>
+  );
+}
+
+function PendingDataSources({
+  title,
+  description,
+  items,
+}: {
+  title: string;
+  description: string;
+  items: Array<[string, string, string]>;
+}) {
+  return (
+    <details className={styles.pendingDataSources}>
+      <summary>
+        <span>
+          <strong>{title}</strong>
+          <small>{description}</small>
+        </span>
+        <b>{items.length} later</b>
+      </summary>
+      <div>
+        {items.map(([label, source, note]) => (
+          <article key={label}>
+            <strong>{label}</strong>
+            <span>{source}</span>
+            <small>{note}</small>
+          </article>
+        ))}
+      </div>
+    </details>
   );
 }
 
