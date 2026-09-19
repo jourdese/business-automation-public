@@ -18,7 +18,7 @@ Status: in progress / mostly implemented
 - Decisions
 - Activity
 - Menu + Recipe CRUD
-- Compact expandable Menu library + fixed no-scroll editors
+- Compact function-first Menu library + fixed no-scroll editors
 - Menu economics and recipe-impact preview
 - Recipe → create Inventory Item → create/edit Supplier
 - Menu/Recipe duplicate, archive filtering, bulk availability, category rename, and ordering
@@ -29,9 +29,9 @@ Status: in progress / mostly implemented
 - Canonical Marinara business configuration
 
 Before production:
-- visual local full-flow review of the new compact Menu/configuration drawers
+- visual local full-flow review of the compact Menu/configuration drawers
 - remaining parity sign-off
-- retire legacy Autoinventory after visual sign-off
+- legacy Autoinventory is retired on this branch and preserved at `archive/marinara-autoinventory-preview`
 - move runtime validation/idempotency enforcement server-side with Jourvis V2
 
 ## Phase 2 — Forecast
