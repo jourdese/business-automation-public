@@ -7,6 +7,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import { resolveCommandCenterBusiness } from "./business-registry";
@@ -29,6 +30,10 @@ import {
   type JourvisTaskAction,
 } from "./runtime";
 import { deriveJourvisTasks } from "./task-engine";
+import {
+  appendCommandCenterHistorySnapshot,
+  commandCenterHistorySignature,
+} from "./history-engine";
 import {
   inventoryRuleSnapshot,
   normalizeActivity,
@@ -109,6 +114,7 @@ function createGenericSeed(businessId: string): CommandCenterRuntimeState {
     menuItems: [],
     pausedItemIds: [],
     activity: [],
+    history: [],
   };
 }
 
@@ -239,6 +245,7 @@ function normalizeStoredState(
       };
     }),
     activity: (stored.activity ?? []).map((entry) => normalizeActivity(entry)),
+    history: stored.history ?? [],
   };
 }
 
@@ -510,6 +517,7 @@ export function CommandCenterRuntimeProvider({
     createSeed("marinara-ristorante"),
   );
   const [loading, setLoading] = useState(true);
+  const historySignatureRef = useRef<string | null>(null);
 
   useEffect(() => {
     const resolved = businessIdFromPath();
@@ -535,6 +543,40 @@ export function CommandCenterRuntimeProvider({
   useEffect(() => {
     if (loading || state.business.id !== businessId) return;
     window.localStorage.setItem(storageKey(businessId), JSON.stringify(state));
+  }, [businessId, loading, state]);
+
+  useEffect(() => {
+    if (loading || state.business.id !== businessId) return;
+
+    const ownerExceptionCount = deriveJourvisTasks(state).length;
+    const signature = commandCenterHistorySignature(
+      state,
+      ownerExceptionCount,
+    );
+
+    if (
+      historySignatureRef.current === signature ||
+      state.history[0]?.stateSignature === signature
+    ) {
+      historySignatureRef.current = signature;
+      return;
+    }
+
+    historySignatureRef.current = signature;
+    setState((current) => {
+      const currentOwnerExceptionCount =
+        deriveJourvisTasks(current).length;
+      const currentSignature = commandCenterHistorySignature(
+        current,
+        currentOwnerExceptionCount,
+      );
+      if (currentSignature !== signature) return current;
+
+      return appendCommandCenterHistorySnapshot(
+        current,
+        currentOwnerExceptionCount,
+      );
+    });
   }, [businessId, loading, state]);
 
   useEffect(() => {
