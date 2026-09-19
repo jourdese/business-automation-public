@@ -29,6 +29,7 @@ import {
   type CommandCenterRecipe,
   type CommandCenterRuntimeState,
   type CommandCenterStockAdjustmentReason,
+  type CommandCenterSupplier,
   type JourvisRuntimeTask,
   type JourvisTaskAction,
 } from "./runtime";
@@ -90,6 +91,15 @@ type CommandCenterRuntimeContextValue = {
   createInventoryItem: (
     item: Omit<CommandCenterInventoryItem, "id">,
   ) => string;
+  saveSupplier: (supplier: {
+    id?: string;
+    name: string;
+    contacts: Array<
+      Omit<CommandCenterSupplier["contacts"][number], "id"> & {
+        id?: string;
+      }
+    >;
+  }) => string | null;
   recordRecipeSale: (recipeId: string, quantity?: number) => void;
   resumeItem: (itemId: string) => void;
   resetDemo: () => void;
@@ -1753,6 +1763,84 @@ export function CommandCenterRuntimeProvider({
     [state.inventory],
   );
 
+  const saveSupplier = useCallback(
+    (draft: {
+      id?: string;
+      name: string;
+      contacts: Array<
+        Omit<CommandCenterSupplier["contacts"][number], "id"> & {
+          id?: string;
+        }
+      >;
+    }) => {
+      const name = draft.name.trim();
+      if (!name) return null;
+
+      const existing = draft.id
+        ? state.suppliers.find((supplier) => supplier.id === draft.id)
+        : undefined;
+      const id =
+        existing?.id ??
+        nextEntityId(
+          "supplier",
+          name,
+          state.suppliers.map((supplier) => supplier.id),
+        );
+      const contacts = draft.contacts
+        .map((contact) => ({
+          id:
+            contact.id?.trim() ||
+            `contact-${randomToken().slice(0, 8).toLowerCase()}`,
+          name: contact.name.trim(),
+          role: contact.role.trim(),
+          channel: contact.channel.trim(),
+          email: contact.email.trim(),
+          phone: contact.phone.trim(),
+        }))
+        .filter((contact) => contact.name);
+
+      if (!contacts.length) return null;
+
+      setState((current) => {
+        const currentExisting = current.suppliers.find(
+          (supplier) => supplier.id === id,
+        );
+        const nextSupplier: CommandCenterSupplier = {
+          id,
+          name,
+          contacts,
+          itemIds: currentExisting?.itemIds ?? [],
+        };
+
+        return {
+          ...current,
+          suppliers: currentExisting
+            ? current.suppliers.map((supplier) =>
+                supplier.id === id ? nextSupplier : supplier,
+              )
+            : [nextSupplier, ...current.suppliers],
+          activity: addActivity(current, {
+            module: "suppliers",
+            action: currentExisting
+              ? "supplier_updated"
+              : "supplier_created",
+            message: currentExisting
+              ? `Owner updated supplier ${name}.`
+              : `Owner created supplier ${name}.`,
+            actor: "owner",
+            executionMode: "manual",
+            reason:
+              "The owner changed supplier identity/contact configuration used by Inventory and Purchasing.",
+            relatedEntityId: id,
+          }),
+        };
+      });
+
+      return id;
+    },
+    [state.suppliers],
+  );
+
   const recordRecipeSale = useCallback(
     (recipeId: string, quantity = 1) => {
       if (!Number.isFinite(quantity) || quantity <= 0) return;
@@ -1882,6 +1970,7 @@ export function CommandCenterRuntimeProvider({
       archiveRecipe,
       duplicateRecipe,
       createInventoryItem,
+      saveSupplier,
       recordRecipeSale,
       resumeItem,
       resetDemo,
@@ -1909,6 +1998,7 @@ export function CommandCenterRuntimeProvider({
       archiveRecipe,
       duplicateRecipe,
       createInventoryItem,
+      saveSupplier,
       recordRecipeSale,
       state,
       tasks,
