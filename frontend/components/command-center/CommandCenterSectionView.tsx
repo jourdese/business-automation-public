@@ -1474,17 +1474,11 @@ export default function CommandCenterSectionView({
         </div>
 
         {selectedInsight ? (
-          <div
-            className={styles.insightModalBackdrop}
-            role="presentation"
-            onMouseDown={() => setInsightModalId(null)}
-          >
-            <section
+          <div className={styles.insightModalBackdrop}>
+            <dialog
+              open
               className={styles.insightMathModal}
-              role="dialog"
-              aria-modal="true"
               aria-labelledby="insight-calculation-title"
-              onMouseDown={(event) => event.stopPropagation()}
             >
               <header className={styles.insightMathModalHeader}>
                 <div>
@@ -1545,22 +1539,16 @@ export default function CommandCenterSectionView({
                   </div>
                 ) : null}
               </div>
-            </section>
+            </dialog>
           </div>
         ) : null}
 
         {insightMethodsOpen ? (
-          <div
-            className={styles.insightModalBackdrop}
-            role="presentation"
-            onMouseDown={() => setInsightMethodsOpen(false)}
-          >
-            <section
+          <div className={styles.insightModalBackdrop}>
+            <dialog
+              open
               className={styles.insightMathModal}
-              role="dialog"
-              aria-modal="true"
               aria-labelledby="insight-methods-title"
-              onMouseDown={(event) => event.stopPropagation()}
             >
               <header className={styles.insightMathModalHeader}>
                 <div>
@@ -1617,7 +1605,7 @@ export default function CommandCenterSectionView({
                   </div>
                 </section>
               </div>
-            </section>
+            </dialog>
           </div>
         ) : null}
       </SectionFrame>
