@@ -1026,10 +1026,9 @@ export default function OperationModuleView({
               }
             }}
           >
-            <aside
+            <dialog
+              open
               className={styles.entityDrawer}
-              role="dialog"
-              aria-modal="true"
               aria-label={
                 supplierEditor.id ? "Edit supplier" : "Add supplier"
               }
@@ -1040,7 +1039,7 @@ export default function OperationModuleView({
                 onSave={() => submitSupplierEditor(supplierEditor)}
                 onCancel={() => setSupplierEditor(null)}
               />
-            </aside>
+            </dialog>
           </div>
         ) : null}
 
@@ -1364,10 +1363,9 @@ export default function OperationModuleView({
               }
             }}
           >
-            <aside
+            <dialog
+              open
               className={styles.entityDrawer}
-              role="dialog"
-              aria-modal="true"
               aria-label={
                 menuEditor.id ? "Edit menu item" : "Add menu item"
               }
@@ -1380,7 +1378,7 @@ export default function OperationModuleView({
                 onSave={submitMenuEditor}
                 onCancel={() => setMenuEditor(null)}
               />
-            </aside>
+            </dialog>
           </div>
         ) : null}
 
@@ -1876,10 +1874,9 @@ export default function OperationModuleView({
               }
             }}
           >
-            <aside
+            <dialog
+              open
               className={styles.entityDrawer}
-              role="dialog"
-              aria-modal="true"
               aria-label={recipeEditor.id ? "Edit recipe" : "Add recipe"}
             >
               <RecipeEditorPanel
@@ -1894,7 +1891,7 @@ export default function OperationModuleView({
                 onSave={submitRecipeEditor}
                 onCancel={() => setRecipeEditor(null)}
               />
-            </aside>
+            </dialog>
           </div>
         ) : null}
 
