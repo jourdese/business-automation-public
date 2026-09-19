@@ -21,6 +21,7 @@ import {
   buildCommandCenterForecastAccuracy,
   buildCommandCenterHistoryTrend,
 } from "@/command-center/core/history-engine";
+import { buildCommandCenterMenuEconomics } from "@/command-center/core/menu-economics";
 import { buildCommandCenterPerformance } from "@/command-center/core/performance-engine";
 import { buildCommandCenterSupplierPerformance } from "@/command-center/core/supplier-performance-engine";
 import { isPurchaseActive } from "@/command-center/core/runtime";
@@ -1353,87 +1354,247 @@ export default function CommandCenterSectionView({
 
   if (section === "insights") {
     const insightForecast = buildCommandCenterForecast(state, 7);
-    const insightPerformance = buildCommandCenterPerformance(
-      state,
-      tasks.length,
+    const activeRecipeById = new Map(
+      state.recipes
+        .filter((recipe) => recipe.active)
+        .map((recipe) => [recipe.id, recipe]),
     );
-    const insightFinance = buildCommandCenterFinance(state);
-    const highestRisks = insightForecast.inventoryRows
-      .filter((row) => row.risk !== "covered")
-      .slice(0, 3)
-      .map((row) => row.name);
-    const formatMoney = (value: number) =>
-      "₱" + Math.round(value).toLocaleString("en-PH");
+    const highestRisk = insightForecast.inventoryRows.find(
+      (row) => row.risk === "critical" || row.risk === "high",
+    );
+    const highestRiskTask = highestRisk
+      ? tasks.find((task) => task.entityId === highestRisk.itemId)
+      : undefined;
+    const incomingProtection = insightForecast.inventoryRows.find(
+      (row) => row.incoming > 0 && row.activePurchaseId,
+    );
+    const supplierWait = activePurchases.find(
+      (purchase) =>
+        purchase.status === "requested" ||
+        purchase.status === "quote_requested" ||
+        purchase.status === "supplier_viewed",
+    );
+    const supplierWaitItem = supplierWait
+      ? state.inventory.find((item) => item.id === supplierWait.itemId)
+      : undefined;
+    const supplierWaitTask = supplierWait
+      ? tasks.find((task) => task.requestId === supplierWait.id)
+      : undefined;
+    const menuPressure = state.menuItems
+      .flatMap((menuItem) => {
+        if (
+          !menuItem.active ||
+          menuItem.currentPrice === undefined ||
+          menuItem.currentPrice <= 0 ||
+          !menuItem.recipeId
+        ) {
+          return [];
+        }
+        const recipe = activeRecipeById.get(menuItem.recipeId);
+        if (!recipe) return [];
+        const economics = buildCommandCenterMenuEconomics(
+          menuItem,
+          recipe,
+          state.inventory,
+        );
+        return economics.warning === "none"
+          ? []
+          : [{ menuItem, economics }];
+      })
+      .sort(
+        (left, right) =>
+          (right.economics.foodCostPercent ?? 0) -
+          (left.economics.foodCostPercent ?? 0),
+      )[0];
+    const separateAuthorityTask = tasks.find(
+      (task) =>
+        task.priority === "high" &&
+        task.id !== highestRiskTask?.id &&
+        task.id !== supplierWaitTask?.id,
+    );
+    const meaningfulTrend =
+      hasHistoricalComparison &&
+      (
+        (historyTrend.inventoryReadinessDelta ?? 0) !== 0 ||
+        (historyTrend.inventoryRiskDelta ?? 0) !== 0 ||
+        (historyTrend.ownerExceptionDelta ?? 0) !== 0
+      );
+
+    const insightCount =
+      (highestRisk ? 1 : 0) +
+      (incomingProtection ? 1 : 0) +
+      (supplierWait && supplierWaitItem && supplierWait.id !== highestRisk?.activePurchaseId ? 1 : 0) +
+      (menuPressure ? 1 : 0) +
+      (separateAuthorityTask ? 1 : 0) +
+      (meaningfulTrend ? 1 : 0);
 
     return (
       <SectionFrame
         eyebrow="INSIGHTS"
-        title="What Jourvis noticed before you asked."
-        description="Insights now combine Forecast, Performance, Finance, Operations, Decisions, and Activity instead of treating each tab as an isolated dashboard."
+        title="Only what is worth noticing."
+        description="Jourvis surfaces a finding only when the current runtime supports it. No generic observations, invented trends, or provider-gated business claims."
       >
+        <div className={styles.insightSummary}>
+          <span>SELECTIVE SIGNALS</span>
+          <strong>{insightCount}</strong>
+          <small>
+            runtime-supported insight{insightCount === 1 ? "" : "s"} right now
+          </small>
+        </div>
+
         <div className={styles.insightList}>
-          <article>
-            <LineChart size={16} />
-            <div>
-              <strong>Forward inventory pressure</strong>
-              <p>
-                {highestRisks.length
-                  ? `${insightForecast.horizonRiskCount} ingredient${insightForecast.horizonRiskCount === 1 ? " is" : "s are"} exposed within seven days. Highest current risks: ${highestRisks.join(", ")}.`
-                  : "No configured ingredient is currently forecast to enter a stock-risk state within seven days."}
-              </p>
-            </div>
-          </article>
-          <article>
-            <Sparkles size={16} />
-            <div>
-              <strong>Menu operating coverage</strong>
-              <p>
-                {insightPerformance.recipeCoveragePercent === null
-                  ? "No active menu catalog is available yet."
-                  : `${insightPerformance.recipeCoveragePercent}% of configured menu items have active recipe mappings. ${insightPerformance.pricedMappedMenuCount} priced mapped item${insightPerformance.pricedMappedMenuCount === 1 ? " can" : "s can"} currently expose food-cost and margin estimates.`}
-              </p>
-            </div>
-          </article>
-          <article>
-            <WalletCards size={16} />
-            <div>
-              <strong>Purchasing capital in motion</strong>
-              <p>
-                Active purchasing represents {formatMoney(insightFinance.openPurchaseCommitments)} in configured commitments, with {formatMoney(insightFinance.confirmedIncomingCommitments)} already at confirmed/in-transit/partial-receipt stages.
-              </p>
-            </div>
-          </article>
-          <article>
-            <Bot size={16} />
-            <div>
-              <strong>Owner dependency</strong>
-              <p>
-                {tasks.length
-                  ? `${tasks.length} exception${tasks.length === 1 ? " currently requires" : "s currently require"} human authority. Jourvis keeps those cases in Decisions instead of silently exceeding configured limits.`
-                  : "No current workflow requires owner authority."}
-              </p>
-            </div>
-          </article>
-          <article>
-            <LineChart size={16} />
-            <div>
-              <strong>Direction of travel</strong>
-              <p>
-                {hasHistoricalComparison
-                  ? `Since the first captured snapshot, inventory readiness moved ${formatSigned(historyTrend.inventoryReadinessDelta, " points")}, inventory risk moved ${formatSigned(historyTrend.inventoryRiskDelta)}, owner exceptions moved ${formatSigned(historyTrend.ownerExceptionDelta)}, and purchasing commitments moved ${formatSignedMoney(historyTrend.openCommitmentDelta)}.`
-                  : "Jourvis has begun capturing operating history. Direction-of-travel insights will appear after another meaningful business-state change."}
-              </p>
-            </div>
-          </article>
-          <article>
-            <CircleAlert size={16} />
-            <div>
-              <strong>Still missing for full business intelligence</strong>
-              <p>
-                Revenue, profit, cash, customer-demand, labor, and period-over-period trends remain provider-gated. Jourvis will not infer those financial/business outcomes from inventory data alone.
-              </p>
-            </div>
-          </article>
+          {highestRisk ? (
+            <article
+              data-severity={
+                highestRisk.risk === "critical" ? "critical" : "high"
+              }
+            >
+              <CircleAlert size={16} />
+              <div>
+                <strong>{highestRisk.name} is the clearest stock risk</strong>
+                <p>
+                  {highestRisk.daysCover === null
+                    ? "Configured usage is not available for a days-of-cover estimate."
+                    : `About ${highestRisk.daysCover} days of cover remain.`}
+                  {" "}Projected stock at supplier arrival is {highestRisk.projectedAtDelivery} {highestRisk.unit},
+                  and the 7-day projection is {highestRisk.projectedAtHorizon} {highestRisk.unit}.
+                  {highestRisk.affectedRecipes.length
+                    ? ` Affected recipes: ${highestRisk.affectedRecipes.join(", ")}.`
+                    : ""}
+                  {highestRiskTask
+                    ? ` The workflow is currently stopped for owner authority: ${highestRiskTask.why}`
+                    : highestRisk.activePurchaseId
+                      ? ` Replenishment ${highestRisk.activePurchaseId} is already active.`
+                      : ""}
+                </p>
+                <div className={styles.insightMeta}>
+                  <span>{highestRisk.risk.toUpperCase()} RISK</span>
+                  <a href={`/command-center/${business.id}/forecast`}>
+                    Open forecast <ArrowRight size={12} />
+                  </a>
+                </div>
+              </div>
+            </article>
+          ) : null}
+
+          {supplierWait && supplierWaitItem && supplierWait.id !== highestRisk?.activePurchaseId ? (
+            <article data-severity={supplierWaitTask ? "attention" : "watch"}>
+              <Bot size={16} />
+              <div>
+                <strong>{supplierWaitItem.name} replenishment is waiting</strong>
+                <p>
+                  {supplierWait.id} is currently {humanizeAction(supplierWait.status).toLowerCase()}.
+                  {" "}{supplierWaitTask
+                    ? `Jourvis cannot continue yet: ${supplierWaitTask.why}`
+                    : "The supplier workflow has not reached final confirmation yet, so Jourvis is keeping the purchase separate from confirmed incoming stock."}
+                </p>
+                <div className={styles.insightMeta}>
+                  <span>WORKFLOW STATE</span>
+                  <a href={`/command-center/${business.id}/operations/purchasing`}>
+                    Open purchasing <ArrowRight size={12} />
+                  </a>
+                </div>
+              </div>
+            </article>
+          ) : null}
+
+          {incomingProtection ? (
+            <article data-severity="protected">
+              <ShieldCheck size={16} />
+              <div>
+                <strong>{incomingProtection.name} risk is being protected by incoming stock</strong>
+                <p>
+                  {incomingProtection.incoming} {incomingProtection.unit} is confirmed incoming under {incomingProtection.activePurchaseId}.
+                  Jourvis still keeps it separate from on-hand inventory until physical receiving is confirmed.
+                  {" "}Projected 7-day stock is {incomingProtection.projectedAtHorizon} {incomingProtection.unit}.
+                </p>
+                <div className={styles.insightMeta}>
+                  <span>INCOMING PROTECTION</span>
+                  <a href={`/command-center/${business.id}/operations/inventory`}>
+                    Open inventory <ArrowRight size={12} />
+                  </a>
+                </div>
+              </div>
+            </article>
+          ) : null}
+
+          {menuPressure ? (
+            <article
+              data-severity={
+                menuPressure.economics.warning === "high" ? "high" : "watch"
+              }
+            >
+              <WalletCards size={16} />
+              <div>
+                <strong>{menuPressure.menuItem.name} is under food-cost pressure</strong>
+                <p>
+                  Configured ingredient cost is approximately ₱{Math.round(menuPressure.economics.ingredientCost ?? 0).toLocaleString("en-PH")}
+                  {" "}against a selling price of ₱{Math.round(menuPressure.menuItem.currentPrice ?? 0).toLocaleString("en-PH")},
+                  for an ingredient-only food cost of {menuPressure.economics.foodCostPercent}%.
+                  {menuPressure.economics.riskyIngredientIds.length
+                    ? ` ${menuPressure.economics.riskyIngredientIds.length} ingredient${menuPressure.economics.riskyIngredientIds.length === 1 ? " is" : "s are"} also at or below reorder level.`
+                    : ""}
+                </p>
+                <div className={styles.insightMeta}>
+                  <span>MENU ECONOMICS</span>
+                  <a href={`/command-center/${business.id}/operations/menu`}>
+                    Open menu <ArrowRight size={12} />
+                  </a>
+                </div>
+              </div>
+            </article>
+          ) : null}
+
+          {separateAuthorityTask ? (
+            <article data-severity="attention">
+              <Sparkles size={16} />
+              <div>
+                <strong>Jourvis deliberately stopped before exceeding authority</strong>
+                <p>
+                  {separateAuthorityTask.title}. {separateAuthorityTask.whatJourvisDid}
+                  {" "}{separateAuthorityTask.whyOwnerIsNeeded ?? separateAuthorityTask.why}
+                </p>
+                <div className={styles.insightMeta}>
+                  <span>HUMAN AUTHORITY</span>
+                  <a href={`/command-center/${business.id}/decisions`}>
+                    Open decisions <ArrowRight size={12} />
+                  </a>
+                </div>
+              </div>
+            </article>
+          ) : null}
+
+          {meaningfulTrend ? (
+            <article data-severity="trend">
+              <LineChart size={16} />
+              <div>
+                <strong>The captured operating state has materially moved</strong>
+                <p>
+                  Across {historyTrend.snapshotCount} observed states, inventory readiness changed {formatSigned(historyTrend.inventoryReadinessDelta, " points")},
+                  {" "}7-day inventory risk changed {formatSigned(historyTrend.inventoryRiskDelta)},
+                  and owner exceptions changed {formatSigned(historyTrend.ownerExceptionDelta)}.
+                </p>
+                <div className={styles.insightMeta}>
+                  <span>OBSERVED HISTORY</span>
+                  <a href={`/command-center/${business.id}/performance`}>
+                    Open performance <ArrowRight size={12} />
+                  </a>
+                </div>
+              </div>
+            </article>
+          ) : null}
+
+          {!insightCount ? (
+            <article data-severity="clear">
+              <CheckCircle2 size={16} />
+              <div>
+                <strong>No material runtime insight needs surfacing right now</strong>
+                <p>
+                  Jourvis has no supported stock-risk, workflow-blocker, food-cost-pressure, authority, or observed-trend finding strong enough to call out.
+                </p>
+              </div>
+            </article>
+          ) : null}
         </div>
       </SectionFrame>
     );
