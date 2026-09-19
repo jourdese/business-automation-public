@@ -14,6 +14,7 @@ import { resolveCommandCenterBusiness } from "./business-registry";
 import { recipeIngredientCost } from "./menu-economics";
 import {
   canAdvancePurchase,
+  canMenuItemBeAvailable,
   canReceivePurchaseStatus,
   canTransitionPurchaseStatus,
   estimatedPurchaseTotal,
@@ -21,6 +22,7 @@ import {
   evaluatePurchaseAuthority,
   isPurchaseActive,
   normalizeInventoryAuthorityConfiguration,
+  reconcileMenuItemsForRecipeStatus,
   suggestedPurchaseQuantity,
   type CommandCenterActivity,
   type CommandCenterInventoryItem,
@@ -1251,11 +1253,12 @@ export function CommandCenterRuntimeProvider({
           : undefined;
         if (draft.recipeId && !linkedRecipe) return current;
         if (
-          draft.recipeId &&
           draft.active &&
           draft.available &&
-          linkedRecipe &&
-          !linkedRecipe.active
+          !canMenuItemBeAvailable(
+            { recipeId: draft.recipeId || undefined },
+            current.recipes,
+          )
         ) {
           return current;
         }
@@ -1397,13 +1400,7 @@ export function CommandCenterRuntimeProvider({
         active: true,
         available:
           source.available &&
-          (!source.recipeId ||
-            Boolean(
-              current.recipes.find(
-                (recipe) =>
-                  recipe.id === source.recipeId && recipe.active,
-              ),
-            )),
+          canMenuItemBeAvailable(source, current.recipes),
         displayOrder,
       };
       createdId = id;
@@ -1431,13 +1428,21 @@ export function CommandCenterRuntimeProvider({
       if (!ids.size) return;
       setState((current) => {
         const affected = current.menuItems.filter(
-          (item) => ids.has(item.id) && item.active,
+          (item) =>
+            ids.has(item.id) &&
+            item.active &&
+            item.available !== available &&
+            (!available ||
+              canMenuItemBeAvailable(item, current.recipes)),
         );
         if (!affected.length) return current;
+        const affectedIds = new Set(
+          affected.map((item) => item.id),
+        );
         return {
           ...current,
           menuItems: current.menuItems.map((item) =>
-            ids.has(item.id) && item.active
+            affectedIds.has(item.id)
               ? { ...item, available }
               : item,
           ),
@@ -1449,8 +1454,9 @@ export function CommandCenterRuntimeProvider({
             message: `Owner marked ${affected.length} menu item${affected.length === 1 ? "" : "s"} ${available ? "available" : "unavailable"}.`,
             actor: "owner",
             executionMode: "manual",
-            reason:
-              "The owner applied a bulk availability change from Menu management.",
+            reason: available
+              ? "The owner applied a bulk availability change. Items linked to archived recipes were left unavailable."
+              : "The owner applied a bulk availability change from Menu management.",
           }),
         };
       });
@@ -1593,13 +1599,14 @@ export function CommandCenterRuntimeProvider({
                 recipe.id === existing.id ? nextRecipe : recipe,
               )
             : [nextRecipe, ...current.recipes],
-          menuItems: nextRecipe.active
-            ? current.menuItems
-            : current.menuItems.map((item) =>
-                item.recipeId === id && item.active
-                  ? { ...item, available: false }
-                  : item,
-              ),
+          menuItems:
+            existing && existing.active !== nextRecipe.active
+              ? reconcileMenuItemsForRecipeStatus(
+                  current.menuItems,
+                  id,
+                  nextRecipe.active,
+                )
+              : current.menuItems,
           activity: addActivity(current, {
             module: "recipes",
             action: existing ? "recipe_updated" : "recipe_created",
@@ -1672,10 +1679,10 @@ export function CommandCenterRuntimeProvider({
         recipes: current.recipes.map((entry) =>
           entry.id === recipeId ? { ...entry, active: false } : entry,
         ),
-        menuItems: current.menuItems.map((item) =>
-          item.recipeId === recipeId && item.active
-            ? { ...item, available: false }
-            : item,
+        menuItems: reconcileMenuItemsForRecipeStatus(
+          current.menuItems,
+          recipeId,
+          false,
         ),
         activity: addActivity(current, {
           module: "recipes",
