@@ -4104,6 +4104,75 @@
   font-size: 0.52rem;
 }
 
+.inlineSupplierActions {
+  display: flex;
+  gap: 0.3rem;
+  flex-wrap: wrap;
+  margin-top: 0.28rem;
+}
+
+.inlineSupplierActions button {
+  min-height: 30px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.3rem 0.42rem;
+  border: 1px solid #3a5059;
+  background: #08161e;
+  color: var(--cc-muted);
+  font-size: 0.5rem;
+}
+
+.inlineSupplierActions button:hover {
+  border-color: var(--mint);
+  color: var(--mint);
+}
+
+.inlineSupplierEditor {
+  padding: 0.15rem;
+  border: 1px solid #5d6347;
+  background: rgba(200, 169, 107, 0.035);
+}
+
+.inlineSupplierEditor .entityEditor {
+  border: 0;
+  background: transparent;
+}
+
+.inlineSupplierEditor .entityEditorGrid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.supplierHeaderActions {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.supplierHeaderActions > b {
+  padding: 0.18rem 0.38rem;
+  border: 1px solid #3e6655;
+  color: var(--mint);
+  font: 0.54rem var(--font-mono);
+}
+
+.supplierHeaderActions button {
+  min-height: 30px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.24rem;
+  padding: 0.28rem 0.4rem;
+  border: 1px solid #3a5059;
+  background: #08161e;
+  color: var(--cc-muted);
+  font-size: 0.52rem;
+}
+
+.supplierHeaderActions button:hover {
+  border-color: var(--mint);
+  color: var(--mint);
+}
+
 .inlineInventoryEditor > footer {
   display: flex;
   align-items: center;
@@ -4467,7 +4536,8 @@
     flex-direction: column;
   }
 
-  .inlineInventoryGrid {
+  .inlineInventoryGrid,
+  .inlineSupplierEditor .entityEditorGrid {
     grid-template-columns: 1fr;
   }
 
