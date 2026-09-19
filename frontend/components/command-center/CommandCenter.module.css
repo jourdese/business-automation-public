@@ -2934,6 +2934,35 @@
   gap: 0.35rem;
 }
 
+.supplierPerformanceFacts {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.35rem;
+}
+
+.supplierPerformanceFacts > span {
+  min-width: 0;
+  padding: 0.45rem;
+  border: 1px solid rgba(52, 74, 84, 0.8);
+  background: #08161e;
+}
+
+.supplierPerformanceFacts small,
+.supplierPerformanceFacts strong {
+  display: block;
+}
+
+.supplierPerformanceFacts small {
+  color: var(--cc-muted);
+  font-size: 0.48rem;
+}
+
+.supplierPerformanceFacts strong {
+  margin-top: 0.1rem;
+  font-size: 0.58rem;
+  overflow-wrap: anywhere;
+}
+
 .supplierContacts > div {
   padding: 0.5rem;
   border: 1px solid rgba(52, 74, 84, 0.8);
@@ -3897,6 +3926,10 @@
     grid-template-columns: 44px minmax(0, 1fr) minmax(80px, auto);
   }
 
+  .supplierPerformanceFacts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .supplierPriceList > div > span:last-child {
     grid-column: 2 / -1;
   }
@@ -3998,6 +4031,10 @@
 
   .supplierPriceList > div {
     grid-template-columns: 44px minmax(0, 1fr);
+  }
+
+  .supplierPerformanceFacts {
+    grid-template-columns: 1fr;
   }
 
   .supplierPriceList > div > span:nth-child(n + 3) {
