@@ -205,7 +205,7 @@ export default function OperationModuleView({
   function submitSupplierEditor(
     draft: SupplierEditorDraft,
   ) {
-    const id = saveSupplier({
+    const saved = saveSupplier({
       id: draft.id,
       name: draft.name,
       contacts: [
@@ -219,8 +219,8 @@ export default function OperationModuleView({
         },
       ],
     });
-    if (id) setSupplierEditor(null);
-    return id;
+    if (saved) setSupplierEditor(null);
+    return saved;
   }
 
   function openNewMenuItem() {
