@@ -2,6 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   canAdvancePurchase,
+  canReceivePurchaseStatus,
+  canTransitionPurchaseStatus,
   evaluateAutomaticPurchaseStart,
   evaluatePurchaseAuthority,
   normalizeInventoryAuthorityConfiguration,
@@ -18,6 +20,8 @@ import { buildCommandCenterForecast } from '../command-center/core/forecast-engi
 import { buildCommandCenterPerformance } from '../command-center/core/performance-engine.ts';
 import { buildCommandCenterFinance } from '../command-center/core/finance-engine.ts';
 import { buildCommandCenterSupplierPerformance } from '../command-center/core/supplier-performance-engine.ts';
+import { buildCommandCenterMenuEconomics } from '../command-center/core/menu-economics.ts';
+import { buildCommandCenterRecipeImpact } from '../command-center/core/recipe-impact.ts';
 import {
   appendCommandCenterHistorySnapshot,
   buildCommandCenterForecastAccuracy,
@@ -89,7 +93,7 @@ function state(
   automationMasterOn = true,
 ): CommandCenterRuntimeState {
   return {
-    version: 1,
+    version: 2,
     business: {
       id: 'test-business',
       name: 'Test Business',
@@ -951,4 +955,125 @@ await test('Supplier performance ignores negative or missing event durations', (
 
   assert.equal(performance.averageViewMinutes, null);
   assert.equal(performance.completionRatePercent, null);
+});
+
+
+await test('Purchase state machine allows only legal forward transitions', () => {
+  assert.equal(
+    canTransitionPurchaseStatus('quote_requested', 'supplier_viewed'),
+    true,
+  );
+  assert.equal(
+    canTransitionPurchaseStatus('quote_requested', 'confirmed'),
+    false,
+  );
+  assert.equal(
+    canTransitionPurchaseStatus('confirmed', 'received'),
+    true,
+  );
+  assert.equal(
+    canTransitionPurchaseStatus('received', 'in_transit'),
+    false,
+  );
+});
+
+await test('Physical receipt is allowed only after supplier confirmation', () => {
+  assert.equal(canReceivePurchaseStatus('quote_received'), false);
+  assert.equal(canReceivePurchaseStatus('awaiting_confirmation'), false);
+  assert.equal(canReceivePurchaseStatus('confirmed'), true);
+  assert.equal(canReceivePurchaseStatus('in_transit'), true);
+  assert.equal(canReceivePurchaseStatus('partial_received'), true);
+  assert.equal(canReceivePurchaseStatus('received'), false);
+});
+
+await test('Menu economics derives gross profit, margin, reference movement and warnings', () => {
+  const shrimp = item({
+    packSize: 5,
+    packPrice: 2800,
+    current: 10,
+    reorderAt: 3,
+  });
+  const recipe = {
+    id: 'recipe-shrimp',
+    name: 'Shrimp Pasta',
+    description: 'Test',
+    active: true,
+    ingredients: { shrimp: 0.1 },
+    savedIngredientCost: 50,
+  };
+  const menuItem = {
+    id: 'menu-shrimp',
+    name: 'Shrimp Pasta',
+    printedName: 'Shrimp Pasta',
+    dishKey: 'shrimp-pasta',
+    category: 'Pasta',
+    currentPrice: 160,
+    referencePrice: 150,
+    referenceSource: 'archived-menu-photo' as const,
+    currentPriceVerified: true,
+    active: true,
+    available: true,
+    recipeId: recipe.id,
+  };
+
+  const economics = buildCommandCenterMenuEconomics(
+    menuItem,
+    recipe,
+    [shrimp],
+  );
+
+  assert.equal(economics.ingredientCost, 56);
+  assert.equal(economics.foodCostPercent, 35);
+  assert.equal(economics.grossProfit, 104);
+  assert.equal(economics.grossMarginPercent, 65);
+  assert.equal(economics.referencePriceDelta, 10);
+  assert.equal(economics.referencePriceDeltaPercent, 6.7);
+  assert.equal(economics.costDriftSinceRecipeSavePercent, 12);
+  assert.equal(economics.warning, 'high');
+});
+
+await test('Recipe impact models quantity, food cost and stockout movement', () => {
+  const shrimp = item({
+    current: 9,
+    dailyUse: 3,
+    packSize: 5,
+    packPrice: 2800,
+  });
+  const existing = {
+    id: 'recipe-shrimp',
+    name: 'Shrimp Pasta',
+    description: 'Test',
+    active: true,
+    ingredients: { shrimp: 0.09 },
+  };
+  const linkedMenu = {
+    id: 'menu-shrimp',
+    name: 'Shrimp Pasta',
+    printedName: 'Shrimp Pasta',
+    dishKey: 'shrimp-pasta',
+    category: 'Pasta',
+    currentPrice: 200,
+    referenceSource: 'demo' as const,
+    currentPriceVerified: true,
+    active: true,
+    available: true,
+    recipeId: existing.id,
+  };
+
+  const impact = buildCommandCenterRecipeImpact(
+    existing,
+    { shrimp: 0.12 },
+    [shrimp],
+    [linkedMenu],
+  );
+
+  assert.equal(impact.beforeCost, 50.4);
+  assert.equal(impact.afterCost, 67.2);
+  assert.equal(impact.costChangePercent, 33.3);
+  assert.equal(impact.averageLinkedFoodCostBefore, 25.2);
+  assert.equal(impact.averageLinkedFoodCostAfter, 33.6);
+  assert.equal(impact.ingredientChanges[0]?.dailyUseChangePercent, 33.3);
+  assert.equal(impact.ingredientChanges[0]?.stockoutDaysBefore, 3);
+  assert.equal(impact.ingredientChanges[0]?.stockoutDaysAfter, 2.3);
+  assert.equal(impact.ingredientChanges[0]?.stockoutDaysDelta, -0.7);
 });
