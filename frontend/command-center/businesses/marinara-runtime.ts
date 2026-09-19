@@ -21,7 +21,7 @@ export function createMarinaraRuntimeSeed(): CommandCenterRuntimeState {
   return {
     version: 2,
     business: marinaraRistoranteBusiness,
-    automationMasterOn: true,
+    automationMasterOn: false,
     inventory: initialIngredients.map((item) => ({
       id: item.id,
       name: item.name,
