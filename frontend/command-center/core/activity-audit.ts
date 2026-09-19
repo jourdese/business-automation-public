@@ -72,8 +72,17 @@ export function createActivity(
   input: ActivityInput,
 ): CommandCenterActivity {
   const at = input.at ?? new Date().toISOString();
+  const randomId =
+    globalThis.crypto?.randomUUID?.() ??
+    `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 9)}`;
+  let id = `activity-${randomId}`;
+  let suffix = 2;
+  while (state.activity.some((entry) => entry.id === id)) {
+    id = `activity-${randomId}-${suffix}`;
+    suffix += 1;
+  }
   return {
-    id: `activity-${Date.parse(at) || Date.now()}-${state.activity.length + 1}`,
+    id,
     at,
     module: input.module,
     action: input.action,
