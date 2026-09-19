@@ -1,7 +1,7 @@
 import {
   isPurchaseActive,
   type CommandCenterRuntimeState,
-} from "./runtime";
+} from "./runtime.ts";
 
 export type CommandCenterFinanceSnapshot = {
   openPurchaseCommitments: number;
