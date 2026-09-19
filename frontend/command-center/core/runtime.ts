@@ -524,6 +524,181 @@ export function purchaseProgressStage(
   return 0;
 }
 
+export type CommandCenterRuntimeValidationIssue = {
+  code: string;
+  entityId?: string;
+  message: string;
+};
+
+function duplicateIds<T extends { id: string }>(entries: T[]) {
+  const seen = new Set<string>();
+  const duplicates = new Set<string>();
+  for (const entry of entries) {
+    if (seen.has(entry.id)) duplicates.add(entry.id);
+    seen.add(entry.id);
+  }
+  return [...duplicates];
+}
+
+export function validateCommandCenterRuntimeState(
+  state: CommandCenterRuntimeState,
+): CommandCenterRuntimeValidationIssue[] {
+  const issues: CommandCenterRuntimeValidationIssue[] = [];
+  const collections: Array<
+    [string, Array<{ id: string }>]
+  > = [
+    ["inventory", state.inventory],
+    ["purchase", state.purchases],
+    ["supplier", state.suppliers],
+    ["recipe", state.recipes],
+    ["menu", state.menuItems],
+  ];
+
+  for (const [label, entries] of collections) {
+    for (const id of duplicateIds(entries)) {
+      issues.push({
+        code: "duplicate_id",
+        entityId: id,
+        message: `Duplicate ${label} id: ${id}.`,
+      });
+    }
+  }
+
+  const inventoryById = new Map(
+    state.inventory.map((item) => [item.id, item]),
+  );
+  const supplierById = new Map(
+    state.suppliers.map((supplier) => [supplier.id, supplier]),
+  );
+  const recipeById = new Map(
+    state.recipes.map((recipe) => [recipe.id, recipe]),
+  );
+
+  for (const recipe of state.recipes) {
+    for (const itemId of Object.keys(recipe.ingredients)) {
+      if (!inventoryById.has(itemId)) {
+        issues.push({
+          code: "recipe_missing_inventory",
+          entityId: recipe.id,
+          message: `Recipe ${recipe.name} references missing inventory item ${itemId}.`,
+        });
+      }
+    }
+  }
+
+  for (const menuItem of state.menuItems) {
+    const recipe = menuItem.recipeId
+      ? recipeById.get(menuItem.recipeId)
+      : undefined;
+    if (menuItem.recipeId && !recipe) {
+      issues.push({
+        code: "menu_missing_recipe",
+        entityId: menuItem.id,
+        message: `Menu item ${menuItem.name} references missing recipe ${menuItem.recipeId}.`,
+      });
+    }
+    if (
+      menuItem.active &&
+      menuItem.available &&
+      menuItem.recipeId &&
+      recipe &&
+      !recipe.active
+    ) {
+      issues.push({
+        code: "available_menu_archived_recipe",
+        entityId: menuItem.id,
+        message: `Available menu item ${menuItem.name} points to archived recipe ${recipe.name}.`,
+      });
+    }
+  }
+
+  for (const item of state.inventory) {
+    if (item.current < 0 || item.incoming < 0) {
+      issues.push({
+        code: "negative_inventory",
+        entityId: item.id,
+        message: `Inventory item ${item.name} has negative stock state.`,
+      });
+    }
+
+    if (!item.supplierId) continue;
+    const supplier = supplierById.get(item.supplierId);
+    if (!supplier) {
+      issues.push({
+        code: "inventory_missing_supplier",
+        entityId: item.id,
+        message: `Inventory item ${item.name} references missing supplier ${item.supplierId}.`,
+      });
+      continue;
+    }
+    if (
+      item.contactId &&
+      !supplier.contacts.some(
+        (contact) => contact.id === item.contactId,
+      )
+    ) {
+      issues.push({
+        code: "inventory_missing_supplier_contact",
+        entityId: item.id,
+        message: `Inventory item ${item.name} references a contact not owned by ${supplier.name}.`,
+      });
+    }
+    if (!supplier.itemIds.includes(item.id)) {
+      issues.push({
+        code: "supplier_item_link_missing",
+        entityId: item.id,
+        message: `Supplier ${supplier.name} does not include inventory item ${item.name} in its item links.`,
+      });
+    }
+  }
+
+  for (const purchase of state.purchases) {
+    const item = inventoryById.get(purchase.itemId);
+    if (!item) {
+      issues.push({
+        code: "purchase_missing_inventory",
+        entityId: purchase.id,
+        message: `Purchase ${purchase.id} references missing inventory item ${purchase.itemId}.`,
+      });
+    }
+    const supplier = supplierById.get(purchase.supplierId);
+    if (!supplier) {
+      issues.push({
+        code: "purchase_missing_supplier",
+        entityId: purchase.id,
+        message: `Purchase ${purchase.id} references missing supplier ${purchase.supplierId}.`,
+      });
+    }
+    if (
+      purchase.contactId &&
+      supplier &&
+      !supplier.contacts.some(
+        (contact) => contact.id === purchase.contactId,
+      )
+    ) {
+      issues.push({
+        code: "purchase_missing_supplier_contact",
+        entityId: purchase.id,
+        message: `Purchase ${purchase.id} references a contact not owned by ${supplier.name}.`,
+      });
+    }
+    if (
+      ["confirmed", "in_transit", "partial_received", "received"].includes(
+        purchase.status,
+      ) &&
+      !purchase.supplierConfirmed
+    ) {
+      issues.push({
+        code: "confirmed_purchase_without_supplier_confirmation",
+        entityId: purchase.id,
+        message: `Purchase ${purchase.id} is ${purchase.status} without supplier confirmation.`,
+      });
+    }
+  }
+
+  return issues;
+}
+
 export function taskPriorityValue(priority: JourvisTaskPriority) {
   if (priority === "high") return 3;
   if (priority === "medium") return 2;
