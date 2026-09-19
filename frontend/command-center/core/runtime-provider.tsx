@@ -1286,7 +1286,7 @@ export function CommandCenterRuntimeProvider({
               currentPrice,
               currentPriceVerified: currentPrice !== undefined,
               active: draft.active,
-              available: draft.available,
+              available: draft.active ? draft.available : false,
               recipeId: draft.recipeId || undefined,
               displayOrder:
                 draft.displayOrder ??
@@ -1305,7 +1305,7 @@ export function CommandCenterRuntimeProvider({
               referenceSource: "demo",
               currentPriceVerified: currentPrice !== undefined,
               active: draft.active,
-              available: draft.available,
+              available: draft.active ? draft.available : false,
               recipeId: draft.recipeId || undefined,
               displayOrder:
                 draft.displayOrder ??
