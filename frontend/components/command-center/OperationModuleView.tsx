@@ -1334,8 +1334,8 @@ export default function OperationModuleView({
             ) : null}
           </div>
           <span>
-            {state.menuItems.filter((item) => item.active).length} active ·{" "}
-            {state.menuItems.length} total
+            {scopedMenuItems.filter((item) => item.active).length} active ·{" "}
+            {scopedMenuItems.length} in this view
           </span>
         </div>
 
@@ -2534,7 +2534,7 @@ function MenuEditorPanel({
           <input
             type="checkbox"
             checked={draft.available}
-            disabled={availabilityBlocked}
+            disabled={!draft.active || availabilityBlocked}
             onChange={(event) =>
               setDraft((current) =>
                 current
@@ -2642,6 +2642,10 @@ function RecipeEditorPanel({
     linkedMenuItems,
   );
   const linkedCount = linkedMenuItems.length;
+  const hasInvalidIngredientLine = draft.ingredients.some((entry) => {
+    const amount = Number(entry.amount);
+    return !entry.itemId || !Number.isFinite(amount) || amount <= 0;
+  });
 
   function addIngredient() {
     const used = new Set(draft.ingredients.map((entry) => entry.itemId));
@@ -3556,8 +3560,18 @@ function RecipeEditorPanel({
       </div>
 
       <footer className={styles.entityEditorActions}>
+        {hasInvalidIngredientLine ? (
+          <small className={styles.entityEditorValidation}>
+            Enter a quantity greater than 0 for every ingredient before saving.
+          </small>
+        ) : null}
         <button type="button" onClick={onCancel}>Cancel</button>
-        <button type="button" data-primary onClick={onSave}>
+        <button
+          type="button"
+          data-primary
+          disabled={!draft.name.trim() || hasInvalidIngredientLine}
+          onClick={onSave}
+        >
           <Save size={14} aria-hidden /> Save recipe
         </button>
       </footer>
