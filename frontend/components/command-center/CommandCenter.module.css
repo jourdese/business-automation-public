@@ -1186,6 +1186,273 @@
   gap: 0.75rem;
 }
 
+
+.jourvisSummonBeacon {
+  position: relative;
+  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.28rem 0.65rem 0.28rem 0.32rem;
+  overflow: visible;
+  border: 1px solid #76552d;
+  background:
+    linear-gradient(rgba(200, 169, 107, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(200, 169, 107, 0.06) 1px, transparent 1px),
+    #17130d;
+  background-size: 7px 7px;
+  color: var(--ivory);
+  box-shadow:
+    inset 0 0 0 2px rgba(200, 169, 107, 0.05),
+    3px 3px 0 rgba(0, 0, 0, 0.28);
+  cursor: pointer;
+  isolation: isolate;
+}
+
+.jourvisSummonBeacon[data-priority="high"] {
+  border-color: #8d4f47;
+  background:
+    linear-gradient(rgba(255, 170, 162, 0.055) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 170, 162, 0.055) 1px, transparent 1px),
+    #1d1111;
+  background-size: 7px 7px;
+}
+
+.jourvisSummonBeacon:hover,
+.jourvisSummonBeacon:focus-visible {
+  border-color: var(--gold);
+  transform: translate(-1px, -1px);
+  box-shadow:
+    inset 0 0 0 2px rgba(200, 169, 107, 0.08),
+    5px 5px 0 rgba(0, 0, 0, 0.3);
+}
+
+.summonGlyph,
+.summonPresencePreview {
+  width: 31px;
+  height: 31px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+}
+
+.summonGlyph {
+  position: relative;
+  z-index: 2;
+  border: 2px solid #f0d49b;
+  background: var(--gold);
+  color: #161009;
+  font: 900 1.4rem/1 var(--font-mono);
+  text-shadow: 1px 0 #f8e9c8;
+  box-shadow:
+    3px 0 0 #6c4a22,
+    0 3px 0 #6c4a22,
+    3px 3px 0 #0a0806;
+  animation: summonBeaconBounce 1.5s steps(2, end) infinite;
+}
+
+.jourvisSummonBeacon[data-priority="high"] .summonGlyph {
+  border-color: #ffd0ca;
+  background: #d56f65;
+  color: #210b09;
+  box-shadow:
+    3px 0 0 #713731,
+    0 3px 0 #713731,
+    3px 3px 0 #0a0806;
+}
+
+.summonPresencePreview {
+  position: absolute;
+  left: 0.31rem;
+  top: 0.3rem;
+  z-index: 3;
+  opacity: 0;
+  transform: scale(0.35);
+  filter: drop-shadow(0 0 9px rgba(167, 227, 197, 0.45));
+  pointer-events: none;
+}
+
+.summonPresencePreview svg {
+  width: 31px;
+  height: 31px;
+}
+
+.summonCopy {
+  min-width: 94px;
+  text-align: left;
+}
+
+.summonCopy small,
+.summonCopy strong {
+  display: block;
+}
+
+.summonCopy small {
+  color: var(--gold);
+  font: 0.5rem var(--font-mono);
+  letter-spacing: 0.1em;
+}
+
+.summonCopy strong {
+  margin-top: 0.08rem;
+  font-size: 0.62rem;
+  white-space: nowrap;
+}
+
+.summonParticles {
+  position: absolute;
+  inset: -13px -8px;
+  z-index: -1;
+  pointer-events: none;
+}
+
+.summonParticles i {
+  position: absolute;
+  color: var(--gold);
+  font: 900 0.6rem/1 var(--font-mono);
+  opacity: 0;
+  text-shadow: 0 0 7px rgba(200, 169, 107, 0.5);
+  animation: summonPixelOrbit 1.8s steps(3, end) infinite;
+}
+
+.summonParticles i:nth-child(1) {
+  left: 12px;
+  top: 0;
+}
+
+.summonParticles i:nth-child(2) {
+  left: 43px;
+  bottom: 0;
+  animation-delay: 0.35s;
+}
+
+.summonParticles i:nth-child(3) {
+  right: 0;
+  top: 7px;
+  animation-delay: 0.7s;
+}
+
+.jourvisSummonBeacon[data-summoning="true"] {
+  border-color: var(--mint);
+  pointer-events: none;
+  animation: summonPortalFlash 620ms steps(4, end) both;
+}
+
+.jourvisSummonBeacon[data-summoning="true"] .summonGlyph {
+  animation: summonGlyphVanish 620ms steps(4, end) both;
+}
+
+.jourvisSummonBeacon[data-summoning="true"] .summonPresencePreview {
+  animation: summonPresenceArrive 620ms steps(4, end) both;
+}
+
+.jourvisSummonBeacon[data-summoning="true"] .summonParticles i {
+  color: var(--mint);
+  animation: summonPixelsConverge 620ms steps(4, end) both;
+}
+
+.jourvisDecisionDialogue {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.jourvisQuestBanner {
+  padding: 0.55rem 0.6rem;
+  border: 1px solid rgba(200, 169, 107, 0.5);
+  background:
+    linear-gradient(90deg, rgba(200, 169, 107, 0.1), transparent 70%),
+    #0b171e;
+}
+
+.jourvisQuestBanner span,
+.jourvisQuestBanner strong {
+  display: block;
+}
+
+.jourvisQuestBanner span {
+  color: var(--gold);
+  font: 0.52rem var(--font-mono);
+  letter-spacing: 0.1em;
+}
+
+.jourvisQuestBanner strong {
+  margin-top: 0.18rem;
+  font-size: 0.72rem;
+  line-height: 1.35;
+}
+
+.jourvisChatBubble {
+  position: relative;
+  padding: 0.58rem 0.64rem;
+  border-left: 2px solid var(--mint);
+  background: #0a1920;
+}
+
+.jourvisChatBubble[data-owner-needed] {
+  border-left-color: var(--gold);
+  background: #17150f;
+}
+
+.jourvisChatBubble span {
+  display: block;
+  color: var(--mint);
+  font: 0.5rem var(--font-mono);
+  letter-spacing: 0.08em;
+}
+
+.jourvisChatBubble[data-owner-needed] span {
+  color: var(--gold);
+}
+
+.jourvisChatBubble p {
+  margin-top: 0.22rem;
+  color: var(--cc-muted);
+  font-size: 0.64rem;
+  line-height: 1.5;
+}
+
+.jourvisChoiceHint {
+  display: block;
+  color: #778a93;
+  font: 0.52rem/1.45 var(--font-mono);
+}
+
+@keyframes summonBeaconBounce {
+  0%, 68%, 100% { transform: translateY(0); }
+  72% { transform: translateY(-3px); }
+  78% { transform: translateY(1px); }
+}
+
+@keyframes summonPixelOrbit {
+  0%, 28%, 100% { opacity: 0; transform: translate(0, 4px); }
+  38%, 60% { opacity: 0.8; transform: translate(0, 0); }
+  70% { opacity: 0; transform: translate(3px, -3px); }
+}
+
+@keyframes summonPortalFlash {
+  0% { box-shadow: 0 0 0 rgba(167, 227, 197, 0); }
+  50% { box-shadow: 0 0 0 7px rgba(167, 227, 197, 0.08), 0 0 28px rgba(167, 227, 197, 0.2); }
+  100% { box-shadow: 0 0 0 rgba(167, 227, 197, 0); }
+}
+
+@keyframes summonGlyphVanish {
+  0% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.35; transform: scale(0.58) rotate(8deg); }
+  100% { opacity: 0; transform: scale(0.2); }
+}
+
+@keyframes summonPresenceArrive {
+  0% { opacity: 0; transform: scale(0.25); }
+  45% { opacity: 0.45; transform: scale(0.7); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes summonPixelsConverge {
+  0% { opacity: 0; transform: scale(1.2); }
+  35% { opacity: 1; }
+  100% { opacity: 0; transform: translate(14px, 13px) scale(0.2); }
+}
+
 .resetDemoButton {
   min-height: 36px;
   display: inline-flex;
@@ -1429,6 +1696,22 @@
     margin-left: auto;
   }
 
+  .jourvisSummonBeacon {
+    min-height: 38px;
+    padding: 0.22rem;
+  }
+
+  .summonCopy {
+    display: none;
+  }
+
+  .summonGlyph,
+  .summonPresencePreview,
+  .summonPresencePreview svg {
+    width: 29px;
+    height: 29px;
+  }
+
   .resetDemoButton span {
     display: none;
   }
@@ -1445,6 +1728,10 @@
 @media (max-width: 520px) {
   .headerRuntimeActions {
     gap: 0.35rem;
+  }
+
+  .jourvisRunState {
+    display: none;
   }
 
   .resetDemoButton {
@@ -5131,5 +5418,17 @@
 
   .inventoryUsedBy {
     grid-template-columns: 1fr;
+  }
+}
+
+
+@media (prefers-reduced-motion: reduce) {
+  .summonGlyph,
+  .summonParticles i,
+  .jourvisSummonBeacon[data-summoning="true"],
+  .jourvisSummonBeacon[data-summoning="true"] .summonGlyph,
+  .jourvisSummonBeacon[data-summoning="true"] .summonPresencePreview,
+  .jourvisSummonBeacon[data-summoning="true"] .summonParticles i {
+    animation: none;
   }
 }

@@ -18,6 +18,7 @@ import {
   WalletCards,
   X,
 } from "lucide-react";
+import CompanionMark from "@/components/jourvis/CompanionMark";
 import JourvisPresence from "@/components/jourvis/JourvisPresence";
 import BusinessBrandMark from "./BusinessBrandMark";
 import {
@@ -72,6 +73,7 @@ export default function CommandCenterShell({ children }: { children: ReactNode }
   const [updateBaseline, setUpdateBaseline] = useState<CommandCenterInventoryItem | null>(null);
   const [updateDraft, setUpdateDraft] = useState<CommandCenterInventoryItem | null>(null);
   const [jourvisOpenKey, setJourvisOpenKey] = useState(0);
+  const [summoningTaskId, setSummoningTaskId] = useState<string | null>(null);
   const {
     state,
     tasks,
@@ -99,6 +101,15 @@ export default function CommandCenterShell({ children }: { children: ReactNode }
     return () => window.removeEventListener("jourvis-command-center-update", handleUpdate);
   }, [state.inventory, tasks]);
 
+  useEffect(() => {
+    if (!summoningTaskId) return;
+    const timer = window.setTimeout(() => {
+      setJourvisOpenKey((value) => value + 1);
+      setSummoningTaskId(null);
+    }, 620);
+    return () => window.clearTimeout(timer);
+  }, [summoningTaskId]);
+
   const business = useMemo(
     () => resolveCommandCenterBusiness(businessId),
     [businessId],
@@ -110,6 +121,11 @@ export default function CommandCenterShell({ children }: { children: ReactNode }
 
   function switchBusiness(nextBusinessId: string) {
     window.location.href = sectionHref(nextBusinessId, activeSection);
+  }
+
+  function summonTopTask() {
+    if (!topTask || summoningTaskId) return;
+    setSummoningTaskId(topTask.id);
   }
 
   function openTaskUpdate(taskId: string) {
@@ -244,7 +260,7 @@ export default function CommandCenterShell({ children }: { children: ReactNode }
           <p>
             {state.automationMasterOn
               ? "Jourvis is working through automatic tasks and will bring you only exceptions that need human authority."
-              : "Jourvis is sleeping. Review the Overview queue and choose which tasks should be automatic before starting it."}
+              : "Jourvis is sleeping. Review the current business state and safeguards, then start automation when you are ready."}
           </p>
         </div>
       </aside>
@@ -282,6 +298,34 @@ export default function CommandCenterShell({ children }: { children: ReactNode }
           </div>
 
           <div className={styles.headerRuntimeActions}>
+            {topTask && !isUpdating ? (
+              <button
+                type="button"
+                className={styles.jourvisSummonBeacon}
+                data-priority={topTask.priority}
+                data-summoning={summoningTaskId === topTask.id}
+                onClick={summonTopTask}
+                aria-label={`Summon Jourvis for ${topTask.title}`}
+              >
+                <span className={styles.summonParticles} aria-hidden>
+                  <i>!</i>
+                  <i>!</i>
+                  <i>!</i>
+                </span>
+                <span className={styles.summonGlyph} aria-hidden>!</span>
+                <span className={styles.summonPresencePreview} aria-hidden>
+                  <CompanionMark />
+                </span>
+                <span className={styles.summonCopy}>
+                  <small>NEEDS YOU</small>
+                  <strong>
+                    {summoningTaskId === topTask.id
+                      ? "Summoning Jourvis…"
+                      : "Summon Jourvis"}
+                  </strong>
+                </span>
+              </button>
+            ) : null}
             <div className={styles.jourvisRunState}>
               <span><i data-off={!state.automationMasterOn} /> {state.automationMasterOn ? "JOURVIS OPERATING" : "JOURVIS PAUSED"}</span>
               <strong>{tasks.length ? `${tasks.length} exception${tasks.length === 1 ? "" : "s"} need you` : "Owner mode: supervise exceptions"}</strong>
@@ -304,25 +348,44 @@ export default function CommandCenterShell({ children }: { children: ReactNode }
           isUpdating
             ? `Update the rule for ${updateItem?.name ?? "this item"} here.`
             : topTask
-              ? topTask.whatHappened
+              ? topTask.title
               : state.automationMasterOn
                 ? `I’m supervising ${business.shortName}. Normal work keeps moving automatically.`
-                : `I’m sleeping for now. Review ${business.shortName}'s task queue, choose Manual or Jourvis for each task, then wake me when you are ready.`
+                : `I’m sleeping for now. Review ${business.shortName}'s current operating state and safeguards, then wake me when you are ready.`
         }
         detail={
           isUpdating
             ? "Changes are staged until you choose Done updating. Jourvis then records the change and its new configuration snapshot in Activity."
             : topTask
-              ? `${topTask.why} ${topTask.whatJourvisDid}${topTask.whyOwnerIsNeeded ? ` ${topTask.whyOwnerIsNeeded}` : ""}`
+              ? `${topTask.whatHappened} ${topTask.why} ${topTask.whatJourvisDid}${topTask.whyOwnerIsNeeded ? ` ${topTask.whyOwnerIsNeeded}` : ""}`
               : state.automationMasterOn
                 ? "I observe, forecast, decide, act, verify, explain, and escalate only when your authority or safeguards require it."
-                : "I will not start new automatic work while the main automation switch is off. The queue remains visible so you can prepare how each task should be handled."
+                : "I will not start new automatic work while the main automation switch is off. Existing workflows and exceptions remain visible so you can inspect what is waiting and why."
         }
         attention={!isUpdating && Boolean(topTask)}
         actions={jourvisActions}
         wide={isUpdating}
         openRequestKey={jourvisOpenKey}
       >
+        {!isUpdating && topTask ? (
+          <div className={styles.jourvisDecisionDialogue}>
+            <div className={styles.jourvisQuestBanner}>
+              <span>ACTIVE EVENT</span>
+              <strong>{topTask.title}</strong>
+            </div>
+            <div className={styles.jourvisChatBubble}>
+              <span>JOURVIS</span>
+              <p>{topTask.whatJourvisDid}</p>
+            </div>
+            <div className={styles.jourvisChatBubble} data-owner-needed>
+              <span>WHY I SUMMONED YOU</span>
+              <p>{topTask.whyOwnerIsNeeded ?? topTask.why}</p>
+            </div>
+            <small className={styles.jourvisChoiceHint}>
+              Choose what happens next below. I will continue only within the authority you give me.
+            </small>
+          </div>
+        ) : null}
         {isUpdating && updateItem ? (
           <div className={styles.jourvisRuleEditor}>
             <div className={styles.ruleEditorHeading}>
