@@ -102,7 +102,11 @@ type CommandCenterRuntimeContextValue = {
       }
     >;
   }) => { supplierId: string; contactId: string } | null;
-  recordRecipeSale: (recipeId: string, quantity?: number) => void;
+  recordRecipeSale: (
+    recipeId: string,
+    quantity?: number,
+    menuItemId?: string,
+  ) => void;
   resumeItem: (itemId: string) => void;
   resetDemo: () => void;
 };
@@ -132,6 +136,7 @@ function createGenericSeed(businessId: string): CommandCenterRuntimeState {
     suppliers: [],
     recipes: [],
     menuItems: [],
+    sales: [],
     pausedItemIds: [],
     activity: [],
     history: [],
@@ -261,6 +266,7 @@ function normalizeStoredState(
           ),
       };
     }),
+    sales: stored.sales ?? seed.sales ?? [],
     pausedItemIds: stored.pausedItemIds ?? [],
     purchases: (stored.purchases ?? []).map((purchase) => {
       const item = (stored.inventory ?? seed.inventory).find(
@@ -1864,7 +1870,7 @@ export function CommandCenterRuntimeProvider({
   );
 
   const recordRecipeSale = useCallback(
-    (recipeId: string, quantity = 1) => {
+    (recipeId: string, quantity = 1, menuItemId?: string) => {
       if (!Number.isFinite(quantity) || quantity <= 0) return;
 
       setState((current) => {
@@ -1891,6 +1897,42 @@ export function CommandCenterRuntimeProvider({
           };
         }
 
+        const linkedMenuItem =
+          (menuItemId
+            ? current.menuItems.find((item) => item.id === menuItemId)
+            : undefined) ??
+          current.menuItems.find(
+            (item) =>
+              item.active &&
+              item.available &&
+              item.recipeId === recipeId,
+          );
+        const unitPrice =
+          linkedMenuItem?.currentPrice ??
+          linkedMenuItem?.referencePrice ??
+          null;
+        const priceSource =
+          linkedMenuItem?.currentPrice !== undefined
+            ? "current"
+            : linkedMenuItem?.referencePrice !== undefined
+              ? "reference_demo"
+              : "unpriced";
+        const ingredientCostPerUnit = recipeIngredientCost(
+          recipe,
+          current.inventory,
+        );
+        const ingredientCost =
+          Math.round(ingredientCostPerUnit * quantity * 100) / 100;
+        const revenue =
+          unitPrice === null
+            ? null
+            : Math.round(unitPrice * quantity * 100) / 100;
+        const ingredientContribution =
+          revenue === null
+            ? null
+            : Math.round((revenue - ingredientCost) * 100) / 100;
+        const saleAt = new Date().toISOString();
+
         const nextInventory = current.inventory.map((item) => {
           const amount = recipe.ingredients[item.id] ?? 0;
           if (!amount) return item;
@@ -1915,14 +1957,36 @@ export function CommandCenterRuntimeProvider({
         return {
           ...current,
           inventory: nextInventory,
+          sales: [
+            {
+              id: `SALE-${randomToken()}`,
+              at: saleAt,
+              menuItemId: linkedMenuItem?.id,
+              recipeId,
+              itemName: linkedMenuItem?.name ?? recipe.name,
+              quantity,
+              unitPrice,
+              revenue,
+              ingredientCostPerUnit,
+              ingredientCost,
+              ingredientContribution,
+              priceSource,
+              origin: "simulated_pos",
+            },
+            ...current.sales,
+          ],
           activity: addActivity(current, {
             module: "recipes",
             action: "recipe_inventory_deducted",
-            message: `POS sale: ${quantity} × ${recipe.name}. Jourvis deducted recipe inventory automatically.`,
+            message: `POS sale: ${quantity} × ${linkedMenuItem?.name ?? recipe.name}. Jourvis deducted recipe inventory automatically.`,
             actor: "external",
             executionMode: "automatic",
             reason:
-              `A simulated POS sale matched the configured recipe. Jourvis automatically applied the recipe quantities to inventory: ${ingredientSummary}.`,
+              `A simulated POS sale matched the configured recipe. Jourvis automatically applied the recipe quantities to inventory: ${ingredientSummary}.${
+                revenue === null
+                  ? " No configured sale price was available, so the sales ledger recorded units and ingredient cost without revenue."
+                  : ` The demo sales ledger recorded ${revenue.toLocaleString("en-PH", { style: "currency", currency: current.business.currency })} revenue and ${ingredientContribution?.toLocaleString("en-PH", { style: "currency", currency: current.business.currency })} ingredient contribution.`
+              }`,
           }),
         };
       });

@@ -162,6 +162,22 @@ export type CommandCenterActivityConfiguration = {
   values: Record<string, string | number | boolean | null>;
 };
 
+export type CommandCenterSaleRecord = {
+  id: string;
+  at: string;
+  menuItemId?: string;
+  recipeId: string;
+  itemName: string;
+  quantity: number;
+  unitPrice: number | null;
+  revenue: number | null;
+  ingredientCostPerUnit: number;
+  ingredientCost: number;
+  ingredientContribution: number | null;
+  priceSource: "current" | "reference_demo" | "unpriced";
+  origin: "simulated_pos" | "seeded_demo";
+};
+
 export type CommandCenterActivity = {
   id: string;
   at: string;
@@ -216,6 +232,7 @@ export type CommandCenterRuntimeState = {
   suppliers: CommandCenterSupplier[];
   recipes: CommandCenterRecipe[];
   menuItems: CommandCenterMenuItem[];
+  sales: CommandCenterSaleRecord[];
   pausedItemIds: string[];
   activity: CommandCenterActivity[];
   history: CommandCenterHistorySnapshot[];

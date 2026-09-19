@@ -13,6 +13,131 @@ const recipeIdByMenuItemId: Readonly<Record<string, string>> = {
   grilled_salmon: "salmon",
 };
 
+const marinaraRecipes = [
+  {
+    id: "seafood-marinara",
+    name: "Seafood Marinara",
+    description: "Pasta, tomato sauce, shrimp, squid, basil and Parmigiano.",
+    active: true,
+    ingredients: {
+      pasta: 0.18,
+      tomato: 0.16,
+      shrimp: 0.07,
+      squid: 0.05,
+      basil: 0.003,
+      parmesan: 0.015,
+      "olive-oil": 0.012,
+    },
+  },
+  {
+    id: "shrimp-alfredo",
+    name: "Shrimp & Mushroom Alfredo",
+    description: "Creamy pasta with shrimp, mushroom and Parmigiano.",
+    active: true,
+    ingredients: {
+      pasta: 0.18,
+      shrimp: 0.09,
+      mushroom: 0.06,
+      cream: 0.12,
+      parmesan: 0.02,
+      "olive-oil": 0.01,
+    },
+  },
+  {
+    id: "quattro",
+    name: "Quattro Formaggi Pizza",
+    description: "Pizza flour, mozzarella and Parmigiano.",
+    active: true,
+    ingredients: {
+      flour: 0.24,
+      mozzarella: 0.13,
+      parmesan: 0.035,
+      tomato: 0.08,
+      basil: 0.002,
+    },
+  },
+  {
+    id: "salmon",
+    name: "Grilled Salmon Fillet",
+    description: "Salmon with olive oil, mushrooms and herbs.",
+    active: true,
+    ingredients: {
+      salmon: 0.19,
+      mushroom: 0.05,
+      "olive-oil": 0.016,
+      basil: 0.002,
+    },
+  },
+] as const;
+
+function demoRecipeIngredientCost(recipeId: string) {
+  const recipe = marinaraRecipes.find((entry) => entry.id === recipeId);
+  if (!recipe) return 0;
+  return Math.round(
+    Object.entries(recipe.ingredients).reduce((sum, [itemId, quantity]) => {
+      const item = initialIngredients.find((entry) => entry.id === itemId);
+      if (!item) return sum;
+      return sum + (item.packPrice / Math.max(item.packSize, 0.01)) * quantity;
+    }, 0) * 100,
+  ) / 100;
+}
+
+function createDemoSales(demoNow: number) {
+  const configs = [
+    { menuItemId: "seafood_marinara_solo", base: 11, step: 3 },
+    { menuItemId: "shrimp_mushroom_alfredo_solo", base: 8, step: 5 },
+    { menuItemId: "quattro_formaggi_pizza_12", base: 9, step: 2 },
+    { menuItemId: "grilled_salmon", base: 5, step: 4 },
+  ];
+
+  return Array.from({ length: 90 }, (_, daysAgo) =>
+    configs.flatMap((config, itemIndex) => {
+      const menuItem = marinaraOriginalMenu.find(
+        (entry) => entry.key === config.menuItemId,
+      );
+      const recipeId = recipeIdByMenuItemId[config.menuItemId];
+      if (!menuItem || !recipeId || menuItem.referencePriceCents === null) {
+        return [];
+      }
+
+      const day = new Date(demoNow - daysAgo * 86_400_000);
+      const weekend = day.getUTCDay() === 0 || day.getUTCDay() === 6;
+      const quantity = Math.max(
+        1,
+        Math.round(
+          (config.base + ((daysAgo * config.step + itemIndex) % 6)) *
+            (weekend ? 1.18 : 1),
+        ),
+      );
+      const unitPrice = menuItem.referencePriceCents / 100;
+      const ingredientCostPerUnit = demoRecipeIngredientCost(recipeId);
+      const revenue = Math.round(unitPrice * quantity * 100) / 100;
+      const ingredientCost =
+        Math.round(ingredientCostPerUnit * quantity * 100) / 100;
+      const at = new Date(
+        demoNow - daysAgo * 86_400_000 - itemIndex * 12 * 60_000,
+      ).toISOString();
+
+      return [{
+        id: `SALE-DEMO-${daysAgo}-${itemIndex}`,
+        at,
+        menuItemId: menuItem.key,
+        recipeId,
+        itemName: menuItem.name,
+        quantity,
+        unitPrice,
+        revenue,
+        ingredientCostPerUnit,
+        ingredientCost,
+        ingredientContribution:
+          Math.round((revenue - ingredientCost) * 100) / 100,
+        priceSource: "reference_demo" as const,
+        origin: "seeded_demo" as const,
+      }];
+    }),
+  ).flat();
+}
+
 export function createMarinaraRuntimeSeed(): CommandCenterRuntimeState {
   const demoNow = Date.now();
   const demoAt = (minutesAgo: number) =>
@@ -124,62 +249,10 @@ export function createMarinaraRuntimeSeed(): CommandCenterRuntimeState {
         .filter((item) => item.supplierId === supplier.id)
         .map((item) => item.id),
     })),
-    recipes: [
-      {
-        id: "seafood-marinara",
-        name: "Seafood Marinara",
-        description: "Pasta, tomato sauce, shrimp, squid, basil and Parmigiano.",
-        active: true,
-        ingredients: {
-          pasta: 0.18,
-          tomato: 0.16,
-          shrimp: 0.07,
-          squid: 0.05,
-          basil: 0.003,
-          parmesan: 0.015,
-          "olive-oil": 0.012,
-        },
-      },
-      {
-        id: "shrimp-alfredo",
-        name: "Shrimp & Mushroom Alfredo",
-        description: "Creamy pasta with shrimp, mushroom and Parmigiano.",
-        active: true,
-        ingredients: {
-          pasta: 0.18,
-          shrimp: 0.09,
-          mushroom: 0.06,
-          cream: 0.12,
-          parmesan: 0.02,
-          "olive-oil": 0.01,
-        },
-      },
-      {
-        id: "quattro",
-        name: "Quattro Formaggi Pizza",
-        description: "Pizza flour, mozzarella and Parmigiano.",
-        active: true,
-        ingredients: {
-          flour: 0.24,
-          mozzarella: 0.13,
-          parmesan: 0.035,
-          tomato: 0.08,
-          basil: 0.002,
-        },
-      },
-      {
-        id: "salmon",
-        name: "Grilled Salmon Fillet",
-        description: "Salmon with olive oil, mushrooms and herbs.",
-        active: true,
-        ingredients: {
-          salmon: 0.19,
-          mushroom: 0.05,
-          "olive-oil": 0.016,
-          basil: 0.002,
-        },
-      },
-    ],
+    recipes: marinaraRecipes.map((recipe) => ({
+      ...recipe,
+      ingredients: { ...recipe.ingredients },
+    })),
     menuItems: marinaraOriginalMenu.map((item) => ({
       id: item.key,
       name: item.name,
@@ -200,6 +273,7 @@ export function createMarinaraRuntimeSeed(): CommandCenterRuntimeState {
       available: true,
       recipeId: recipeIdByMenuItemId[item.key],
     })),
+    sales: createDemoSales(demoNow),
     pausedItemIds: [],
     activity: [
       {

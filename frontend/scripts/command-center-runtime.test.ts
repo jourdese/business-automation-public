@@ -22,6 +22,7 @@ import { deriveJourvisTasks } from '../command-center/core/task-engine.ts';
 import { buildCommandCenterForecast } from '../command-center/core/forecast-engine.ts';
 import { buildCommandCenterPerformance } from '../command-center/core/performance-engine.ts';
 import { buildCommandCenterFinance } from '../command-center/core/finance-engine.ts';
+import { buildCommandCenterSalesAnalytics } from '../command-center/core/sales-engine.ts';
 import {
   buildCommandCenterInsights,
   commandCenterInsightMethods,
@@ -118,6 +119,7 @@ function state(
     suppliers: [],
     recipes: [],
     menuItems: [],
+    sales: [],
     pausedItemIds: [],
     activity: [],
     history: [],
@@ -1573,4 +1575,111 @@ await test('Forecast links ingredient risk to configured active menu items using
 
   assert.deepEqual(row?.affectedRecipes, ['Shrimp Pasta']);
   assert.deepEqual(row?.affectedMenuItems, ['Shrimp Pasta Solo']);
+});
+
+
+await test('Sales analytics groups dated demo ledger by Manila business day', () => {
+  const sales = [
+    {
+      id: 's1',
+      at: '2026-09-14T03:00:00.000Z',
+      recipeId: 'recipe',
+      itemName: 'Dish',
+      quantity: 2,
+      unitPrice: 500,
+      revenue: 1000,
+      ingredientCostPerUnit: 150,
+      ingredientCost: 300,
+      ingredientContribution: 700,
+      priceSource: 'reference_demo' as const,
+      origin: 'seeded_demo' as const,
+    },
+    {
+      id: 's2',
+      at: '2026-09-15T03:00:00.000Z',
+      recipeId: 'recipe',
+      itemName: 'Dish',
+      quantity: 1,
+      unitPrice: 500,
+      revenue: 500,
+      ingredientCostPerUnit: 150,
+      ingredientCost: 150,
+      ingredientContribution: 350,
+      priceSource: 'current' as const,
+      origin: 'simulated_pos' as const,
+    },
+  ];
+
+  const analytics = buildCommandCenterSalesAnalytics(
+    sales,
+    'Asia/Manila',
+    'daily',
+    new Date('2026-09-15T04:00:00.000Z'),
+  );
+
+  const monday = analytics.buckets.find(
+    (bucket) => bucket.key === '2026-09-14',
+  );
+  const tuesday = analytics.buckets.find(
+    (bucket) => bucket.key === '2026-09-15',
+  );
+
+  assert.equal(monday?.revenue, 1000);
+  assert.equal(monday?.ingredientContribution, 700);
+  assert.equal(tuesday?.revenue, 500);
+  assert.equal(tuesday?.units, 1);
+  assert.equal(analytics.currentLabel, 'Today');
+  assert.equal(analytics.simulatedRecordCount, 1);
+});
+
+await test('Sales analytics aggregates the same ledger into Monday-start weeks and months', () => {
+  const sales = [
+    {
+      id: 's1',
+      at: '2026-09-14T03:00:00.000Z',
+      recipeId: 'recipe',
+      itemName: 'Dish',
+      quantity: 2,
+      unitPrice: 500,
+      revenue: 1000,
+      ingredientCostPerUnit: 150,
+      ingredientCost: 300,
+      ingredientContribution: 700,
+      priceSource: 'reference_demo' as const,
+      origin: 'seeded_demo' as const,
+    },
+    {
+      id: 's2',
+      at: '2026-09-18T03:00:00.000Z',
+      recipeId: 'recipe',
+      itemName: 'Dish',
+      quantity: 1,
+      unitPrice: 500,
+      revenue: 500,
+      ingredientCostPerUnit: 150,
+      ingredientCost: 150,
+      ingredientContribution: 350,
+      priceSource: 'reference_demo' as const,
+      origin: 'seeded_demo' as const,
+    },
+  ];
+
+  const weekly = buildCommandCenterSalesAnalytics(
+    sales,
+    'Asia/Manila',
+    'weekly',
+    new Date('2026-09-19T04:00:00.000Z'),
+  );
+  const monthly = buildCommandCenterSalesAnalytics(
+    sales,
+    'Asia/Manila',
+    'monthly',
+    new Date('2026-09-19T04:00:00.000Z'),
+  );
+
+  assert.equal(weekly.current.key, '2026-09-14');
+  assert.equal(weekly.current.revenue, 1500);
+  assert.equal(monthly.current.key, '2026-09-01');
+  assert.equal(monthly.current.revenue, 1500);
+  assert.equal(monthly.current.ingredientMarginPercent, 70);
 });
