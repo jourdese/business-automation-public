@@ -17,6 +17,7 @@ import { deriveJourvisTasks } from '../command-center/core/task-engine.ts';
 import { buildCommandCenterForecast } from '../command-center/core/forecast-engine.ts';
 import { buildCommandCenterPerformance } from '../command-center/core/performance-engine.ts';
 import { buildCommandCenterFinance } from '../command-center/core/finance-engine.ts';
+import { buildCommandCenterSupplierPerformance } from '../command-center/core/supplier-performance-engine.ts';
 import {
   appendCommandCenterHistorySnapshot,
   buildCommandCenterForecastAccuracy,
@@ -831,4 +832,123 @@ await test('Forecast accuracy compares matured prediction with later actual stoc
   assert.equal(accuracy.rows[0]?.actual, 4);
   assert.equal(accuracy.rows[0]?.absoluteError, 1);
   assert.equal(accuracy.meanNormalizedErrorPercent, 10);
+});
+
+
+await test('Supplier performance derives observed workflow timing and completion', () => {
+  const runtime = state(item());
+  runtime.suppliers = [
+    {
+      id: 'supplier',
+      name: 'Seafood Supplier',
+      contacts: [],
+      itemIds: ['shrimp'],
+    },
+  ];
+  runtime.purchases = [
+    purchase({
+      id: 'JV-0001',
+      status: 'received',
+      quotedTotal: 6000,
+      receivedQuantity: 10,
+    }),
+    purchase({
+      id: 'JV-0002',
+      status: 'rejected',
+      quotedTotal: 5000,
+      createdAt: '2026-09-19T03:00:00.000Z',
+    }),
+  ];
+  runtime.activity = [
+    {
+      id: 'supplier-view',
+      at: '2026-09-19T00:10:00.000Z',
+      module: 'purchasing',
+      action: 'supplier_viewed',
+      message: 'Viewed',
+      actor: 'external',
+      executionMode: 'automatic',
+      reason: 'test',
+      relatedRequestId: 'JV-0001',
+    },
+    {
+      id: 'quote',
+      at: '2026-09-19T00:20:00.000Z',
+      module: 'purchasing',
+      action: 'quote_received',
+      message: 'Quote',
+      actor: 'external',
+      executionMode: 'automatic',
+      reason: 'test',
+      relatedRequestId: 'JV-0001',
+    },
+    {
+      id: 'confirmed',
+      at: '2026-09-19T00:30:00.000Z',
+      module: 'purchasing',
+      action: 'supplier_confirmed',
+      message: 'Confirmed',
+      actor: 'external',
+      executionMode: 'automatic',
+      reason: 'test',
+      relatedRequestId: 'JV-0001',
+    },
+    {
+      id: 'received',
+      at: '2026-09-19T02:00:00.000Z',
+      module: 'inventory',
+      action: 'delivery_received',
+      message: 'Received',
+      actor: 'owner',
+      executionMode: 'manual',
+      reason: 'test',
+      relatedRequestId: 'JV-0001',
+    },
+  ];
+
+  const performance =
+    buildCommandCenterSupplierPerformance(runtime);
+  const supplier = performance.suppliers[0];
+
+  assert.equal(performance.requestCount, 2);
+  assert.equal(performance.closedCount, 2);
+  assert.equal(performance.completionRatePercent, 50);
+  assert.equal(performance.averageViewMinutes, 10);
+  assert.equal(performance.averageQuoteMinutes, 20);
+  assert.equal(performance.averageConfirmationMinutes, 30);
+  assert.equal(performance.averageReceiptHours, 2);
+  assert.equal(supplier?.receivedSpend, 6000);
+  assert.equal(supplier?.completionRatePercent, 50);
+});
+
+await test('Supplier performance ignores negative or missing event durations', () => {
+  const runtime = state(item());
+  runtime.suppliers = [
+    {
+      id: 'supplier',
+      name: 'Supplier',
+      contacts: [],
+      itemIds: ['shrimp'],
+    },
+  ];
+  runtime.purchases = [purchase({ id: 'JV-0001' })];
+  runtime.activity = [
+    {
+      id: 'bad-event',
+      at: '2026-09-18T23:00:00.000Z',
+      module: 'purchasing',
+      action: 'supplier_viewed',
+      message: 'Bad',
+      actor: 'external',
+      executionMode: 'automatic',
+      reason: 'test',
+      relatedRequestId: 'JV-0001',
+    },
+  ];
+
+  const performance =
+    buildCommandCenterSupplierPerformance(runtime);
+
+  assert.equal(performance.averageViewMinutes, null);
+  assert.equal(performance.completionRatePercent, null);
 });
