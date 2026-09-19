@@ -70,7 +70,7 @@ test('chat and meal-plan namespaces are unique to Marinara', () => {
   assert.equal(marinaraSiteConfig.mealPlanStoragePrefix, 'marinara.meal-plan.v1');
 });
 test('supplied website imagery is local, classified and never hotlinked', () => {
-  assert.equal(imageFiles('../src/assets/businesses/restaurant/marinara-ristorante/branding/').length, 7);
+  assert.equal(imageFiles('../src/assets/businesses/restaurant/marinara-ristorante/branding/').length, 8);
   assert.equal(imageFiles('../src/assets/businesses/restaurant/marinara-ristorante/atmosphere/').length, 1);
   assert.equal(imageFiles('../src/assets/businesses/restaurant/marinara-ristorante/food/').length, 28);
   const assetModule = source('../lib/businesses/restaurant/marinara-ristorante/assets.ts');

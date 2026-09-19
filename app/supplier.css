@@ -1,0 +1,76 @@
+.supplier-portal {
+  min-height: 100vh;
+  background: #f4f5ed;
+}
+.portal-header {
+  background: #17392d;
+  color: #cadbc8;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 26px 6%;
+}
+.portal-header > a:last-child {
+  font-size: 1rem;
+}
+.portal-main {
+  max-width: 1120px;
+  margin: auto;
+  padding: 60px 28px;
+}
+.portal-main > h1 {
+  max-width: 760px;
+  font-size: 2.8125rem;
+}
+.portal-intro {
+  max-width: 640px;
+  color: #526458;
+  font-size: 1rem;
+  line-height: 1.9;
+  margin: 25px 0 38px;
+}
+.supplier-register {
+  max-width: 780px;
+}
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 20px;
+}
+.supplier-register h2 {
+  margin-bottom: 20px;
+}
+.supplier-portal .notice {
+  top: 15px;
+}
+.supplier-portal .spaced {
+  margin-top: 40px;
+}
+.supplier-portal .cc-brand small {
+  letter-spacing: 2px;
+  font-size: 1rem;
+}
+.companion-mark {
+  display: block;
+  flex-shrink: 0;
+}
+@media (max-width: 640px) {
+  .portal-header {
+    padding: 22px;
+  }
+  .portal-main {
+    padding: 38px 20px;
+  }
+  .portal-main > h1 {
+    font-size: 2.1875rem;
+  }
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+  .portal-header .cc-brand {
+    font-size: 1.4375rem;
+  }
+  .portal-header > a:last-child {
+    font-size: 1rem;
+  }
+}

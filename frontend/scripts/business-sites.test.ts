@@ -30,7 +30,7 @@ test('registry selects presentation but never replaces database route authorizat
   assert.doesNotMatch(generic, /RibCrib|the-rib-crib/);
   const renderer = read('components/business-sites/BusinessSiteRenderer.tsx');
   assert.match(renderer, /key=\{business.publicPath\}/);
-  assert.match(renderer, /import\('\.\/restaurant\/the-rib-crib\/RibCribPage'\)/);
+  assert.match(renderer, /import\([\"']\.\/restaurant\/the-rib-crib\/RibCribPage[\"']\)/);
 });
 
 test('root layout no longer imports restaurant patch styles', () => {

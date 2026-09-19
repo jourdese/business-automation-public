@@ -1,0 +1,228 @@
+{
+  "name": "CORE | COMMANDCENTER | Supplier Action Gateway V2",
+  "active": false,
+  "nodes": [
+    {
+      "name": "Authenticated action",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "command-center-v2-actions",
+        "authentication": "headerAuth",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "name": "Command Center V2 action key"
+        }
+      },
+      "id": "cc-v2-1",
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "name": "Validate lease envelope",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "parameters": {
+        "jsCode": "const b=$input.first().json.body;const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;if(!b||!uuid.test(b.id)||!uuid.test(b.leaseToken)||Object.keys(b).some(k=>!['id','leaseToken'].includes(k)))throw new Error('Invalid action envelope');return [{json:{op:'begin_action',p:{id:b.id,leaseToken:b.leaseToken}}}];"
+      },
+      "id": "cc-v2-2",
+      "position": [
+        250,
+        0
+      ]
+    },
+    {
+      "name": "Consume one-time lease",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "parameters": {
+        "method": "POST",
+        "url": "https://pqdagfmhixblthnrfdcv.supabase.co/rest/v1/rpc/cc_api",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "name": "Command Center Supabase publishable apikey"
+        }
+      },
+      "id": "cc-v2-3",
+      "position": [
+        500,
+        0
+      ]
+    },
+    {
+      "name": "Prepare approved email",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "parameters": {
+        "jsCode": "const j=$input.first().json;if(!j.id||!j.purchase||!['supplier_quote_request','supplier_purchase'].includes(j.kind)||!j.recipient||/\\.invalid$/i.test(j.recipient))throw new Error('Unsupported approved action');const p=j.purchase;const money=v=>'PHP '+(Number(v)/100).toFixed(2);const subject=j.kind==='supplier_purchase'?'Purchase order '+p.id:'Quotation request '+p.id;const message=[j.kind==='supplier_purchase'?'Please confirm this approved purchase order.':'Please provide a quotation in your Jourvis supplier portal.',p.product,p.packs+' packs x '+p.packSize+' base units','Pack price: '+money(p.packPrice),'Delivery fee: '+money(p.deliveryFee),'Terms: '+(p.terms||'Please specify'), 'Reference: '+p.id].join('\\n');return [{json:{to:j.recipient,subject,message,correlationId:j.id}}];"
+      },
+      "id": "cc-v2-4",
+      "position": [
+        750,
+        0
+      ]
+    },
+    {
+      "name": "Existing Gmail integration",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "parameters": {
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "value": "0a0835d0b0258bd0",
+          "mode": "id"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "to": "={{ $json.to }}",
+            "subject": "={{ $json.subject }}",
+            "message": "={{ $json.message }}",
+            "correlationId": "={{ $json.correlationId }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "to",
+              "displayName": "to",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "subject",
+              "displayName": "subject",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "message",
+              "displayName": "message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "correlationId",
+              "displayName": "correlationId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            }
+          ]
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "id": "cc-v2-5",
+      "position": [
+        1000,
+        0
+      ]
+    },
+    {
+      "name": "Return provider receipt",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "parameters": {
+        "jsCode": "const r=$input.first().json;const id=$('Prepare approved email').first().json.correlationId;if(r.sent===true&&typeof r.providerMessageId==='string'&&r.providerMessageId.length)return [{json:{id,status:'succeeded',providerReceipt:r.providerMessageId}}];if(r.sent===false)return [{json:{id,status:'failed',notSent:true}}];return [{json:{id,status:'uncertain'}}];"
+      },
+      "id": "cc-v2-6",
+      "position": [
+        1250,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "Authenticated action": {
+      "main": [
+        [
+          {
+            "node": "Validate lease envelope",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate lease envelope": {
+      "main": [
+        [
+          {
+            "node": "Consume one-time lease",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Consume one-time lease": {
+      "main": [
+        [
+          {
+            "node": "Prepare approved email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare approved email": {
+      "main": [
+        [
+          {
+            "node": "Existing Gmail integration",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Existing Gmail integration": {
+      "main": [
+        [
+          {
+            "node": "Return provider receipt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataSuccessExecution": "none",
+    "saveDataErrorExecution": "none",
+    "saveManualExecutions": false,
+    "executionTimeout": 60
+  },
+  "pinData": {}
+}

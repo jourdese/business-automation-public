@@ -14,13 +14,14 @@ const read = (path: string) => readFileSync(join(frontend, path), 'utf8');
 const site = 'components/business-sites/restaurant/the-wild-tree/';
 const data = 'lib/businesses/restaurant/the-wild-tree/';
 
-test('all 38 user assets are reorganized without changing filenames or bytes', () => {
+test('all 38 user assets preserve filenames and canonical bytes across checkout line endings', () => {
   const names = Object.keys(wildTreeAssetFolders).sort();
   assert.equal(names.length, 38);
   const pairs = names.map(name => {
     const path = sourceAssetPath(name);
     assert.ok(path);
-    const bytes = readFileSync(join(frontend, path));
+    const raw = readFileSync(join(frontend, path));
+    const bytes = name.endsWith('.svg') ? Buffer.from(raw.toString('utf8').replace(/\r\n/g, '\n')) : raw;
     const blob = createHash('sha1').update(`blob ${bytes.length}\0`).update(bytes).digest('hex');
     return `${name}:${blob}`;
   });

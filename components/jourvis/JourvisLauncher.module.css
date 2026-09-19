@@ -1,0 +1,261 @@
+/* This dock deliberately does not use the old .rib-jourvis-launcher class.
+   Its legacy global size/animation overrides must not leak into this component. */
+.launcher {
+  --dock-size: 84px;
+  --dock-mascot-size: 56px;
+  position: fixed;
+  z-index: 125;
+  right: max(20px, env(safe-area-inset-right, 0px));
+  bottom: max(20px, env(safe-area-inset-bottom, 0px));
+  display: grid;
+  place-items: center;
+  box-sizing: border-box;
+  width: var(--dock-size);
+  height: var(--dock-size);
+  min-width: 0;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  appearance: none;
+  background: transparent;
+  color: var(--dock-ivory, #f7f4ee);
+  line-height: 1;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  isolation: isolate;
+  transition:
+    opacity 160ms ease,
+    visibility 160ms ease;
+}
+
+/* Preserve the existing behavior: the chat takes over when opened. */
+.launcher[data-open="true"] {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.launcher:focus-visible {
+  outline: 2px solid var(--dock-mint, #a7e3c5);
+  outline-offset: 4px;
+}
+
+.dock {
+  position: absolute;
+  inset: 4px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(167, 227, 197, 0.28);
+  border-radius: inherit;
+  background:
+    radial-gradient(ellipse at 27% 12%, rgba(167, 227, 197, 0.14), transparent 58%),
+    linear-gradient(150deg, rgba(31, 58, 95, 0.94), var(--dock-ink, #08141f) 74%);
+  box-shadow:
+    0 10px 28px rgba(0, 0, 0, 0.25),
+    0 3px 8px rgba(0, 0, 0, 0.18),
+    inset 0 1px 0 rgba(247, 244, 238, 0.12),
+    inset 0 -6px 16px rgba(0, 0, 0, 0.16);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition:
+    transform 200ms ease,
+    border-color 200ms ease,
+    box-shadow 200ms ease;
+  pointer-events: none;
+}
+
+.dock::before {
+  content: "";
+  position: absolute;
+  inset: 5px;
+  border: 1px solid rgba(167, 227, 197, 0.08);
+  border-radius: inherit;
+}
+
+.rim {
+  position: absolute;
+  inset: -4px;
+  border: 1px solid rgba(167, 227, 197, 0.1);
+  border-top-color: rgba(200, 169, 107, 0.48);
+  border-right-color: rgba(167, 227, 197, 0.3);
+  border-radius: inherit;
+  animation: orbit 28s linear infinite;
+}
+
+.bits {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: inherit;
+}
+
+.bit {
+  position: absolute;
+  left: var(--bit-x);
+  top: var(--bit-y);
+  width: 2px;
+  height: 2px;
+  border-radius: 0.5px;
+  background: var(--bit-color);
+  opacity: 0.35;
+  animation: drift 7s ease-in-out var(--bit-delay) infinite;
+}
+
+.mascot {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: var(--dock-mascot-size);
+  height: var(--dock-mascot-size);
+}
+
+.mascot > span {
+  width: 100%;
+  height: 100%;
+}
+
+/* Keep the real SVG geometry and fills; only refine its movement and shadow. */
+.mascot svg {
+  filter: drop-shadow(0 3px 5px rgba(0, 0, 0, 0.2));
+  animation: float 6s ease-in-out infinite;
+  transform-origin: center;
+}
+
+.accent {
+  position: absolute;
+  right: 9px;
+  bottom: 9px;
+  z-index: 2;
+  width: 5px;
+  height: 5px;
+  border: 2px solid var(--dock-ink, #08141f);
+  border-radius: 50%;
+  background: var(--dock-mint, #a7e3c5);
+  box-shadow: 0 0 6px rgba(167, 227, 197, 0.18);
+}
+
+.tooltip {
+  position: absolute;
+  right: calc(100% + 10px);
+  top: 50%;
+  width: max-content;
+  max-width: min(210px, calc(100vw - var(--dock-size) - 60px));
+  padding: 11px 14px;
+  border: 1px solid rgba(167, 227, 197, 0.18);
+  border-radius: 12px;
+  background: var(--dock-ink, #08141f);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+  color: var(--dock-ivory, #f7f4ee);
+  text-align: left;
+  opacity: 0;
+  visibility: hidden;
+  transform: translate(4px, -50%);
+  pointer-events: none;
+  transition:
+    opacity 160ms ease,
+    transform 160ms ease,
+    visibility 160ms ease;
+}
+
+.tooltip strong {
+  display: block;
+  font-size: 1rem;
+  font-weight: 650;
+  line-height: 1.35;
+  letter-spacing: -0.01em;
+}
+
+.tooltip small {
+  display: block;
+  margin-top: 3px;
+  color: var(--dock-mint, #a7e3c5);
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.5;
+}
+
+.launcher:focus-visible:not([data-tooltip-dismissed="true"]) .tooltip {
+  opacity: 1;
+  visibility: visible;
+  transform: translate(0, -50%);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .launcher:hover .dock {
+    transform: translateY(-2px);
+    border-color: rgba(167, 227, 197, 0.48);
+    box-shadow:
+      0 13px 30px rgba(0, 0, 0, 0.28),
+      inset 0 1px 0 rgba(247, 244, 238, 0.14);
+  }
+
+  .launcher:hover:not([data-tooltip-dismissed="true"]) .tooltip {
+    opacity: 1;
+    visibility: visible;
+    transform: translate(0, -50%);
+  }
+}
+
+.launcher:active .dock {
+  transform: scale(0.97);
+}
+
+@keyframes orbit {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes drift {
+  0%,
+  100% {
+    opacity: 0.18;
+    transform: translateY(1px);
+  }
+  50% {
+    opacity: 0.64;
+    transform: translateY(-2px);
+  }
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(1px);
+  }
+  50% {
+    transform: translateY(-1px);
+  }
+}
+
+@media (max-width: 640px) {
+  .launcher {
+    --dock-size: 72px;
+    --dock-mascot-size: 48px;
+    right: max(14px, env(safe-area-inset-right, 0px));
+    bottom: max(14px, env(safe-area-inset-bottom, 0px));
+  }
+
+  .accent {
+    right: 7px;
+    bottom: 7px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .launcher,
+  .launcher *,
+  .launcher *::before,
+  .launcher *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .bit {
+    opacity: 0.35;
+  }
+}
