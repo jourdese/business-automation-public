@@ -2193,37 +2193,24 @@ function RecipeEditorPanel({
   const [inventoryEditor, setInventoryEditor] =
     useState<InventoryEditorDraft | null>(null);
 
-  const costFor = (ingredients: Array<{ itemId: string; amount: string }>) =>
-    ingredients.reduce((sum, entry) => {
-      const item = inventory.find((candidate) => candidate.id === entry.itemId);
-      const amount = Number(entry.amount);
-      if (!item || !Number.isFinite(amount) || amount <= 0) return sum;
-      return sum + (item.packPrice / Math.max(item.packSize, 0.01)) * amount;
-    }, 0);
-
-  const servingsFor = (ingredients: Array<{ itemId: string; amount: string }>) => {
-    const possible = ingredients.flatMap((entry) => {
-      const item = inventory.find((candidate) => candidate.id === entry.itemId);
-      const amount = Number(entry.amount);
-      if (!item || !Number.isFinite(amount) || amount <= 0) return [];
-      return [Math.floor(item.current / amount)];
-    });
-    return possible.length ? Math.min(...possible) : 0;
-  };
-
-  const draftCost = costFor(draft.ingredients);
-  const draftServings = servingsFor(draft.ingredients);
-  const existingIngredients = existing
-    ? Object.entries(existing.ingredients).map(([itemId, amount]) => ({
-        itemId,
-        amount: String(amount),
-      }))
+  const linkedMenuItems = existing
+    ? menuItems.filter((item) => item.recipeId === existing.id)
     : [];
-  const previousCost = costFor(existingIngredients);
-  const costDelta = draftCost - previousCost;
-  const linkedCount = existing
-    ? menuItems.filter((item) => item.recipeId === existing.id).length
-    : 0;
+  const draftIngredientRecord = Object.fromEntries(
+    draft.ingredients
+      .map((entry) => [entry.itemId, Number(entry.amount)] as const)
+      .filter(
+        ([itemId, amount]) =>
+          Boolean(itemId) && Number.isFinite(amount) && amount > 0,
+      ),
+  );
+  const recipeImpact = buildCommandCenterRecipeImpact(
+    existing,
+    draftIngredientRecord,
+    inventory,
+    linkedMenuItems,
+  );
+  const linkedCount = linkedMenuItems.length;
 
   function addIngredient() {
     const used = new Set(draft.ingredients.map((entry) => entry.itemId));
@@ -2448,29 +2435,116 @@ function RecipeEditorPanel({
 
       <div className={styles.recipeImpact}>
         <article>
-          <span>EST. INGREDIENT COST</span>
-          <strong>₱{Math.round(draftCost).toLocaleString("en-PH")}</strong>
-          {existing ? (
-            <small>
-              {costDelta === 0
-                ? "No cost change"
-                : `${costDelta > 0 ? "+" : "-"}₱${Math.round(Math.abs(costDelta)).toLocaleString("en-PH")} vs saved recipe`}
-            </small>
-          ) : (
-            <small>Based on configured inventory pack prices</small>
-          )}
+          <span>INGREDIENT COST</span>
+          <strong>
+            ₱{Math.round(recipeImpact.beforeCost).toLocaleString("en-PH")}
+            {" → "}
+            ₱{Math.round(recipeImpact.afterCost).toLocaleString("en-PH")}
+          </strong>
+          <small>
+            {recipeImpact.costChange === 0
+              ? "No cost change"
+              : `${recipeImpact.costChange > 0 ? "+" : "-"}₱${Math.round(
+                  Math.abs(recipeImpact.costChange),
+                ).toLocaleString("en-PH")}${recipeImpact.costChangePercent !== null ? ` · ${recipeImpact.costChangePercent > 0 ? "+" : ""}${recipeImpact.costChangePercent}%` : ""}`}
+          </small>
+        </article>
+        <article>
+          <span>LINKED MENU FOOD COST</span>
+          <strong>
+            {recipeImpact.averageLinkedFoodCostBefore === null
+              ? "—"
+              : recipeImpact.averageLinkedFoodCostBefore + "%"}
+            {" → "}
+            {recipeImpact.averageLinkedFoodCostAfter === null
+              ? "—"
+              : recipeImpact.averageLinkedFoodCostAfter + "%"}
+          </strong>
+          <small>
+            {linkedCount
+              ? `average across ${linkedCount} linked menu item${linkedCount === 1 ? "" : "s"} with live prices`
+              : "link and price menu items to calculate food cost"}
+          </small>
         </article>
         <article>
           <span>POSSIBLE SERVINGS</span>
-          <strong>{draftServings}</strong>
-          <small>Based on current on-hand inventory</small>
+          <strong>
+            {recipeImpact.beforeServings ?? 0}
+            {" → "}
+            {recipeImpact.afterServings ?? 0}
+          </strong>
+          <small>based on current on-hand inventory</small>
         </article>
         <article>
           <span>LINKED MENU ITEMS</span>
           <strong>{linkedCount}</strong>
-          <small>These items will use the saved recipe immediately</small>
+          <small>these items use the saved recipe immediately</small>
         </article>
       </div>
+
+      {recipeImpact.ingredientChanges.length ? (
+        <section className={styles.recipeChangeImpact}>
+          <header>
+            <div>
+              <span>CHANGE IMPACT</span>
+              <strong>How the draft changes inventory pressure</strong>
+            </div>
+            <small>
+              Daily-demand and stockout movement are modeled from each
+              ingredient&apos;s configured daily-use baseline. They are not yet
+              POS-demand forecasts.
+            </small>
+          </header>
+          <div>
+            {recipeImpact.ingredientChanges.map((change) => (
+              <article key={change.itemId}>
+                <strong>{change.name}</strong>
+                <span>
+                  <small>Recipe quantity</small>
+                  <b>
+                    {change.beforeAmount} → {change.afterAmount} {change.unit}
+                  </b>
+                  <em>
+                    {change.quantityChangePercent === null
+                      ? "new ingredient"
+                      : `${change.quantityChangePercent > 0 ? "+" : ""}${change.quantityChangePercent}%`}
+                  </em>
+                </span>
+                <span>
+                  <small>Modeled daily demand</small>
+                  <b>
+                    {change.configuredDailyUse === null
+                      ? "—"
+                      : `${change.configuredDailyUse} → ${change.modeledDailyUseAfter} ${change.unit}/day`}
+                  </b>
+                  <em>
+                    {change.dailyUseChangePercent === null
+                      ? "no baseline"
+                      : `${change.dailyUseChangePercent > 0 ? "+" : ""}${change.dailyUseChangePercent}%`}
+                  </em>
+                </span>
+                <span>
+                  <small>Projected stockout</small>
+                  <b>
+                    {change.stockoutDaysBefore === null
+                      ? "—"
+                      : `${change.stockoutDaysBefore} → ${change.stockoutDaysAfter} days`}
+                  </b>
+                  <em>
+                    {change.stockoutDaysDelta === null
+                      ? "no baseline"
+                      : change.stockoutDaysDelta < 0
+                        ? `${Math.abs(change.stockoutDaysDelta)} days sooner`
+                        : change.stockoutDaysDelta > 0
+                          ? `${change.stockoutDaysDelta} days later`
+                          : "unchanged"}
+                  </em>
+                </span>
+              </article>
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       <div className={styles.recipeBuilder}>
         <header>
