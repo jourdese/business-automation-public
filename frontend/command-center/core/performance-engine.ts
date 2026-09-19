@@ -1,9 +1,9 @@
-import { buildCommandCenterForecast } from "./forecast-engine";
+import { buildCommandCenterForecast } from "./forecast-engine.ts";
 import {
   inventoryPercent,
   isPurchaseActive,
   type CommandCenterRuntimeState,
-} from "./runtime";
+} from "./runtime.ts";
 
 export type CommandCenterPerformanceSnapshot = {
   inventoryReadinessPercent: number | null;
