@@ -14,18 +14,29 @@ const recipeIdByMenuItemId: Readonly<Record<string, string>> = {
 };
 
 export function createMarinaraRuntimeSeed(): CommandCenterRuntimeState {
+  const demoNow = Date.now();
+  const demoAt = (minutesAgo: number) =>
+    new Date(demoNow - minutesAgo * 60_000).toISOString();
+
   return {
     version: 2,
     business: marinaraRistoranteBusiness,
-    automationMasterOn: false,
+    automationMasterOn: true,
     inventory: initialIngredients.map((item) => ({
       id: item.id,
       name: item.name,
       unit: item.unit,
-      current: item.current,
+      current:
+        item.id === "tomato"
+          ? 2.6
+          : item.id === "parmesan"
+            ? 2.8
+            : item.id === "squid"
+              ? 3
+              : item.current,
       fullLevel: item.fullLevel,
       reorderAt: item.reorderAt,
-      incoming: item.incoming,
+      incoming: item.id === "tomato" ? 12 : item.incoming,
       supplierId: item.supplierId,
       contactId: item.contactId,
       packSize: item.packSize,
@@ -48,7 +59,63 @@ export function createMarinaraRuntimeSeed(): CommandCenterRuntimeState {
       maxDeliveryFee: item.maxDeliveryFee,
       maxLeadDays: item.maxLeadDays,
     })),
-    purchases: [],
+    purchases: [
+      {
+        id: "JV-DEMO-TOMATO",
+        itemId: "tomato",
+        supplierId: "casa-rosso",
+        contactId: "lia",
+        quantity: 12,
+        status: "in_transit",
+        estimatedTotal: 2940,
+        etaDays: 1,
+        buyerConfirmed: true,
+        supplierConfirmed: true,
+        createdAt: demoAt(18),
+        origin: "jourvis",
+        automationMode: "autobuy",
+        explanation:
+          "Jourvis automatically replenished Tomato sauce within the configured fixed-price authority. The supplier confirmed the order and it is now in transit.",
+      },
+      {
+        id: "JV-DEMO-BASIL",
+        itemId: "basil",
+        supplierId: "green-basket",
+        contactId: "mika",
+        quantity: 2,
+        status: "quote_requested",
+        estimatedTotal: 820,
+        counteroffersUsed: 0,
+        buyerConfirmed: false,
+        supplierConfirmed: false,
+        createdAt: demoAt(3),
+        origin: "jourvis",
+        automationMode: "autobuy",
+        explanation:
+          "Jourvis automatically requested a supplier quote after Fresh basil crossed its configured stock trigger.",
+      },
+      {
+        id: "JV-DEMO-SHRIMP",
+        itemId: "shrimp",
+        supplierId: "davao-seafood",
+        contactId: "maria",
+        quantity: 10,
+        status: "quote_received",
+        estimatedTotal: 5600,
+        quotedPackPrice: 3250,
+        quotedTotal: 6650,
+        deliveryFee: 150,
+        etaDays: 1,
+        counteroffersUsed: 0,
+        buyerConfirmed: false,
+        supplierConfirmed: false,
+        createdAt: demoAt(14),
+        origin: "jourvis",
+        automationMode: "autobuy",
+        explanation:
+          "The supplier quote exceeded Jourvis' configured hard pack-price limit, so Jourvis stopped before accepting or negotiating the purchase.",
+      },
+    ],
     suppliers: suppliers.map((supplier) => ({
       id: supplier.id,
       name: supplier.name,
@@ -134,7 +201,77 @@ export function createMarinaraRuntimeSeed(): CommandCenterRuntimeState {
       recipeId: recipeIdByMenuItemId[item.key],
     })),
     pausedItemIds: [],
-    activity: [],
+    activity: [
+      {
+        id: "activity-demo-basil-started",
+        at: demoAt(2),
+        module: "purchasing",
+        action: "purchase_started",
+        message: "Jourvis automatically started JV-DEMO-BASIL for Fresh basil.",
+        actor: "jourvis",
+        executionMode: "automatic",
+        reason:
+          "Fresh basil crossed its configured action trigger and the proposed purchase is inside Jourvis' automatic authority.",
+        relatedEntityId: "basil",
+        relatedRequestId: "JV-DEMO-BASIL",
+      },
+      {
+        id: "activity-demo-tomato-transit",
+        at: demoAt(4),
+        module: "purchasing",
+        action: "shipment_in_transit",
+        message:
+          "JV-DEMO-TOMATO: Casa Rosso Foods marked the Tomato sauce delivery in transit.",
+        actor: "external",
+        executionMode: "automatic",
+        reason:
+          "Jourvis recorded the supplier shipment after automatically accepting the fixed-price purchase within configured limits.",
+        relatedEntityId: "tomato",
+        relatedRequestId: "JV-DEMO-TOMATO",
+      },
+      {
+        id: "activity-demo-shrimp-stopped",
+        at: demoAt(9),
+        module: "purchasing",
+        action: "authority_escalation",
+        message:
+          "Jourvis stopped JV-DEMO-SHRIMP and sent the supplier quote to Decisions.",
+        actor: "jourvis",
+        executionMode: "automatic",
+        reason:
+          "The quoted pack price is ₱3,250, above the configured ₱3,100 hard maximum. Jourvis will not accept or negotiate beyond that authority.",
+        relatedEntityId: "shrimp",
+        relatedRequestId: "JV-DEMO-SHRIMP",
+      },
+      {
+        id: "activity-demo-shrimp-quote",
+        at: demoAt(10),
+        module: "purchasing",
+        action: "quote_received",
+        message:
+          "JV-DEMO-SHRIMP: Davao Fresh Seafood returned a quote for Shrimp.",
+        actor: "external",
+        executionMode: "automatic",
+        reason:
+          "Jourvis recorded the supplier terms before checking them against automatic purchasing authority.",
+        relatedEntityId: "shrimp",
+        relatedRequestId: "JV-DEMO-SHRIMP",
+      },
+      {
+        id: "activity-demo-tomato-started",
+        at: demoAt(18),
+        module: "purchasing",
+        action: "purchase_started",
+        message:
+          "Jourvis automatically started the Tomato sauce replenishment workflow.",
+        actor: "jourvis",
+        executionMode: "automatic",
+        reason:
+          "Tomato sauce crossed its configured action trigger and the fixed-price replenishment was inside Jourvis' purchasing authority.",
+        relatedEntityId: "tomato",
+        relatedRequestId: "JV-DEMO-TOMATO",
+      },
+    ],
     history: [],
   };
 }
