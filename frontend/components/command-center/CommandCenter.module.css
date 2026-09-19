@@ -4637,10 +4637,6 @@
     text-align: left;
   }
 
-  .menuExpandedIntro {
-    flex-direction: column;
-  }
-
   .entityDrawer {
     width: 100vw;
   }
