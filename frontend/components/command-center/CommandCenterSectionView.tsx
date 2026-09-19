@@ -19,7 +19,10 @@ import { operationCatalog } from "@/command-center/core/business-registry";
 import { jourvisAutonomyLoop } from "@/command-center/core/autonomy";
 import { buildCommandCenterFinance } from "@/command-center/core/finance-engine";
 import { buildCommandCenterForecast } from "@/command-center/core/forecast-engine";
-import { buildCommandCenterHistoryTrend } from "@/command-center/core/history-engine";
+import {
+  buildCommandCenterForecastAccuracy,
+  buildCommandCenterHistoryTrend,
+} from "@/command-center/core/history-engine";
 import { buildCommandCenterPerformance } from "@/command-center/core/performance-engine";
 import {
   estimatedPurchaseTotal,
@@ -411,6 +414,10 @@ export default function CommandCenterSectionView({
 
   if (section === "forecast") {
     const forecast = buildCommandCenterForecast(state, 7);
+    const forecastAccuracy = buildCommandCenterForecastAccuracy(
+      state,
+      7,
+    );
     const connectedInventoryRows = forecast.inventoryRows.filter(
       (row) => row.dailyUse > 0,
     );
@@ -499,6 +506,79 @@ export default function CommandCenterSectionView({
             {hasHistoricalComparison
               ? `Observed from ${formatActivityTime(historyTrend.oldestAt ?? "", business.timezone)} to ${formatActivityTime(historyTrend.latestAt ?? "", business.timezone)}. This is runtime history, not yet POS-based forecast accuracy.`
               : "Jourvis has started capturing historical operating snapshots. Trend comparisons appear after the business state changes."}
+          </p>
+        </article>
+
+        <article className={styles.panelCard}>
+          <PanelHeading
+            icon={<CheckCircle2 size={17} />}
+            eyebrow="FORECAST ACCURACY"
+            title={
+              forecastAccuracy.matured
+                ? "Compare earlier 7-day projections with later actual stock"
+                : "Collecting a matured 7-day comparison"
+            }
+          />
+          <div className={styles.historyTrendGrid}>
+            <div>
+              <span>STATUS</span>
+              <strong>{forecastAccuracy.matured ? "Matured" : "Collecting"}</strong>
+              <small>requires observations at least 7 days apart</small>
+            </div>
+            <div>
+              <span>COMPARED ITEMS</span>
+              <strong>{forecastAccuracy.itemCount}</strong>
+              <small>items with configured daily-use inputs</small>
+            </div>
+            <div>
+              <span>MEAN NORMALIZED ERROR</span>
+              <strong>
+                {forecastAccuracy.meanNormalizedErrorPercent === null
+                  ? "—"
+                  : forecastAccuracy.meanNormalizedErrorPercent + "%"}
+              </strong>
+              <small>absolute error as % of configured full stock</small>
+            </div>
+            <div>
+              <span>HORIZON</span>
+              <strong>{forecastAccuracy.horizonDays} days</strong>
+              <small>prediction window currently evaluated</small>
+            </div>
+          </div>
+
+          {forecastAccuracy.rows.length ? (
+            <div className={styles.forecastAccuracyList}>
+              {forecastAccuracy.rows
+                .slice()
+                .sort(
+                  (left, right) =>
+                    right.errorPercentOfFullLevel -
+                    left.errorPercentOfFullLevel,
+                )
+                .slice(0, 6)
+                .map((row) => {
+                  const item = state.inventory.find(
+                    (entry) => entry.id === row.itemId,
+                  );
+                  return (
+                    <div key={row.itemId}>
+                      <strong>{item?.name ?? row.itemId}</strong>
+                      <span>
+                        predicted {row.predicted} {row.unit} · actual {row.actual} {row.unit}
+                      </span>
+                      <b>
+                        {row.absoluteError} {row.unit} error · {row.errorPercentOfFullLevel}%
+                      </b>
+                    </div>
+                  );
+                })}
+            </div>
+          ) : null}
+
+          <p className={styles.historyTrendNote}>
+            {forecastAccuracy.matured
+              ? `Baseline ${formatActivityTime(forecastAccuracy.baselineAt ?? "", business.timezone)} → actual ${formatActivityTime(forecastAccuracy.actualAt ?? "", business.timezone)}. This measures the configured inventory-demand baseline only; POS-driven demand-model accuracy comes later.`
+              : "Jourvis will not label the forecast accurate or inaccurate until the configured horizon has actually elapsed and a later observation exists."}
           </p>
         </article>
 
