@@ -112,6 +112,8 @@ export type CommandCenterRecipe = {
   notes?: string;
   active: boolean;
   ingredients: Record<string, number>;
+  savedIngredientCost?: number;
+  updatedAt?: string;
 };
 
 export type CommandCenterMenuItem = {
@@ -130,6 +132,7 @@ export type CommandCenterMenuItem = {
   active: boolean;
   available: boolean;
   recipeId?: string;
+  displayOrder?: number;
 };
 
 export type CommandCenterStockAdjustmentReason =
