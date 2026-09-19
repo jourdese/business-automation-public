@@ -99,7 +99,7 @@ type CommandCenterRuntimeContextValue = {
         id?: string;
       }
     >;
-  }) => string | null;
+  }) => { supplierId: string; contactId: string } | null;
   recordRecipeSale: (recipeId: string, quantity?: number) => void;
   resumeItem: (itemId: string) => void;
   resetDemo: () => void;
@@ -1800,6 +1800,7 @@ export function CommandCenterRuntimeProvider({
         .filter((contact) => contact.name);
 
       if (!contacts.length) return null;
+      const primaryContactId = contacts[0].id;
 
       setState((current) => {
         const currentExisting = current.suppliers.find(
@@ -1836,7 +1837,10 @@ export function CommandCenterRuntimeProvider({
         };
       });
 
-      return id;
+      return {
+        supplierId: id,
+        contactId: primaryContactId,
+      };
     },
     [state.suppliers],
   );
