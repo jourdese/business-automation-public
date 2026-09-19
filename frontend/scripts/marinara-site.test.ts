@@ -23,12 +23,12 @@ test('Marinara keeps its own preset, storage and chat namespace', () => {
 });
 
 test('all supplied Marinara image groups are wired into the visual story', () => {
-  assert.equal(imageFiles('../src/assets/businesses/restaurant/marinara-ristorante/branding/').length, 7);
+  assert.equal(imageFiles('../src/assets/businesses/restaurant/marinara-ristorante/branding/').length, 8);
   assert.equal(imageFiles('../src/assets/businesses/restaurant/marinara-ristorante/atmosphere/').length, 1);
   assert.equal(imageFiles('../src/assets/businesses/restaurant/marinara-ristorante/food/').length, 28);
   const assetModule = source('../lib/businesses/restaurant/marinara-ristorante/assets.ts');
   assert.match(assetModule, /foodGallery:[^]*/);
-  for (const filename of ['marinara-buon-cibo-logo-full.png', 'marinara-coverphoto.jpg', 'marinara-logo-clear.png', 'marinara-logo-meta-thumbnail.png', 'marinara-logo.jpg', 'marinara-interior.jpg', 'marinara-menu-garden-amore-set.jpg']) {
+  for (const filename of ['marinara-buon-cibo-logo-full.png', 'marinara-coverphoto.jpg', 'marinara-buon-cibo-logo-orange.png', 'marinara-logo-meta-thumbnail.png', 'marinara-logo.jpg', 'marinara-interior.jpg', 'marinara-menu-garden-amore-set.jpg']) {
     assert.match(assetModule, new RegExp(filename.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
   }
 });
