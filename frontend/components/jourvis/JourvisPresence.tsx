@@ -301,6 +301,7 @@ export default function JourvisPresence({
       data-side={side}
       data-vertical={vertical}
       data-wide={wide}
+      data-attention={attention}
       style={
         position
           ? { left: position.left, top: position.top, right: "auto", bottom: "auto" }
@@ -437,13 +438,22 @@ export default function JourvisPresence({
         onPointerUp={endDrag}
         onPointerCancel={endDrag}
         onClick={toggleOpen}
-        aria-label={open ? "Close Jourvis" : "Open Jourvis"}
+        aria-label={
+          open
+            ? "Close Jourvis"
+            : attention
+              ? `Jourvis needs your attention: ${message}`
+              : "Open Jourvis"
+        }
         aria-expanded={open}
       >
         <span className={styles.orbHalo} />
         <span className={styles.orbFace}>
           <CompanionMark />
         </span>
+        {attention ? (
+          <span className={styles.attentionEmote} aria-hidden>!</span>
+        ) : null}
         <span className={styles.presenceDot} />
         <span className={styles.dragHint}>
           <Grip size={11} aria-hidden />

@@ -18,7 +18,6 @@ import {
   WalletCards,
   X,
 } from "lucide-react";
-import CompanionMark from "@/components/jourvis/CompanionMark";
 import JourvisPresence from "@/components/jourvis/JourvisPresence";
 import BusinessBrandMark from "./BusinessBrandMark";
 import {
@@ -73,7 +72,6 @@ export default function CommandCenterShell({ children }: { children: ReactNode }
   const [updateBaseline, setUpdateBaseline] = useState<CommandCenterInventoryItem | null>(null);
   const [updateDraft, setUpdateDraft] = useState<CommandCenterInventoryItem | null>(null);
   const [jourvisOpenKey, setJourvisOpenKey] = useState(0);
-  const [summoningTaskId, setSummoningTaskId] = useState<string | null>(null);
   const {
     state,
     tasks,
@@ -101,15 +99,6 @@ export default function CommandCenterShell({ children }: { children: ReactNode }
     return () => window.removeEventListener("jourvis-command-center-update", handleUpdate);
   }, [state.inventory, tasks]);
 
-  useEffect(() => {
-    if (!summoningTaskId) return;
-    const timer = window.setTimeout(() => {
-      setJourvisOpenKey((value) => value + 1);
-      setSummoningTaskId(null);
-    }, 620);
-    return () => window.clearTimeout(timer);
-  }, [summoningTaskId]);
-
   const business = useMemo(
     () => resolveCommandCenterBusiness(businessId),
     [businessId],
@@ -121,11 +110,6 @@ export default function CommandCenterShell({ children }: { children: ReactNode }
 
   function switchBusiness(nextBusinessId: string) {
     window.location.href = sectionHref(nextBusinessId, activeSection);
-  }
-
-  function summonTopTask() {
-    if (!topTask || summoningTaskId) return;
-    setSummoningTaskId(topTask.id);
   }
 
   function openTaskUpdate(taskId: string) {
@@ -298,34 +282,6 @@ export default function CommandCenterShell({ children }: { children: ReactNode }
           </div>
 
           <div className={styles.headerRuntimeActions}>
-            {topTask && !isUpdating ? (
-              <button
-                type="button"
-                className={styles.jourvisSummonBeacon}
-                data-priority={topTask.priority}
-                data-summoning={summoningTaskId === topTask.id}
-                onClick={summonTopTask}
-                aria-label={`Summon Jourvis for ${topTask.title}`}
-              >
-                <span className={styles.summonParticles} aria-hidden>
-                  <i>!</i>
-                  <i>!</i>
-                  <i>!</i>
-                </span>
-                <span className={styles.summonGlyph} aria-hidden>!</span>
-                <span className={styles.summonPresencePreview} aria-hidden>
-                  <CompanionMark />
-                </span>
-                <span className={styles.summonCopy}>
-                  <small>NEEDS YOU</small>
-                  <strong>
-                    {summoningTaskId === topTask.id
-                      ? "Summoning Jourvis…"
-                      : "Summon Jourvis"}
-                  </strong>
-                </span>
-              </button>
-            ) : null}
             <div className={styles.jourvisRunState}>
               <span><i data-off={!state.automationMasterOn} /> {state.automationMasterOn ? "JOURVIS OPERATING" : "JOURVIS PAUSED"}</span>
               <strong>{tasks.length ? `${tasks.length} exception${tasks.length === 1 ? "" : "s"} need you` : "Owner mode: supervise exceptions"}</strong>
