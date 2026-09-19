@@ -1003,6 +1003,47 @@ export default function OperationModuleView({
           description={operationModule.description}
         />
 
+        <div className={styles.entityToolbar}>
+          <div>
+            <button
+              type="button"
+              data-primary
+              onClick={() => setSupplierEditor(supplierDraftFrom())}
+            >
+              <PlusCircle size={15} aria-hidden /> Add supplier
+            </button>
+          </div>
+          <span>{state.suppliers.length} configured suppliers</span>
+        </div>
+
+        {supplierEditor ? (
+          <div
+            className={styles.entityDrawerBackdrop}
+            role="presentation"
+            onMouseDown={(event) => {
+              if (event.target === event.currentTarget) {
+                setSupplierEditor(null);
+              }
+            }}
+          >
+            <aside
+              className={styles.entityDrawer}
+              role="dialog"
+              aria-modal="true"
+              aria-label={
+                supplierEditor.id ? "Edit supplier" : "Add supplier"
+              }
+            >
+              <SupplierEditorPanel
+                draft={supplierEditor}
+                setDraft={setSupplierEditor}
+                onSave={() => submitSupplierEditor(supplierEditor)}
+                onCancel={() => setSupplierEditor(null)}
+              />
+            </aside>
+          </div>
+        ) : null}
+
         <div className={styles.activitySummary}>
           <article>
             <span>REQUESTS OBSERVED</span>
@@ -1050,7 +1091,17 @@ export default function OperationModuleView({
                     <span>SUPPLIER</span>
                     <h3>{supplier.name}</h3>
                   </div>
-                  <b>{activeSupplierPurchases.length} active</b>
+                  <div className={styles.supplierHeaderActions}>
+                    <b>{activeSupplierPurchases.length} active</b>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setSupplierEditor(supplierDraftFrom(supplier))
+                      }
+                    >
+                      <Pencil size={13} aria-hidden /> Edit
+                    </button>
+                  </div>
                 </header>
 
                 <div className={styles.supplierPriceList}>
