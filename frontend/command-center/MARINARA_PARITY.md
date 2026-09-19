@@ -37,7 +37,20 @@ This checklist tracks migration from the legacy Marinara Autoinventory preview i
 - Activity history with actor, automatic/manual mode, reason, related entity/request, timestamp, and configuration snapshot.
 - Browser demo persistence and reset behavior.
 - Marinara archived menu references separated from live/current price truth.
-- Four recipe-mapped menu items connected to ingredient economics and simulated POS usage.
+- Four original recipe-mapped menu items connected to ingredient economics and simulated POS usage.
+- Full Menu CRUD with current selling price, category, variant/size, description, recipe mapping, availability, archive/restore, duplication, category rename, bulk availability, and display ordering.
+- Compact expandable Menu library with landscape thumbnails; Add/Edit uses a fixed drawer so scrolling position is preserved.
+- Menu economics: ingredient cost, food-cost %, gross profit per item, gross margin %, current-vs-archived price movement, food-cost warnings, and recipe-cost drift since the recipe was last saved.
+- Full Recipe CRUD with archive/restore, duplication, notes, ingredient add/remove/quantity editing, live cost/serving impact, and linked-menu food-cost impact.
+- Recipe change preview models ingredient quantity change, configured daily-use change, and stockout timing movement before save.
+- Recipe editor can create a new Inventory ingredient without leaving the workflow.
+- New ingredient setup includes unit, storage zone, stock/full/reorder levels, daily use, supplier/contact, purchasing mode, pack size/price, lead time, automation mode, trigger, and automatic spending limit.
+- Supplier create/edit is available from the Suppliers operation and directly from Recipe → Create Inventory Item; editing the primary contact preserves any additional stored contacts.
+- Runtime schema migrated to v2 while preserving existing browser storage.
+- Collision-resistant request/entity/activity IDs replace array-length IDs.
+- Purchase-state transition table and physical-receipt guards prevent invalid workflow jumps.
+- Runtime integrity validation checks Menu → Recipe → Inventory → Supplier → Purchase relationships, duplicate IDs, supplier/contact ownership, negative stock, and supplier-confirmation invariants.
+- Production action-provider contract now includes an idempotency key for retry-safe external side effects.
 
 ## Intentionally changed from legacy
 
@@ -56,12 +69,11 @@ This checklist tracks migration from the legacy Marinara Autoinventory preview i
 
 ## Remaining before legacy retirement
 
-- Complete local/browser review of the current Command Center purchasing and receiving flow.
-- Verify no useful legacy procurement edge case remains after the new supplier lifecycle and pre-contact safeguards.
-- Decide whether any remaining selected-item detail from legacy deserves a shared Command Center equivalent.
-- Remove the legacy reference card/link after parity sign-off.
-- Redirect the legacy Autoinventory route to `/command-center/marinara-ristorante/operations/inventory`.
-- Remove legacy-only implementation once the redirect has been reviewed.
+- Complete the visual local/browser review on the current branch, especially the new compact Menu tiles/drawers and the nested Recipe → Inventory → Supplier flow.
+- Browser-flow checklist: edit recipe → Menu economics change; change Menu price → food-cost/margin change; simulate sale → ingredient stock decreases; low stock → restock work appears; purchasing → supplier lifecycle; physical receive → incoming becomes on-hand; Menu/Recipe archive/restore; supplier create/edit preserves contact/item links.
+- The code-level safety gate is already green: typecheck, scoped lint, runtime regression tests, production build, purchase-state tests, economics/recipe-impact tests, and runtime relationship validation.
+- No Vercel preview exists for `jourvis/command-center-v1`, so legacy remains available until that visual review is completed.
+- After visual sign-off: remove the legacy reference card/link, redirect the legacy Autoinventory route to `/command-center/marinara-ristorante/operations/inventory`, then remove legacy-only implementation.
 
 ## After legacy retirement
 
