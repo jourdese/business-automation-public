@@ -1528,3 +1528,49 @@ await test('Insight methodology keeps advanced formulas visible when required da
   assert.equal(waiting.get('days-cover'), 'active');
   assert.equal(waiting.get('purchase-price-variance'), 'active');
 });
+
+
+await test('Forecast links ingredient risk to configured active menu items using affected recipes', () => {
+  const shrimp = item();
+  const runtime = state(shrimp);
+  runtime.recipes = [
+    {
+      id: 'recipe-shrimp',
+      name: 'Shrimp Pasta',
+      description: 'Test recipe',
+      active: true,
+      ingredients: { shrimp: 0.1 },
+    },
+  ];
+  runtime.menuItems = [
+    {
+      id: 'menu-shrimp',
+      name: 'Shrimp Pasta Solo',
+      printedName: 'Shrimp Pasta Solo',
+      dishKey: 'shrimp-pasta',
+      category: 'Pasta',
+      referenceSource: 'demo',
+      currentPriceVerified: false,
+      active: true,
+      available: true,
+      recipeId: 'recipe-shrimp',
+    },
+    {
+      id: 'menu-archived',
+      name: 'Archived Shrimp Dish',
+      printedName: 'Archived Shrimp Dish',
+      dishKey: 'archived-shrimp',
+      category: 'Pasta',
+      referenceSource: 'demo',
+      currentPriceVerified: false,
+      active: false,
+      available: false,
+      recipeId: 'recipe-shrimp',
+    },
+  ];
+
+  const row = buildCommandCenterForecast(runtime, 7).inventoryRows[0];
+
+  assert.deepEqual(row?.affectedRecipes, ['Shrimp Pasta']);
+  assert.deepEqual(row?.affectedMenuItems, ['Shrimp Pasta Solo']);
+});

@@ -26,6 +26,7 @@ export type InventoryForecastRow = {
   recommendedQuantity: number;
   risk: InventoryForecastRisk;
   affectedRecipes: string[];
+  affectedMenuItems: string[];
   activePurchaseId?: string;
   nextAction: string;
 };
@@ -111,6 +112,23 @@ export function buildCommandCenterForecast(
             Object.prototype.hasOwnProperty.call(recipe.ingredients, item.id),
         )
         .map((recipe) => recipe.name);
+      const affectedRecipeIds = new Set(
+        state.recipes
+          .filter(
+            (recipe) =>
+              recipe.active &&
+              Object.prototype.hasOwnProperty.call(recipe.ingredients, item.id),
+          )
+          .map((recipe) => recipe.id),
+      );
+      const affectedMenuItems = state.menuItems
+        .filter(
+          (menuItem) =>
+            menuItem.active &&
+            menuItem.recipeId !== undefined &&
+            affectedRecipeIds.has(menuItem.recipeId),
+        )
+        .map((menuItem) => menuItem.name);
       const activePurchase = activePurchases.find(
         (purchase) => purchase.itemId === item.id,
       );
@@ -155,6 +173,7 @@ export function buildCommandCenterForecast(
         recommendedQuantity,
         risk,
         affectedRecipes,
+        affectedMenuItems,
         activePurchaseId: activePurchase?.id,
         nextAction,
       };
