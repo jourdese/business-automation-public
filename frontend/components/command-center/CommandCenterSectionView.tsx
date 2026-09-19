@@ -413,7 +413,7 @@ export default function CommandCenterSectionView({
               <span>PRIORITY INVENTORY</span>
               <h2>Highest-risk ingredients first</h2>
               <p>
-                Each row shows how long stock can cover configured use, what remains when the supplier could arrive, the seven-day position, current incoming protection, affected menu/recipes, and Jourvis' next move.
+                Each row shows how long stock can cover configured use, what remains when the supplier could arrive, the seven-day position, current incoming protection, affected menu/recipes, and Jourvis’s next move.
               </p>
             </div>
             <b>{riskRows.length} open risk{riskRows.length === 1 ? "" : "s"}</b>
