@@ -20,6 +20,7 @@ import { deriveJourvisTasks } from '../command-center/core/task-engine.ts';
 import { buildCommandCenterForecast } from '../command-center/core/forecast-engine.ts';
 import { buildCommandCenterPerformance } from '../command-center/core/performance-engine.ts';
 import { buildCommandCenterFinance } from '../command-center/core/finance-engine.ts';
+import { buildCommandCenterOperatingHealth } from '../command-center/core/business-health-engine.ts';
 import { buildCommandCenterSupplierPerformance } from '../command-center/core/supplier-performance-engine.ts';
 import { buildCommandCenterMenuEconomics } from '../command-center/core/menu-economics.ts';
 import { buildCommandCenterRecipeImpact } from '../command-center/core/recipe-impact.ts';
@@ -1207,4 +1208,90 @@ await test('Runtime integrity validator catches invalid confirmed purchase and d
     codes.has('confirmed_purchase_without_supplier_confirmation'),
     true,
   );
+});
+
+
+await test('Operating signals prioritize critical stock risk above lower urgency signals', () => {
+  const runtime = state(
+    item({
+      current: 0.5,
+      incoming: 0,
+      dailyUse: 2,
+      leadDays: 2,
+    }),
+    [],
+    false,
+  );
+  const health = buildCommandCenterOperatingHealth(runtime, []);
+
+  assert.equal(health.highestSeverity, 'critical');
+  assert.equal(health.signals[0]?.id, 'inventory-critical');
+  assert.equal(health.attentionCount >= 1, true);
+  assert.equal(
+    health.signals.some((signal) => signal.id === 'automation-paused'),
+    true,
+  );
+});
+
+await test('Operating signals surface menu food-cost pressure from live recipe economics', () => {
+  const shrimp = item({
+    current: 10,
+    reorderAt: 1,
+    dailyUse: 0,
+    packSize: 5,
+    packPrice: 2800,
+  });
+  const runtime = state(shrimp);
+  runtime.recipes = [
+    {
+      id: 'recipe-shrimp',
+      name: 'Shrimp Pasta',
+      description: 'Test',
+      active: true,
+      ingredients: { shrimp: 0.1 },
+      savedIngredientCost: 50,
+    },
+  ];
+  runtime.menuItems = [
+    {
+      id: 'menu-shrimp',
+      name: 'Shrimp Pasta',
+      printedName: 'Shrimp Pasta',
+      dishKey: 'shrimp-pasta',
+      category: 'Pasta',
+      currentPrice: 150,
+      referenceSource: 'demo',
+      currentPriceVerified: true,
+      active: true,
+      available: true,
+      recipeId: 'recipe-shrimp',
+    },
+  ];
+
+  const health = buildCommandCenterOperatingHealth(runtime, []);
+  const signal = health.signals.find(
+    (entry) => entry.id === 'menu-cost-pressure',
+  );
+
+  assert.equal(Boolean(signal), true);
+  assert.equal(signal?.severity, 'warning');
+  assert.match(signal?.summary ?? '', /Shrimp Pasta/i);
+});
+
+await test('Operating signals fall back to stable when no exception or watch condition exists', () => {
+  const runtime = state(
+    item({
+      current: 10,
+      fullLevel: 10,
+      reorderAt: 1,
+      dailyUse: 0,
+      automationEnabled: false,
+    }),
+  );
+
+  const health = buildCommandCenterOperatingHealth(runtime, []);
+
+  assert.equal(health.signals.length, 1);
+  assert.equal(health.signals[0]?.severity, 'stable');
+  assert.equal(health.attentionCount, 0);
 });
