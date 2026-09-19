@@ -706,7 +706,7 @@ export default function CommandCenterSectionView({
         performance.recipeCoveragePercent === null
           ? "—"
           : performance.recipeCoveragePercent + "%",
-        `${performance.recipeMappedMenuCount}/${performance.activeMenuItemCount} active items mapped`,
+        `${performance.recipeMappedMenuCount}/${performance.activeMenuItemCount} configured items mapped`,
       ],
       [
         "Average food cost",
@@ -1328,7 +1328,7 @@ export default function CommandCenterSectionView({
               <p>
                 {insightPerformance.recipeCoveragePercent === null
                   ? "No active menu catalog is available yet."
-                  : `${insightPerformance.recipeCoveragePercent}% of active menu items have active recipe mappings. ${insightPerformance.pricedMappedMenuCount} priced mapped item${insightPerformance.pricedMappedMenuCount === 1 ? " can" : "s can"} currently expose food-cost and margin estimates.`}
+                  : `${insightPerformance.recipeCoveragePercent}% of configured menu items have active recipe mappings. ${insightPerformance.pricedMappedMenuCount} priced mapped item${insightPerformance.pricedMappedMenuCount === 1 ? " can" : "s can"} currently expose food-cost and margin estimates.`}
               </p>
             </div>
           </article>
