@@ -3,7 +3,6 @@
 import { type ReactNode, useState } from "react";
 import {
   ArrowRight,
-  Bot,
   CheckCircle2,
   CircleAlert,
   HelpCircle,
