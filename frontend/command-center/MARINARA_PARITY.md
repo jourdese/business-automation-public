@@ -39,7 +39,7 @@ This checklist tracks migration from the legacy Marinara Autoinventory preview i
 - Marinara archived menu references separated from live/current price truth.
 - Four original recipe-mapped menu items connected to ingredient economics and simulated POS usage.
 - Full Menu CRUD with current selling price, category, variant/size, description, recipe mapping, availability, archive/restore, duplication, category rename, bulk availability, and display ordering.
-- Compact expandable Menu library with landscape thumbnails; Add/Edit uses a fixed drawer so scrolling position is preserved.
+- Compact fixed-size Menu library with landscape thumbnails; clicking a tile opens a compact function-first modal, while Add/Edit uses a fixed drawer so scrolling position is preserved.
 - Menu economics: ingredient cost, food-cost %, gross profit per item, gross margin %, current-vs-archived price movement, food-cost warnings, and recipe-cost drift since the recipe was last saved.
 - Full Recipe CRUD with archive/restore, duplication, notes, ingredient add/remove/quantity editing, live cost/serving impact, and linked-menu food-cost impact.
 - Recipe change preview models ingredient quantity change, configured daily-use change, and stockout timing movement before save.
@@ -73,7 +73,7 @@ This checklist tracks migration from the legacy Marinara Autoinventory preview i
 
 ## Remaining visual review
 
-- Review the compact Menu tile behavior locally: expansion should remain about two tiles wide with a thumbnail-sized image, quick KPIs/actions first, and deeper reference/ingredient information under `More details`.
+- Review the compact Menu tile behavior locally: the grid should never resize; clicking a tile should open a compact modal with a thumbnail-sized image, quick KPIs/actions first, and deeper reference/ingredient information under `More details`.
 - Review the fixed Add/Edit drawers and nested Recipe → Inventory → Supplier flow.
 - Browser-flow checklist: edit recipe → Menu economics change; change Menu price → food-cost/margin change; simulate sale → ingredient stock decreases; low stock → restock work appears; purchasing → supplier lifecycle; physical receive → incoming becomes on-hand; Menu/Recipe archive/restore; supplier create/edit preserves contact/item links.
 
