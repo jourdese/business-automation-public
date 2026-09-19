@@ -77,56 +77,6 @@ function eventDurationMinutes(
   return (at - createdAt) / 60_000;
 }
 
-function aggregate(
-  rows: CommandCenterSupplierPerformanceRow[],
-): CommandCenterSupplierPerformance {
-  const weightedDurations = (
-    key:
-      | "averageViewMinutes"
-      | "averageQuoteMinutes"
-      | "averageConfirmationMinutes"
-      | "averageReceiptHours",
-  ) =>
-    rows.flatMap((row) =>
-      row[key] === null ? [] : [row[key] as number],
-    );
-
-  const requestCount = rows.reduce(
-    (sum, row) => sum + row.requestCount,
-    0,
-  );
-  const closedCount = rows.reduce(
-    (sum, row) => sum + row.closedCount,
-    0,
-  );
-  const receivedCount = rows.reduce(
-    (sum, row) => sum + row.receivedCount,
-    0,
-  );
-
-  return {
-    suppliers: rows,
-    requestCount,
-    closedCount,
-    receivedCount,
-    completionRatePercent: closedCount
-      ? Math.round((receivedCount / closedCount) * 100)
-      : null,
-    averageViewMinutes: average(
-      weightedDurations("averageViewMinutes"),
-    ),
-    averageQuoteMinutes: average(
-      weightedDurations("averageQuoteMinutes"),
-    ),
-    averageConfirmationMinutes: average(
-      weightedDurations("averageConfirmationMinutes"),
-    ),
-    averageReceiptHours: average(
-      weightedDurations("averageReceiptHours"),
-    ),
-  };
-}
-
 export function buildCommandCenterSupplierPerformance(
   state: CommandCenterRuntimeState,
 ): CommandCenterSupplierPerformance {
@@ -211,5 +161,54 @@ export function buildCommandCenterSupplierPerformance(
     },
   );
 
-  return aggregate(rows);
+  const supplierIds = new Set(
+    state.suppliers.map((supplier) => supplier.id),
+  );
+  const purchases = state.purchases.filter((purchase) =>
+    supplierIds.has(purchase.supplierId),
+  );
+  const received = purchases.filter(
+    (purchase) => purchase.status === "received",
+  );
+  const rejected = purchases.filter(
+    (purchase) => purchase.status === "rejected",
+  );
+  const closedCount = received.length + rejected.length;
+
+  const allDurations = (
+    actions: string[],
+    source = purchases,
+  ) =>
+    source.flatMap((purchase) => {
+      const value = eventDurationMinutes(
+        purchase,
+        state.activity,
+        actions,
+      );
+      return value === null ? [] : [value];
+    });
+
+  return {
+    suppliers: rows,
+    requestCount: purchases.length,
+    closedCount,
+    receivedCount: received.length,
+    completionRatePercent: closedCount
+      ? Math.round((received.length / closedCount) * 100)
+      : null,
+    averageViewMinutes: average(
+      allDurations(["supplier_viewed"]),
+    ),
+    averageQuoteMinutes: average(
+      allDurations(["quote_received"]),
+    ),
+    averageConfirmationMinutes: average(
+      allDurations(["supplier_confirmed"]),
+    ),
+    averageReceiptHours: average(
+      allDurations(["delivery_received"], received).map(
+        (minutes) => minutes / 60,
+      ),
+    ),
+  };
 }
