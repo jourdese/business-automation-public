@@ -2463,6 +2463,7 @@ function RecipeEditorPanel({
   suppliers,
   menuItems,
   onCreateInventoryItem,
+  onSaveSupplier,
   onSave,
   onCancel,
 }: {
@@ -2475,6 +2476,15 @@ function RecipeEditorPanel({
   onCreateInventoryItem: (
     item: Omit<CommandCenterInventoryItem, "id">,
   ) => string;
+  onSaveSupplier: (supplier: {
+    id?: string;
+    name: string;
+    contacts: Array<
+      Omit<CommandCenterSupplier["contacts"][number], "id"> & {
+        id?: string;
+      }
+    >;
+  }) => { supplierId: string; contactId: string } | null;
   onSave: () => void;
   onCancel: () => void;
 }) {
@@ -2482,6 +2492,8 @@ function RecipeEditorPanel({
   const defaultContact = defaultSupplier?.contacts[0];
   const [inventoryEditor, setInventoryEditor] =
     useState<InventoryEditorDraft | null>(null);
+  const [inlineSupplierEditor, setInlineSupplierEditor] =
+    useState<SupplierEditorDraft | null>(null);
 
   const linkedMenuItems = existing
     ? menuItems.filter((item) => item.recipeId === existing.id)
@@ -2540,6 +2552,52 @@ function RecipeEditorPanel({
       automationTriggerPercent: "30",
       maxAutoOrderSpend: "5000",
     });
+  }
+
+  function supplierDraftFromInline(
+    supplier?: CommandCenterSupplier,
+  ): SupplierEditorDraft {
+    const contact = supplier?.contacts[0];
+    return {
+      id: supplier?.id,
+      name: supplier?.name ?? "",
+      contactId: contact?.id,
+      contactName: contact?.name ?? "",
+      role: contact?.role ?? "Sales",
+      channel: contact?.channel ?? "Email",
+      email: contact?.email ?? "",
+      phone: contact?.phone ?? "",
+    };
+  }
+
+  function saveInlineSupplier() {
+    if (!inlineSupplierEditor) return;
+    const saved = onSaveSupplier({
+      id: inlineSupplierEditor.id,
+      name: inlineSupplierEditor.name,
+      contacts: [
+        {
+          id: inlineSupplierEditor.contactId,
+          name: inlineSupplierEditor.contactName,
+          role: inlineSupplierEditor.role,
+          channel: inlineSupplierEditor.channel,
+          email: inlineSupplierEditor.email,
+          phone: inlineSupplierEditor.phone,
+        },
+      ],
+    });
+    if (!saved) return;
+
+    setInventoryEditor((current) =>
+      current
+        ? {
+            ...current,
+            supplierId: saved.supplierId,
+            contactId: saved.contactId,
+          }
+        : current,
+    );
+    setInlineSupplierEditor(null);
   }
 
   function submitInventoryEditor() {
@@ -3013,6 +3071,36 @@ function RecipeEditorPanel({
                     </option>
                   ))}
                 </select>
+                <div className={styles.inlineSupplierActions}>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setInlineSupplierEditor(
+                        supplierDraftFromInline(),
+                      )
+                    }
+                  >
+                    <PlusCircle size={13} aria-hidden /> New supplier
+                  </button>
+                  {inventoryEditor.supplierId ? (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setInlineSupplierEditor(
+                          supplierDraftFromInline(
+                            suppliers.find(
+                              (supplier) =>
+                                supplier.id ===
+                                inventoryEditor.supplierId,
+                            ),
+                          ),
+                        )
+                      }
+                    >
+                      <Pencil size={13} aria-hidden /> Edit supplier
+                    </button>
+                  ) : null}
+                </div>
               </label>
               <label>
                 <span>Contact</span>
@@ -3207,6 +3295,17 @@ function RecipeEditorPanel({
                 </div>
               </label>
             </div>
+
+            {inlineSupplierEditor ? (
+              <section className={styles.inlineSupplierEditor}>
+                <SupplierEditorPanel
+                  draft={inlineSupplierEditor}
+                  setDraft={setInlineSupplierEditor}
+                  onSave={saveInlineSupplier}
+                  onCancel={() => setInlineSupplierEditor(null)}
+                />
+              </section>
+            ) : null}
 
             <footer>
               <small>
