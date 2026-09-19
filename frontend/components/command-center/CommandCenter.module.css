@@ -3847,6 +3847,29 @@
   color: var(--ink);
 }
 
+.entityToolbar button:disabled,
+.entityEditor button:disabled,
+.entityActions button:disabled,
+.recipeBuilder button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+  border-color: #344a54;
+  color: var(--cc-muted);
+}
+
+.entityEditor button[data-primary]:disabled {
+  background: #30443d;
+  color: #82948d;
+}
+
+.entityEditorValidation {
+  margin-right: auto;
+  align-self: center;
+  color: var(--gold);
+  font-size: 0.52rem;
+  line-height: 1.4;
+}
+
 .entityEditor {
   display: grid;
   gap: 0.75rem;
