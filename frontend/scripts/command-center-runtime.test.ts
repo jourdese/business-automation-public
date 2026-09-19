@@ -1630,7 +1630,7 @@ await test('Sales analytics groups dated demo ledger by Manila business day', ()
   assert.equal(monday?.ingredientContribution, 700);
   assert.equal(tuesday?.revenue, 500);
   assert.equal(tuesday?.units, 1);
-  assert.equal(analytics.currentLabel, 'Today');
+  assert.equal(analytics.currentLabel, 'Tue · Sep 15');
   assert.equal(analytics.simulatedRecordCount, 1);
 });
 
@@ -1684,4 +1684,54 @@ await test('Sales analytics aggregates the same ledger into Monday-start weeks a
   assert.equal(monthly.current.key, '2026-09-01');
   assert.equal(monthly.current.revenue, 1500);
   assert.equal(monthly.current.ingredientMarginPercent, 70);
+});
+
+
+await test('Sales analytics can anchor daily weekly and monthly views to a selected historical date', () => {
+  const sales = [
+    {
+      id: 's1',
+      at: '2026-08-10T03:00:00.000Z',
+      recipeId: 'recipe',
+      itemName: 'Dish',
+      quantity: 2,
+      unitPrice: 500,
+      revenue: 1000,
+      ingredientCostPerUnit: 150,
+      ingredientCost: 300,
+      ingredientContribution: 700,
+      priceSource: 'reference_demo' as const,
+      origin: 'seeded_demo' as const,
+    },
+  ];
+
+  const selected = new Date('2026-08-10T04:00:00.000Z');
+  const daily = buildCommandCenterSalesAnalytics(
+    sales,
+    'Asia/Manila',
+    'daily',
+    selected,
+  );
+  const weekly = buildCommandCenterSalesAnalytics(
+    sales,
+    'Asia/Manila',
+    'weekly',
+    selected,
+  );
+  const monthly = buildCommandCenterSalesAnalytics(
+    sales,
+    'Asia/Manila',
+    'monthly',
+    selected,
+  );
+
+  assert.equal(daily.current.key, '2026-08-10');
+  assert.equal(daily.current.revenue, 1000);
+  assert.equal(weekly.current.key, '2026-08-10');
+  assert.equal(weekly.current.revenue, 1000);
+  assert.equal(monthly.current.key, '2026-08-01');
+  assert.equal(monthly.current.revenue, 1000);
+  assert.equal(daily.currentLabel, 'Mon · Aug 10');
+  assert.equal(weekly.currentLabel, 'Week of Aug 10');
+  assert.equal(monthly.currentLabel, 'Aug 2026');
 });

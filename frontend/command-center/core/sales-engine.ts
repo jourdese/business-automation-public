@@ -176,12 +176,7 @@ export function buildCommandCenterSalesAnalytics(
 
   return {
     period,
-    currentLabel:
-      period === "daily"
-        ? "Today"
-        : period === "weekly"
-          ? "This week"
-          : "This month",
+    currentLabel: bucketLabel(currentPeriodKey, period),
     buckets,
     current,
     previous,

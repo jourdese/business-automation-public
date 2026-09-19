@@ -1,6 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { format } from "date-fns";
+import { CalendarDays, RotateCcw } from "lucide-react";
+import { DayPicker } from "react-day-picker";
 import {
   Bar,
   BarChart,
@@ -50,14 +53,17 @@ export default function SalesAnalyticsPanel({
 }) {
   const [period, setPeriod] =
     useState<CommandCenterSalesPeriod>("daily");
+  const [selectedDate, setSelectedDate] = useState(() => new Date());
+  const [calendarOpen, setCalendarOpen] = useState(true);
   const analytics = useMemo(
     () =>
       buildCommandCenterSalesAnalytics(
         sales,
         timeZone,
         period,
+        selectedDate,
       ),
-    [period, sales, timeZone],
+    [period, sales, selectedDate, timeZone],
   );
   const current = analytics.current;
   const change = analytics.revenueChangePercent;
@@ -74,22 +80,98 @@ export default function SalesAnalyticsPanel({
             the current day, week, and month immediately.
           </p>
         </div>
-        <div
-          className={styles.salesPeriodToggle}
-          aria-label="Sales analysis period"
-        >
-          {periods.map((option) => (
-            <button
-              type="button"
-              key={option.id}
-              data-active={period === option.id}
-              onClick={() => setPeriod(option.id)}
-            >
-              {option.label}
-            </button>
-          ))}
+        <div className={styles.salesAnalyticsControls}>
+          <div
+            className={styles.salesPeriodToggle}
+            aria-label="Sales analysis period"
+          >
+            {periods.map((option) => (
+              <button
+                type="button"
+                key={option.id}
+                data-active={period === option.id}
+                onClick={() => setPeriod(option.id)}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+          <button
+            type="button"
+            className={styles.salesCalendarButton}
+            data-open={calendarOpen}
+            onClick={() => setCalendarOpen((open) => !open)}
+          >
+            <CalendarDays size={14} aria-hidden />
+            Calendar
+          </button>
         </div>
       </header>
+
+      <div className={styles.salesDateContext}>
+        <div>
+          <span>VIEWING DATE</span>
+          <strong>{format(selectedDate, "EEEE, MMMM d, yyyy")}</strong>
+          <small>
+            {period === "daily"
+              ? "The chart ends on this business day."
+              : period === "weekly"
+                ? "The chart ends on the Monday-start week containing this date."
+                : "The chart ends on the month containing this date."}
+          </small>
+        </div>
+        <button
+          type="button"
+          onClick={() => setSelectedDate(new Date())}
+        >
+          <RotateCcw size={13} aria-hidden />
+          Back to today
+        </button>
+      </div>
+
+      {calendarOpen ? (
+        <div className={styles.salesCalendarPanel}>
+          <div>
+            <span>SELECT A DATE</span>
+            <strong>Choose what period you want to analyze</strong>
+            <small>
+              Then switch between Daily, Weekly, or Monthly. Jourvis will
+              recalculate the chart around the selected date.
+            </small>
+          </div>
+          <DayPicker
+            mode="single"
+            selected={selectedDate}
+            onSelect={(date) => {
+              if (date) setSelectedDate(date);
+            }}
+            disabled={{ after: new Date() }}
+            weekStartsOn={1}
+            showOutsideDays
+            classNames={{
+              root: styles.salesDayPicker,
+              months: styles.salesDayPickerMonths,
+              month: styles.salesDayPickerMonth,
+              month_caption: styles.salesDayPickerCaption,
+              caption_label: styles.salesDayPickerCaptionLabel,
+              nav: styles.salesDayPickerNav,
+              button_previous: styles.salesDayPickerNavButton,
+              button_next: styles.salesDayPickerNavButton,
+              month_grid: styles.salesDayPickerGrid,
+              weekdays: styles.salesDayPickerWeekdays,
+              weekday: styles.salesDayPickerWeekday,
+              weeks: styles.salesDayPickerWeeks,
+              week: styles.salesDayPickerWeek,
+              day: styles.salesDayPickerDay,
+              day_button: styles.salesDayPickerDayButton,
+              selected: styles.salesDayPickerSelected,
+              today: styles.salesDayPickerToday,
+              outside: styles.salesDayPickerOutside,
+              disabled: styles.salesDayPickerDisabled,
+            }}
+          />
+        </div>
+      ) : null}
 
       <div className={styles.salesAnalyticsSummary}>
         <div>
