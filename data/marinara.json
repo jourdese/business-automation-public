@@ -1,0 +1,36 @@
+{
+  "version": "marinara-v2-12-1",
+  "slug": "marinara-ristorante",
+  "name": "Marinara Ristorante",
+  "notice": "Demonstration menu and recipe quantities. Confirm availability and dietary requirements with the restaurant team. No payment is collected.",
+  "ingredients": [
+    ["arugula","Arugula","kg",45000,3,0.7], ["peach","Peaches","kg",24000,5,1], ["pecan","Pecans","kg",95000,2,0.4],
+    ["leaves","Mixed salad leaves","kg",28000,4,1], ["cranberry","Dried cranberries","kg",65000,3,0.5],
+    ["shrimp","Peeled shrimp","kg",59000,8,10], ["squid","Squid","kg",36000,5,1], ["mussels","Mussels","kg",24000,5,1],
+    ["pasta","Dry pasta","kg",16000,16,4], ["tomato","Tomato sauce","L",24500,6,8], ["cream","Cooking cream","L",28000,8,2],
+    ["mushroom","Mushrooms","kg",32000,6,1.5], ["garlic","Garlic","kg",18000,3,0.5], ["olive_oil","Olive oil","L",52000,6,1],
+    ["parmesan","Parmesan","kg",98000,4,1], ["flour","Flour","kg",7500,25,5], ["yeast","Yeast","kg",28000,1,0.15],
+    ["salt","Salt","kg",3500,3,0.5], ["mozzarella","Mozzarella","kg",65000,8,2], ["gorgonzola","Gorgonzola","kg",125000,2,0.5],
+    ["fontina","Fontina","kg",110000,2,0.5], ["burrata","Burrata","each",22000,15,4], ["basil","Fresh basil","kg",45000,0.35,0.5],
+    ["salmon","Salmon fillet","kg",105000,5,1], ["lemon","Lemons","kg",18000,7,1.5], ["butter","Butter","kg",52000,5,1],
+    ["vegetables","Seasonal vegetables","kg",15000,10,2], ["chicken","Spring chicken","kg",22000,8,2], ["herbs","Mixed herbs","kg",70000,1,0.2],
+    ["cream_cheese","Cream cheese","kg",65000,4,1], ["biscuit","Biscuit crumbs","kg",22000,3,0.5], ["lime","Limes","kg",24000,3,0.5],
+    ["sugar","Sugar","kg",8500,5,1], ["egg","Eggs","each",950,45,12], ["cucumber","Cucumber","kg",8500,5,1],
+    ["honey","Honey","kg",32000,3,0.5], ["orange","Oranges","kg",15000,8,2], ["water","Filtered water","L",1500,45,10]
+  ],
+  "items": [
+    {"code":"arugula_peach_pecan_solo","name":"Arugula with Peach & Pecan","category":"To begin","price":46500,"image":"marinara-menu-Arugula Salad with Peaches and Pecan.jpg","description":"Peppery leaves, sweet peaches and a little pecan crunch. A fresh beginning.","allergens":["Tree nuts","Milk"],"recipe":{"arugula":0.08,"peach":0.07,"pecan":0.02,"olive_oil":0.012,"lemon":0.02,"parmesan":0.012,"salt":0.001}},
+    {"code":"shrimp_cranberry_salad_solo","name":"Shrimp & Cranberry Salad","category":"To begin","price":48500,"image":"marinara-menu-Shrimp & Cranberry Salad.jpg","description":"Tender shrimp, garden leaves and cranberries with a bright citrus dressing.","allergens":["Crustaceans"],"recipe":{"shrimp":0.09,"leaves":0.08,"cranberry":0.02,"olive_oil":0.012,"lemon":0.025,"salt":0.001}},
+    {"code":"seafood_marinara_solo","name":"Seafood Marinara","category":"Pasta","price":56500,"image":"marinara-menu-Seafood Marinara.jpg","description":"Pasta tangled with shrimp, squid and mussels in a generous tomato sauce.","allergens":["Wheat","Crustaceans","Molluscs"],"recipe":{"pasta":0.12,"shrimp":0.06,"squid":0.06,"mussels":0.06,"tomato":0.15,"garlic":0.008,"olive_oil":0.015,"basil":0.004,"salt":0.002}},
+    {"code":"shrimp_mushroom_alfredo_solo","name":"Shrimp & Mushroom Alfredo","category":"Pasta","price":46000,"image":"marinara-menu-Shrimp & Mushroom Alfredo.jpg","description":"A comforting bowl of creamy pasta, mushrooms and shrimp, finished with Parmesan.","allergens":["Wheat","Milk","Crustaceans"],"recipe":{"pasta":0.12,"shrimp":0.08,"mushroom":0.06,"cream":0.12,"parmesan":0.025,"butter":0.012,"garlic":0.005,"salt":0.002}},
+    {"code":"quattro_formaggi_pizza_12","name":"Quattro Formaggi","category":"Pizza","price":68000,"image":"marinara-menu-Quattro Formaggi Pizza.jpg","description":"Four cheeses, one very good reason to share. Our 12-inch pizza for the table.","allergens":["Wheat","Milk"],"recipe":{"flour":0.18,"water":0.115,"yeast":0.003,"salt":0.003,"olive_oil":0.01,"mozzarella":0.07,"gorgonzola":0.025,"fontina":0.025,"parmesan":0.02}},
+    {"code":"burrata_pizza","name":"Burrata Pizza","category":"Pizza","price":99900,"image":"marinara-menu-Burrata Pizza.jpg","description":"Creamy burrata meets tomato and fresh basil. Cut, share, linger.","allergens":["Wheat","Milk"],"recipe":{"flour":0.18,"water":0.115,"yeast":0.003,"salt":0.003,"olive_oil":0.012,"tomato":0.08,"mozzarella":0.05,"burrata":1,"basil":0.006}},
+    {"code":"grilled_salmon","name":"Grilled Salmon Fillet","category":"From the kitchen","price":99500,"image":"marinara-menu-Grilled Salmon Fillet.jpg","description":"Grilled salmon with vegetables and a simple lemon-butter finish.","allergens":["Fish","Milk"],"recipe":{"salmon":0.2,"vegetables":0.15,"lemon":0.04,"butter":0.02,"olive_oil":0.012,"herbs":0.003,"salt":0.002}},
+    {"code":"herb_spring_chicken_mushroom","name":"Herb Spring Chicken","category":"From the kitchen","price":59500,"image":"marinara-menu-Herb Spring Chicken in Mushroom.jpg","description":"Herb-seasoned chicken, mushroom cream and something warm from the kitchen.","allergens":["Milk"],"recipe":{"chicken":0.35,"mushroom":0.08,"cream":0.09,"butter":0.015,"garlic":0.008,"herbs":0.005,"vegetables":0.1,"salt":0.003}},
+    {"code":"key_lime_cheesecake","name":"Key Lime Cheesecake","category":"Something sweet","price":22000,"image":"marinara-menu-Key Lime Cheesecake.jpg","description":"A creamy slice with a bright lime finish. Save a little room.","allergens":["Milk","Egg","Wheat"],"recipe":{"cream_cheese":0.065,"biscuit":0.025,"butter":0.012,"lime":0.025,"sugar":0.02,"egg":0.3}},
+    {"code":"cucumber_lemon","name":"Cucumber Lemon","category":"A little refreshment","price":17500,"image":"marinara-menu-Cucumber Lemon.jpg","description":"Cool cucumber, lemon and a gently sweet finish.","allergens":[],"recipe":{"cucumber":0.08,"lemon":0.05,"sugar":0.02,"water":0.25}},
+    {"code":"honey_lemon","name":"Honey Lemon","category":"A little refreshment","price":17500,"image":"marinara-menu-Honey Lemon.jpg","description":"A sunny glass of honey and lemon.","allergens":[],"recipe":{"honey":0.03,"lemon":0.06,"water":0.25}},
+    {"code":"orange_juice","name":"Orange Juice","category":"A little refreshment","price":17500,"image":"marinara-menu-Orange Juice.jpg","description":"Bright, citrusy and made for a long lunch.","allergens":[],"recipe":{"orange":0.35,"water":0.05}}
+  ],
+  "suppliers": ["Davao Pasta & Provisions","Casa Rosso Foods","Italian Pantry Davao","Davao Dairy Supply","Davao Fresh Seafood","Green Basket Produce"]
+}
