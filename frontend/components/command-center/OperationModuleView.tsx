@@ -11,7 +11,6 @@ import {
   Archive,
   ArrowDown,
   ArrowLeft,
-  ArrowRight,
   ArrowUp,
   Bot,
   CheckCircle2,
@@ -176,11 +175,6 @@ export default function OperationModuleView({
     description: "Business operation managed by Jourvis.",
   };
   const moduleTasks = tasks.filter((task) => task.module === moduleId);
-  const currentInventoryRoute =
-    businessId === "marinara-ristorante" && moduleId === "inventory"
-      ? "/restaurant/marinara-ristorante/Autoinventory-preview"
-      : null;
-
   const supplierById = useMemo(
     () => new Map(state.suppliers.map((supplier) => [supplier.id, supplier])),
     [state.suppliers],
@@ -592,21 +586,6 @@ export default function OperationModuleView({
           })}
         </div>
 
-        {currentInventoryRoute ? (
-          <article className={styles.migrationCard}>
-            <div>
-              <span>LEGACY REFERENCE</span>
-              <strong>Previous Autoinventory remains available during parity checks</strong>
-              <p>
-                The Command Center is now the migration target. The legacy workspace is kept
-                only as a reference while remaining detailed behavior is verified.
-              </p>
-            </div>
-            <a href={currentInventoryRoute}>
-              Open legacy inventory <ArrowRight size={14} />
-            </a>
-          </article>
-        ) : null}
       </section>
     );
   }
