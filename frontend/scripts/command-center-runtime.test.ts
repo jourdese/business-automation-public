@@ -22,6 +22,10 @@ import { deriveJourvisTasks } from '../command-center/core/task-engine.ts';
 import { buildCommandCenterForecast } from '../command-center/core/forecast-engine.ts';
 import { buildCommandCenterPerformance } from '../command-center/core/performance-engine.ts';
 import { buildCommandCenterFinance } from '../command-center/core/finance-engine.ts';
+import {
+  buildCommandCenterInsights,
+  commandCenterInsightMethods,
+} from '../command-center/core/insight-engine.ts';
 import { buildCommandCenterSupplierPerformance } from '../command-center/core/supplier-performance-engine.ts';
 import { buildCommandCenterMenuEconomics } from '../command-center/core/menu-economics.ts';
 import { buildCommandCenterRecipeImpact } from '../command-center/core/recipe-impact.ts';
@@ -1371,4 +1375,156 @@ await test('Recipe archive and restore reconcile linked active menu availability
     restored.find((item) => item.id === 'menu-archived')?.available,
     false,
   );
+});
+
+
+await test('Insight engine exposes inventory math with auditable equations', () => {
+  const shrimp = item({
+    current: 2,
+    incoming: 1,
+    dailyUse: 1,
+    leadDays: 2,
+    fullLevel: 10,
+    reorderAt: 3,
+    packSize: 5,
+  });
+  const runtime = state(shrimp);
+  const insights = buildCommandCenterInsights(
+    runtime,
+    deriveJourvisTasks(runtime),
+  );
+  const risk = insights.find((insight) =>
+    insight.id.startsWith('inventory-risk-'),
+  );
+
+  assert.ok(risk);
+  assert.equal(risk?.severity, 'high');
+  assert.equal(
+    risk?.calculations.some((step) => step.label === 'Days of cover'),
+    true,
+  );
+  assert.equal(
+    risk?.calculations.some(
+      (step) => step.label === 'Lead-time demand',
+    ),
+    true,
+  );
+  assert.equal(
+    risk?.calculations.some(
+      (step) => step.label === 'Recommended replenishment',
+    ),
+    true,
+  );
+  assert.match(risk?.dataLimit ?? '', /Safety stock/i);
+});
+
+await test('Insight engine calculates purchase price variance against configured target and hard ceiling', () => {
+  const shrimp = item({
+    targetPackPrice: 2800,
+    hardMaxPackPrice: 3100,
+    packSize: 5,
+  });
+  const quoted = purchase({
+    quantity: 10,
+    quotedPackPrice: 3250,
+    quotedTotal: 6650,
+  });
+  const runtime = state(shrimp, [quoted], true);
+  const insights = buildCommandCenterInsights(
+    runtime,
+    deriveJourvisTasks(runtime),
+  );
+  const price = insights.find((insight) =>
+    insight.id.startsWith('purchase-price-'),
+  );
+
+  assert.ok(price);
+  assert.equal(price?.severity, 'high');
+  assert.match(price?.summary ?? '', /₱900/);
+  assert.equal(
+    price?.calculations.some(
+      (step) =>
+        step.label === 'Purchase price variance vs target' &&
+        step.result === '₱900',
+    ),
+    true,
+  );
+  assert.equal(
+    price?.calculations.some(
+      (step) => step.label === 'Hard-ceiling variance',
+    ),
+    true,
+  );
+});
+
+await test('Insight engine derives menu food cost and contribution math only from priced mapped items', () => {
+  const shrimp = item({
+    packSize: 5,
+    packPrice: 2800,
+    current: 10,
+    dailyUse: 0,
+  });
+  const runtime = state(shrimp);
+  runtime.recipes = [
+    {
+      id: 'recipe-shrimp',
+      name: 'Shrimp Pasta',
+      description: 'Test',
+      active: true,
+      ingredients: { shrimp: 0.1 },
+    },
+  ];
+  runtime.menuItems = [
+    {
+      id: 'menu-shrimp',
+      name: 'Shrimp Pasta',
+      printedName: 'Shrimp Pasta',
+      dishKey: 'shrimp-pasta',
+      category: 'Pasta',
+      currentPrice: 150,
+      referenceSource: 'demo',
+      currentPriceVerified: true,
+      active: true,
+      available: true,
+      recipeId: 'recipe-shrimp',
+    },
+  ];
+
+  const insights = buildCommandCenterInsights(runtime, []);
+  const menu = insights.find((insight) =>
+    insight.id.startsWith('menu-cost-'),
+  );
+
+  assert.ok(menu);
+  assert.equal(
+    menu?.calculations.some(
+      (step) => step.label === 'Food cost percentage',
+    ),
+    true,
+  );
+  assert.equal(
+    menu?.calculations.some(
+      (step) => step.label === 'Contribution margin',
+    ),
+    true,
+  );
+});
+
+await test('Insight methodology keeps advanced formulas visible when required data is not yet available', () => {
+  const waiting = new Map(
+    commandCenterInsightMethods.map((method) => [
+      method.id,
+      method.status,
+    ]),
+  );
+
+  assert.equal(waiting.get('safety-stock'), 'waiting_for_data');
+  assert.equal(waiting.get('eoq'), 'waiting_for_data');
+  assert.equal(
+    waiting.get('actual-vs-ideal-food-cost'),
+    'waiting_for_data',
+  );
+  assert.equal(waiting.get('forecast-error'), 'waiting_for_data');
+  assert.equal(waiting.get('days-cover'), 'active');
+  assert.equal(waiting.get('purchase-price-variance'), 'active');
 });
