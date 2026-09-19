@@ -14,6 +14,8 @@ import { resolveCommandCenterBusiness } from "./business-registry";
 import { recipeIngredientCost } from "./menu-economics";
 import {
   canAdvancePurchase,
+  canReceivePurchaseStatus,
+  canTransitionPurchaseStatus,
   estimatedPurchaseTotal,
   evaluateAutomaticPurchaseStart,
   evaluatePurchaseAuthority,
@@ -110,7 +112,7 @@ function storageKey(businessId: string) {
 
 function createGenericSeed(businessId: string): CommandCenterRuntimeState {
   return {
-    version: 1,
+    version: 2,
     business: resolveCommandCenterBusiness(businessId),
     automationMasterOn: false,
     inventory: [],
@@ -129,8 +131,18 @@ function createSeed(businessId: string) {
   return createGenericSeed(businessId);
 }
 
+function randomToken() {
+  const uuid = globalThis.crypto?.randomUUID?.();
+  if (uuid) return uuid.replaceAll("-", "").slice(0, 10).toUpperCase();
+  return `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`.toUpperCase();
+}
+
 function nextRequestId(state: CommandCenterRuntimeState) {
-  return `JV-${String(state.purchases.length + 1).padStart(4, "0")}`;
+  let id = "";
+  do {
+    id = `JV-${randomToken()}`;
+  } while (state.purchases.some((purchase) => purchase.id === id));
+  return id;
 }
 
 function createPurchase(
@@ -183,10 +195,11 @@ function nextEntityId(
   existingIds: string[],
 ) {
   const base = `${prefix}-${entitySlug(name)}`;
-  if (!existingIds.includes(base)) return base;
-  let index = 2;
-  while (existingIds.includes(`${base}-${index}`)) index += 1;
-  return `${base}-${index}`;
+  let id = "";
+  do {
+    id = `${base}-${randomToken().slice(0, 6).toLowerCase()}`;
+  } while (existingIds.includes(id));
+  return id;
 }
 
 function normalizeStoredState(
@@ -198,6 +211,7 @@ function normalizeStoredState(
   return {
     ...seed,
     ...stored,
+    version: 2,
     inventory: (stored.inventory ?? seed.inventory).map((item) => ({
       ...(seedInventory.get(item.id) ?? item),
       ...item,
@@ -498,6 +512,13 @@ function advanceOneAutonomousStep(
     action = "shipment_in_transit";
     reason =
       "The supplier changed the confirmed purchase to in transit. Jourvis recorded the external status update automatically.";
+  }
+
+  if (
+    replacement.status !== purchase.status &&
+    !canTransitionPurchaseStatus(purchase.status, replacement.status)
+  ) {
+    return state;
   }
 
   return {
@@ -1104,7 +1125,9 @@ export function CommandCenterRuntimeProvider({
 
       setState((current) => {
         const purchase = current.purchases.find((entry) => entry.id === purchaseId);
-        if (!purchase) return current;
+        if (!purchase || !canReceivePurchaseStatus(purchase.status)) {
+          return current;
+        }
         const item = current.inventory.find((entry) => entry.id === purchase.itemId);
         if (!item) return current;
 
@@ -1217,6 +1240,15 @@ export function CommandCenterRuntimeProvider({
           ? current.recipes.find((recipe) => recipe.id === draft.recipeId)
           : undefined;
         if (draft.recipeId && !linkedRecipe) return current;
+        if (
+          draft.recipeId &&
+          draft.active &&
+          draft.available &&
+          linkedRecipe &&
+          !linkedRecipe.active
+        ) {
+          return current;
+        }
 
         const currentPrice =
           draft.currentPrice !== undefined &&
@@ -1353,7 +1385,15 @@ export function CommandCenterRuntimeProvider({
         referenceSource: "demo",
         currentPriceVerified: source.currentPrice !== undefined,
         active: true,
-        available: source.available,
+        available:
+          source.available &&
+          (!source.recipeId ||
+            Boolean(
+              current.recipes.find(
+                (recipe) =>
+                  recipe.id === source.recipeId && recipe.active,
+              ),
+            )),
         displayOrder,
       };
       createdId = id;
@@ -1543,6 +1583,13 @@ export function CommandCenterRuntimeProvider({
                 recipe.id === existing.id ? nextRecipe : recipe,
               )
             : [nextRecipe, ...current.recipes],
+          menuItems: nextRecipe.active
+            ? current.menuItems
+            : current.menuItems.map((item) =>
+                item.recipeId === id && item.active
+                  ? { ...item, available: false }
+                  : item,
+              ),
           activity: addActivity(current, {
             module: "recipes",
             action: existing ? "recipe_updated" : "recipe_created",
@@ -1614,6 +1661,11 @@ export function CommandCenterRuntimeProvider({
         ...current,
         recipes: current.recipes.map((entry) =>
           entry.id === recipeId ? { ...entry, active: false } : entry,
+        ),
+        menuItems: current.menuItems.map((item) =>
+          item.recipeId === recipeId && item.active
+            ? { ...item, available: false }
+            : item,
         ),
         activity: addActivity(current, {
           module: "recipes",
