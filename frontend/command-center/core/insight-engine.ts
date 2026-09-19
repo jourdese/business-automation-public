@@ -1,6 +1,7 @@
 import { buildCommandCenterForecast } from "./forecast-engine.ts";
 import { buildCommandCenterHistoryTrend } from "./history-engine.ts";
 import { buildCommandCenterMenuEconomics } from "./menu-economics.ts";
+import { buildCommandCenterSalesAnalytics } from "./sales-engine.ts";
 import {
   suggestedPurchaseQuantity,
   type CommandCenterPurchase,
@@ -127,6 +128,22 @@ export const commandCenterInsightMethods: CommandCenterInsightMethod[] = [
     status: "active",
     purpose: "Express ingredient-only contribution as a percentage of selling price.",
     requires: ["contribution margin", "selling price"],
+  },
+  {
+    id: "sales-period-change",
+    label: "Recorded sales period change",
+    formula: "(Current period sales − previous period sales) ÷ previous period sales × 100",
+    status: "active",
+    purpose: "Measure how the dated sales ledger changed versus the immediately previous comparable period.",
+    requires: ["dated priced sales ledger", "comparable prior period"],
+  },
+  {
+    id: "sales-contribution-margin",
+    label: "Recorded ingredient contribution margin",
+    formula: "(Recorded sales − recorded recipe ingredient cost) ÷ recorded sales × 100",
+    status: "active",
+    purpose: "Measure ingredient-only contribution across the recorded sales mix.",
+    requires: ["dated priced sales ledger", "recipe ingredient-cost snapshots"],
   },
   {
     id: "observed-delta",
@@ -526,6 +543,66 @@ export function buildCommandCenterInsights(
       ],
       dataLimit:
         "This is ingredient-only economics. Labor, overhead, tax, discounts, voids, waste, and actual POS sales are not included until those providers/data sources exist.",
+    });
+  }
+
+  const weeklySales = buildCommandCenterSalesAnalytics(
+    state.sales,
+    state.business.timezone,
+    "weekly",
+  );
+  const weeklySalesChange = weeklySales.revenueChangePercent;
+  if (
+    weeklySales.previous &&
+    weeklySales.previous.revenue > 0 &&
+    weeklySales.current.revenue > 0 &&
+    weeklySalesChange !== null &&
+    Math.abs(weeklySalesChange) >= 5
+  ) {
+    const direction = weeklySalesChange > 0 ? "above" : "below";
+    insights.push({
+      id: "demo-sales-weekly-change",
+      severity: weeklySalesChange < -10 ? "attention" : "trend",
+      tag: "DEMO SALES TREND",
+      title:
+        `This week's demo sales are ${number(Math.abs(weeklySalesChange), 1)}% ${direction} the previous week`,
+      summary:
+        `The dated demo POS ledger records ${money(weeklySales.current.revenue)} this week versus ${money(weeklySales.previous.revenue)} in the previous week. ` +
+        `Current ingredient contribution is ${money(weeklySales.current.ingredientContribution)} at ${number(weeklySales.current.ingredientMarginPercent ?? 0, 1)}% ingredient-only margin.`,
+      href: `/command-center/${state.business.id}/finance`,
+      calculations: [
+        {
+          label: "Weekly sales change",
+          formula:
+            "(Current week sales − previous week sales) ÷ previous week sales × 100",
+          substitution:
+            `(${money(weeklySales.current.revenue)} − ${money(weeklySales.previous.revenue)}) ÷ ${money(weeklySales.previous.revenue)} × 100`,
+          result: `${weeklySalesChange > 0 ? "+" : ""}${number(weeklySalesChange, 1)}%`,
+          meaning:
+            "Compares the current Monday-start demo week with the immediately previous Monday-start week.",
+        },
+        {
+          label: "Recorded ingredient contribution",
+          formula: "Recorded sales − recorded recipe ingredient cost",
+          substitution:
+            `${money(weeklySales.current.revenue)} − ${money(weeklySales.current.ingredientCost)}`,
+          result: money(weeklySales.current.ingredientContribution),
+          meaning:
+            "Ingredient-only contribution for the current recorded demo sales mix.",
+        },
+        {
+          label: "Recorded ingredient contribution margin",
+          formula:
+            "Ingredient contribution ÷ recorded sales × 100",
+          substitution:
+            `${money(weeklySales.current.ingredientContribution)} ÷ ${money(weeklySales.current.revenue)} × 100`,
+          result: `${number(weeklySales.current.ingredientMarginPercent ?? 0, 1)}%`,
+          meaning:
+            "Contribution after configured recipe ingredient cost only; it is not net profit.",
+        },
+      ],
+      dataLimit:
+        "This finding uses the synthetic demo POS ledger and archived reference/demo prices. It demonstrates Jourvis analysis behavior; it is not verified production revenue.",
     });
   }
 

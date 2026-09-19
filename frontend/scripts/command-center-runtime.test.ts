@@ -1529,6 +1529,8 @@ await test('Insight methodology keeps advanced formulas visible when required da
   assert.equal(waiting.get('forecast-error'), 'waiting_for_data');
   assert.equal(waiting.get('days-cover'), 'active');
   assert.equal(waiting.get('purchase-price-variance'), 'active');
+  assert.equal(waiting.get('sales-period-change'), 'active');
+  assert.equal(waiting.get('sales-contribution-margin'), 'active');
 });
 
 

@@ -1449,7 +1449,16 @@ export default function CommandCenterSectionView({
 
   if (section === "briefings") {
     const briefingForecast = buildCommandCenterForecast(state, 7);
-    const briefingFinance = buildCommandCenterFinance(state);
+    const briefingDailySales = buildCommandCenterSalesAnalytics(
+      state.sales,
+      business.timezone,
+      "daily",
+    );
+    const briefingWeeklySales = buildCommandCenterSalesAnalytics(
+      state.sales,
+      business.timezone,
+      "weekly",
+    );
     const recentActivity = state.activity.slice(0, 4);
     const incomingItems = state.inventory
       .filter((item) => item.incoming > 0)
@@ -1478,7 +1487,7 @@ export default function CommandCenterSectionView({
       <SectionFrame
         eyebrow="BRIEFINGS"
         title="Your current business briefing."
-        description="One concise owner briefing from the live Command Center state. No invented daily, weekly, or monthly reporting."
+        description="One concise owner briefing from live Command Center state. Dated demo POS figures are explicitly labeled synthetic; verified production reporting still requires real sales providers."
       >
         <article className={styles.executiveBriefing}>
           <header className={styles.executiveBriefingHeader}>
@@ -1490,13 +1499,14 @@ export default function CommandCenterSectionView({
                 {" "}{activePurchases.length} purchasing workflow{activePurchases.length === 1 ? "" : "s"} are active,
                 {" "}{tasks.length} exception{tasks.length === 1 ? "" : "s"} require owner authority,
                 and {briefingForecast.horizonRiskCount} ingredient{briefingForecast.horizonRiskCount === 1 ? " is" : "s are"} in a configured seven-day risk state.
+                {" "}The synthetic demo POS ledger records {formatMoney(briefingDailySales.current.revenue)} today and {formatMoney(briefingWeeklySales.current.revenue)} this week.
               </p>
             </div>
             <div className={styles.executiveBriefingFacts}>
               <span><b>{activePurchases.length}</b> active workflows</span>
               <span><b>{tasks.length}</b> need owner</span>
               <span><b>{briefingForecast.horizonRiskCount}</b> 7-day risks</span>
-              <span><b>{formatMoney(briefingFinance.openPurchaseCommitments)}</b> open commitments</span>
+              <span><b>{formatMoney(briefingDailySales.current.revenue)}</b> demo sales today</span>
             </div>
           </header>
 
