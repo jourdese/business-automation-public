@@ -4,7 +4,7 @@ import {
   projectedInventoryAtDelivery,
   suggestedPurchaseQuantity,
   type CommandCenterRuntimeState,
-} from "./runtime";
+} from "./runtime.ts";
 
 export type InventoryForecastRisk =
   | "critical"
