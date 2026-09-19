@@ -3624,6 +3624,21 @@
   color: var(--mint);
 }
 
+.menuDetailModal .entityEditor {
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.menuDetailModal .entityEditor > header {
+  padding-bottom: 0.55rem;
+  border-bottom: 1px solid var(--cc-line);
+}
+
+.menuDetailModal .entityEditorActions {
+  padding-top: 0.25rem;
+}
+
 .menuQuickStats {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
