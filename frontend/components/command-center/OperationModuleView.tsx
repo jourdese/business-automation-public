@@ -1317,7 +1317,9 @@ export default function OperationModuleView({
             >
               Mark visible unavailable
             </button>
-            {menuCategory !== "All" ? (
+            {(businessId !== "marinara-ristorante" ||
+              menuScope === "all") &&
+            menuCategory !== "All" ? (
               <button
                 type="button"
                 onClick={() =>
@@ -1536,24 +1538,29 @@ export default function OperationModuleView({
                 >
                   <Copy size={14} aria-hidden /> Duplicate
                 </button>
-                <button
-                  type="button"
-                  onClick={() =>
-                    moveMenuItem(selectedMenuItem.id, "up")
-                  }
-                  aria-label="Move menu item earlier"
-                >
-                  <ArrowUp size={14} aria-hidden />
-                </button>
-                <button
-                  type="button"
-                  onClick={() =>
-                    moveMenuItem(selectedMenuItem.id, "down")
-                  }
-                  aria-label="Move menu item later"
-                >
-                  <ArrowDown size={14} aria-hidden />
-                </button>
+                {businessId !== "marinara-ristorante" ||
+                menuScope === "all" ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        moveMenuItem(selectedMenuItem.id, "up")
+                      }
+                      aria-label="Move menu item earlier"
+                    >
+                      <ArrowUp size={14} aria-hidden />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        moveMenuItem(selectedMenuItem.id, "down")
+                      }
+                      aria-label="Move menu item later"
+                    >
+                      <ArrowDown size={14} aria-hidden />
+                    </button>
+                  </>
+                ) : null}
                 {selectedMenuItem.active ? (
                   <button
                     type="button"
@@ -1577,7 +1584,9 @@ export default function OperationModuleView({
                         currentPrice: selectedMenuItem.currentPrice,
                         description: selectedMenuItem.description,
                         active: true,
-                        available: selectedMenuItem.available,
+                        available:
+                          !selectedMenuItem.recipeId ||
+                          selectedMenuRecipe?.active === true,
                         recipeId: selectedMenuItem.recipeId,
                         displayOrder: selectedMenuItem.displayOrder,
                       });
@@ -2394,6 +2403,12 @@ function MenuEditorPanel({
   onSave: () => void;
   onCancel: () => void;
 }) {
+  const selectedRecipe = draft.recipeId
+    ? recipes.find((recipe) => recipe.id === draft.recipeId)
+    : undefined;
+  const availabilityBlocked =
+    Boolean(draft.recipeId) && selectedRecipe?.active !== true;
+
   return (
     <section className={styles.entityEditor}>
       <header>
@@ -2476,7 +2491,11 @@ function MenuEditorPanel({
           >
             <option value="">No recipe yet</option>
             {recipes.map((recipe) => (
-              <option key={recipe.id} value={recipe.id}>
+              <option
+                key={recipe.id}
+                value={recipe.id}
+                disabled={!recipe.active && recipe.id !== draft.recipeId}
+              >
                 {recipe.name}{recipe.active ? "" : " · archived"}
               </option>
             ))}
@@ -2515,6 +2534,7 @@ function MenuEditorPanel({
           <input
             type="checkbox"
             checked={draft.available}
+            disabled={availabilityBlocked}
             onChange={(event) =>
               setDraft((current) =>
                 current
@@ -2593,6 +2613,16 @@ function RecipeEditorPanel({
     useState<InventoryEditorDraft | null>(null);
   const [inlineSupplierEditor, setInlineSupplierEditor] =
     useState<SupplierEditorDraft | null>(null);
+  const selectedInventorySupplier = inventoryEditor
+    ? suppliers.find(
+        (supplier) => supplier.id === inventoryEditor.supplierId,
+      )
+    : undefined;
+  const selectedInventoryContact = inventoryEditor
+    ? selectedInventorySupplier?.contacts.find(
+        (contact) => contact.id === inventoryEditor.contactId,
+      ) ?? selectedInventorySupplier?.contacts[0]
+    : undefined;
 
   const linkedMenuItems = existing
     ? menuItems.filter((item) => item.recipeId === existing.id)
@@ -2740,13 +2770,9 @@ function RecipeEditorPanel({
       return;
     }
 
-    const selectedSupplier = suppliers.find(
-      (supplier) => supplier.id === inventoryEditor.supplierId,
-    );
-    const selectedContact =
-      selectedSupplier?.contacts.find(
-        (contact) => contact.id === inventoryEditor.contactId,
-      ) ?? selectedSupplier?.contacts[0];
+    if (!selectedInventorySupplier || !selectedInventoryContact) {
+      return;
+    }
     const safePackPrice = Math.max(0, packPrice);
     const autoAcceptPackPrice =
       Math.round(safePackPrice * 1.05 * 100) / 100;
@@ -2760,8 +2786,8 @@ function RecipeEditorPanel({
       fullLevel,
       reorderAt: Math.min(reorderAt, fullLevel),
       incoming: 0,
-      supplierId: selectedSupplier?.id ?? "",
-      contactId: selectedContact?.id ?? "",
+      supplierId: selectedInventorySupplier.id,
+      contactId: selectedInventoryContact.id,
       packSize,
       packPrice: safePackPrice,
       purchaseUnit:
@@ -3214,10 +3240,7 @@ function RecipeEditorPanel({
                     )
                   }
                 >
-                  {(suppliers.find(
-                    (supplier) =>
-                      supplier.id === inventoryEditor.supplierId,
-                  )?.contacts ?? []).map((contact) => (
+                  {(selectedInventorySupplier?.contacts ?? []).map((contact) => (
                     <option key={contact.id} value={contact.id}>
                       {contact.name} · {contact.role}
                     </option>
@@ -3408,7 +3431,9 @@ function RecipeEditorPanel({
 
             <footer>
               <small>
-                Target/auto-accept/hard price guards are initialized from the pack price and can be refined in Inventory → Update.
+                {!selectedInventorySupplier || !selectedInventoryContact
+                  ? "Choose or create a supplier with a primary contact before creating this inventory item."
+                  : "Target/auto-accept/hard price guards are initialized from the pack price and can be refined in Inventory → Update."}
               </small>
               <div>
                 <button
@@ -3420,6 +3445,10 @@ function RecipeEditorPanel({
                 <button
                   type="button"
                   data-primary
+                  disabled={
+                    !selectedInventorySupplier ||
+                    !selectedInventoryContact
+                  }
                   onClick={submitInventoryEditor}
                 >
                   <Save size={14} aria-hidden /> Create & add
