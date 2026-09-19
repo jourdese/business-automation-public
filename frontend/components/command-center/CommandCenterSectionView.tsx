@@ -11,8 +11,6 @@ import {
   ShieldCheck,
   Sparkles,
   Zap,
-  TrendingDown,
-  TrendingUp,
   WalletCards,
 } from "lucide-react";
 import CompanionMark from "@/components/jourvis/CompanionMark";
@@ -339,12 +337,7 @@ export default function CommandCenterSectionView({
               <span>{metric.label}</span>
               <strong>{metric.value}</strong>
               <div>
-                {"change" in metric && metric.change ? (
-                  <b data-down={metric.change.startsWith("-")}>
-                    {metric.change.startsWith("-") ? <TrendingDown size={12} /> : <TrendingUp size={12} />}
-                    {metric.change}
-                  </b>
-                ) : null}
+                <b>Runtime</b>
                 <small>{metric.note}</small>
               </div>
             </article>
