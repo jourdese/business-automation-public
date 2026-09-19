@@ -2145,6 +2145,141 @@ export default function OperationModuleView({
   );
 }
 
+function SupplierEditorPanel({
+  draft,
+  setDraft,
+  onSave,
+  onCancel,
+}: {
+  draft: SupplierEditorDraft;
+  setDraft: Dispatch<SetStateAction<SupplierEditorDraft | null>>;
+  onSave: () => void;
+  onCancel: () => void;
+}) {
+  return (
+    <section className={styles.entityEditor}>
+      <header>
+        <div>
+          <span>{draft.id ? "EDIT SUPPLIER" : "NEW SUPPLIER"}</span>
+          <h3>{draft.id ? draft.name || "Supplier" : "Create supplier"}</h3>
+          <p>
+            Configure the supplier identity and primary purchasing contact used by
+            Inventory and Purchasing.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={onCancel}
+          aria-label="Close supplier editor"
+        >
+          <X size={16} aria-hidden />
+        </button>
+      </header>
+
+      <div className={styles.entityEditorGrid}>
+        <label className={styles.entityEditorWide}>
+          <span>Supplier name</span>
+          <input
+            value={draft.name}
+            placeholder="Supplier business name"
+            onChange={(event) =>
+              setDraft((current) =>
+                current
+                  ? { ...current, name: event.target.value }
+                  : current,
+              )
+            }
+          />
+        </label>
+        <label>
+          <span>Primary contact</span>
+          <input
+            value={draft.contactName}
+            placeholder="Contact person"
+            onChange={(event) =>
+              setDraft((current) =>
+                current
+                  ? { ...current, contactName: event.target.value }
+                  : current,
+              )
+            }
+          />
+        </label>
+        <label>
+          <span>Role</span>
+          <input
+            value={draft.role}
+            placeholder="Sales"
+            onChange={(event) =>
+              setDraft((current) =>
+                current
+                  ? { ...current, role: event.target.value }
+                  : current,
+              )
+            }
+          />
+        </label>
+        <label>
+          <span>Channel</span>
+          <select
+            value={draft.channel}
+            onChange={(event) =>
+              setDraft((current) =>
+                current
+                  ? { ...current, channel: event.target.value }
+                  : current,
+              )
+            }
+          >
+            <option value="Email">Email</option>
+            <option value="Phone">Phone</option>
+            <option value="SMS">SMS</option>
+            <option value="Messenger">Messenger</option>
+            <option value="WhatsApp">WhatsApp</option>
+            <option value="Viber">Viber</option>
+          </select>
+        </label>
+        <label>
+          <span>Email</span>
+          <input
+            type="email"
+            value={draft.email}
+            placeholder="supplier@example.com"
+            onChange={(event) =>
+              setDraft((current) =>
+                current
+                  ? { ...current, email: event.target.value }
+                  : current,
+              )
+            }
+          />
+        </label>
+        <label>
+          <span>Phone</span>
+          <input
+            value={draft.phone}
+            placeholder="+63…"
+            onChange={(event) =>
+              setDraft((current) =>
+                current
+                  ? { ...current, phone: event.target.value }
+                  : current,
+              )
+            }
+          />
+        </label>
+      </div>
+
+      <footer className={styles.entityEditorActions}>
+        <button type="button" onClick={onCancel}>Cancel</button>
+        <button type="button" data-primary onClick={onSave}>
+          <Save size={14} aria-hidden /> Save supplier
+        </button>
+      </footer>
+    </section>
+  );
+}
+
 function MenuEditorPanel({
   draft,
   setDraft,
