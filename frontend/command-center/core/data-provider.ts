@@ -42,6 +42,7 @@ export interface CommandCenterActionProvider {
     module: string;
     action: string;
     payload?: Record<string, unknown>;
+    idempotencyKey?: string;
   }): Promise<{
     ok: boolean;
     actionId: string;
@@ -62,4 +63,8 @@ export interface CommandCenterActionProvider {
  * The UI should depend on these interfaces rather than localStorage, Supabase,
  * n8n, a POS, or any accounting provider directly. Demo providers can be
  * swapped for production providers without rewriting Command Center pages.
+ *
+ * Production action providers should honor idempotencyKey for external side
+ * effects so retries cannot create duplicate supplier orders, payments, emails,
+ * calendar actions, or other irreversible work.
  */
