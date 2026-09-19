@@ -3,7 +3,10 @@ import type {
   BusinessMetricSeed,
   JourvisDecision,
 } from "./types";
-import type { CommandCenterActivity } from "./runtime";
+import type {
+  CommandCenterActivity,
+  CommandCenterHistorySnapshot,
+} from "./runtime";
 
 export type CommandCenterForecast = {
   id: string;
@@ -29,6 +32,7 @@ export interface CommandCenterDataProvider {
   getForecasts(businessId: string): Promise<CommandCenterForecast[]>;
   getDecisions(businessId: string): Promise<JourvisDecision[]>;
   getActivity(businessId: string): Promise<CommandCenterActivity[]>;
+  getHistory(businessId: string): Promise<CommandCenterHistorySnapshot[]>;
   getBriefings(businessId: string): Promise<CommandCenterBriefing[]>;
 }
 
