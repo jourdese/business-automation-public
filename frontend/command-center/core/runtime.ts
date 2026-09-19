@@ -208,7 +208,7 @@ export type CommandCenterHistorySnapshot = {
 };
 
 export type CommandCenterRuntimeState = {
-  version: 1;
+  version: 2;
   business: CommandCenterBusiness;
   automationMasterOn: boolean;
   inventory: CommandCenterInventoryItem[];
@@ -324,6 +324,43 @@ export function evaluateAutomaticPurchaseStart(
 
 export function isPurchaseActive(status: CommandCenterPurchaseStatus) {
   return status !== "received" && status !== "rejected";
+}
+
+const purchaseTransitions: Record<
+  CommandCenterPurchaseStatus,
+  ReadonlyArray<CommandCenterPurchaseStatus>
+> = {
+  suggested: ["requested", "quote_requested", "rejected"],
+  requested: ["supplier_viewed", "rejected"],
+  quote_requested: ["supplier_viewed", "rejected"],
+  supplier_viewed: ["quote_received", "awaiting_confirmation", "rejected"],
+  quote_received: ["counter_sent", "awaiting_confirmation", "rejected"],
+  counter_sent: ["awaiting_confirmation", "rejected"],
+  approved: ["awaiting_confirmation", "rejected"],
+  awaiting_confirmation: ["confirmed", "rejected"],
+  confirmed: ["in_transit", "partial_received", "received"],
+  in_transit: ["partial_received", "received"],
+  partial_received: ["partial_received", "received"],
+  received: [],
+  rejected: [],
+};
+
+export function canTransitionPurchaseStatus(
+  from: CommandCenterPurchaseStatus,
+  to: CommandCenterPurchaseStatus,
+) {
+  if (from === to) return from === "partial_received";
+  return purchaseTransitions[from].includes(to);
+}
+
+export function canReceivePurchaseStatus(
+  status: CommandCenterPurchaseStatus,
+) {
+  return (
+    status === "confirmed" ||
+    status === "in_transit" ||
+    status === "partial_received"
+  );
 }
 
 export function evaluatePurchaseAuthority(
