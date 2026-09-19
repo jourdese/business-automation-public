@@ -26,6 +26,7 @@ import {
   Truck,
 } from "lucide-react";
 import { operationCatalog } from "@/command-center/core/business-registry";
+import { buildCommandCenterSupplierPerformance } from "@/command-center/core/supplier-performance-engine";
 import {
   estimatedPurchaseTotal,
   inventoryPercent,
@@ -909,6 +910,17 @@ export default function OperationModuleView({
   }
 
   if (moduleId === "suppliers") {
+    const supplierPerformance =
+      buildCommandCenterSupplierPerformance(state);
+    const supplierPerformanceById = new Map(
+      supplierPerformance.suppliers.map((entry) => [
+        entry.supplierId,
+        entry,
+      ]),
+    );
+    const formatMinutes = (value: number | null) =>
+      value === null ? "—" : value < 60 ? `${value} min` : `${Math.round((value / 60) * 10) / 10} hr`;
+
     return (
       <section className={styles.sectionPage}>
         <OperationHeader
@@ -917,8 +929,37 @@ export default function OperationModuleView({
           description={operationModule.description}
         />
 
+        <div className={styles.activitySummary}>
+          <article>
+            <span>REQUESTS OBSERVED</span>
+            <strong>{supplierPerformance.requestCount}</strong>
+            <small>supplier workflows in runtime history</small>
+          </article>
+          <article>
+            <span>COMPLETION</span>
+            <strong>
+              {supplierPerformance.completionRatePercent === null
+                ? "—"
+                : supplierPerformance.completionRatePercent + "%"}
+            </strong>
+            <small>received ÷ closed requests</small>
+          </article>
+          <article>
+            <span>AVG SUPPLIER VIEW</span>
+            <strong>{formatMinutes(supplierPerformance.averageViewMinutes)}</strong>
+            <small>request created → supplier viewed</small>
+          </article>
+          <article>
+            <span>AVG QUOTE RESPONSE</span>
+            <strong>{formatMinutes(supplierPerformance.averageQuoteMinutes)}</strong>
+            <small>quote-mode request → quote received</small>
+          </article>
+        </div>
+
         <div className={styles.supplierRuntimeGrid}>
           {state.suppliers.map((supplier) => {
+            const performance =
+              supplierPerformanceById.get(supplier.id);
             const suppliedItems = state.inventory.filter((item) =>
               supplier.itemIds.includes(item.id),
             );
@@ -971,6 +1012,49 @@ export default function OperationModuleView({
                       <span>{contact.email}</span>
                     </div>
                   ))}
+                </div>
+
+                <div className={styles.supplierPerformanceFacts}>
+                  <span>
+                    <small>Requests</small>
+                    <strong>{performance?.requestCount ?? 0}</strong>
+                  </span>
+                  <span>
+                    <small>Completion</small>
+                    <strong>
+                      {performance?.completionRatePercent === null ||
+                      performance?.completionRatePercent === undefined
+                        ? "—"
+                        : performance.completionRatePercent + "%"}
+                    </strong>
+                  </span>
+                  <span>
+                    <small>Avg viewed</small>
+                    <strong>{formatMinutes(performance?.averageViewMinutes ?? null)}</strong>
+                  </span>
+                  <span>
+                    <small>Avg quote</small>
+                    <strong>{formatMinutes(performance?.averageQuoteMinutes ?? null)}</strong>
+                  </span>
+                  <span>
+                    <small>Avg confirmation</small>
+                    <strong>{formatMinutes(performance?.averageConfirmationMinutes ?? null)}</strong>
+                  </span>
+                  <span>
+                    <small>Avg receipt</small>
+                    <strong>
+                      {performance?.averageReceiptHours === null ||
+                      performance?.averageReceiptHours === undefined
+                        ? "—"
+                        : performance.averageReceiptHours + " hr"}
+                    </strong>
+                  </span>
+                  <span>
+                    <small>Received spend</small>
+                    <strong>
+                      ₱{Math.round(performance?.receivedSpend ?? 0).toLocaleString("en-PH")}
+                    </strong>
+                  </span>
                 </div>
 
                 <footer>
