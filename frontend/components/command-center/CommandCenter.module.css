@@ -546,6 +546,37 @@
   line-height: 1.5;
 }
 
+.forecastAccuracyList {
+  display: grid;
+  gap: 0.35rem;
+  margin-top: 0.6rem;
+}
+
+.forecastAccuracyList > div {
+  display: grid;
+  grid-template-columns: minmax(140px, 1fr) minmax(220px, 1.5fr) auto;
+  gap: 0.55rem;
+  align-items: center;
+  padding: 0.48rem 0.55rem;
+  border: 1px solid #314750;
+  background: #08161e;
+}
+
+.forecastAccuracyList strong {
+  font-size: 0.58rem;
+}
+
+.forecastAccuracyList span {
+  color: var(--cc-muted);
+  font-size: 0.52rem;
+}
+
+.forecastAccuracyList b {
+  color: var(--gold);
+  font-size: 0.53rem;
+  text-align: right;
+}
+
 .forecastList {
   display: grid;
   gap: 0.55rem;
@@ -1027,6 +1058,14 @@
 
   .historyTrendGrid {
     grid-template-columns: 1fr;
+  }
+
+  .forecastAccuracyList > div {
+    grid-template-columns: 1fr;
+  }
+
+  .forecastAccuracyList b {
+    text-align: left;
   }
 
   .jourvisRunState {
