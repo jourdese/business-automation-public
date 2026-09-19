@@ -816,7 +816,7 @@ export default function CommandCenterSectionView({
                   ₱{Math.round(
                     (bucket as typeof dailySales.current)
                       .ingredientContribution,
-                  ).toLocaleString("en-PH")} ingredient contribution
+                  ).toLocaleString("en-PH")} remaining after food cost
                 </small>
               </section>
             ))}
@@ -1179,10 +1179,10 @@ export default function CommandCenterSectionView({
           <header>
             <div>
               <span>MENU UNIT ECONOMICS</span>
-              <h2>Ingredient contribution—not full accounting profit</h2>
+              <h2>What is left from each sale after food cost</h2>
               <p>
-                These values use current selling prices and configured recipe ingredient costs only.
-                Labor, rent, utilities, taxes, payment fees, waste, discounts, and other operating expenses are not included.
+                This subtracts the estimated recipe food cost from the selling price.
+                What remains is not profit: labor, rent, utilities, taxes, payment fees, waste, discounts, and other operating expenses still need to be paid.
               </p>
             </div>
             <a href={`/command-center/${business.id}/operations/menu`}>
@@ -1197,22 +1197,22 @@ export default function CommandCenterSectionView({
               <small>items eligible for configured unit economics</small>
             </div>
             <div>
-              <span>AVG INGREDIENT CONTRIBUTION</span>
+              <span>AVG REMAINING AFTER FOOD COST</span>
               <strong>
                 {finance.averageMenuGrossProfit === null
                   ? "—"
                   : formatMoney(finance.averageMenuGrossProfit)}
               </strong>
-              <small>selling price − configured recipe ingredient cost</small>
+              <small>selling price − estimated recipe food cost</small>
             </div>
             <div>
-              <span>AVG INGREDIENT-ONLY MARGIN</span>
+              <span>AVG MARGIN AFTER FOOD COST</span>
               <strong>
                 {finance.averageMenuGrossMarginPercent === null
                   ? "—"
                   : finance.averageMenuGrossMarginPercent + "%"}
               </strong>
-              <small>ingredient contribution ÷ selling price</small>
+              <small>remaining after food cost ÷ selling price</small>
             </div>
           </div>
         </article>

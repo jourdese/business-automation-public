@@ -67,11 +67,11 @@ export default function SalesAnalyticsPanel({
       <header className={styles.salesAnalyticsHeader}>
         <div>
           <span>DEMO POS SALES ANALYSIS</span>
-          <h2>Sales, ingredient cost, and contribution over time</h2>
+          <h2>See where your sales money goes</h2>
           <p>
-            A dated demo ledger powers this chart. New simulated POS sales
-            are appended immediately, so the same transaction updates the
-            current day, week, and month.
+            Sales are split into the estimated food cost of the dishes sold
+            and the amount left after food cost. New simulated POS sales update
+            the current day, week, and month immediately.
           </p>
         </div>
         <div
@@ -102,17 +102,17 @@ export default function SalesAnalyticsPanel({
           </small>
         </div>
         <div>
-          <span>INGREDIENT COST</span>
+          <span>FOOD COST</span>
           <strong>{formatMoney(current.ingredientCost)}</strong>
-          <small>recipe-cost snapshot recorded with each sale</small>
+          <small>estimated cost of the ingredients used in the dishes sold</small>
         </div>
         <div>
-          <span>INGREDIENT CONTRIBUTION</span>
+          <span>REMAINING AFTER FOOD COST</span>
           <strong>{formatMoney(current.ingredientContribution)}</strong>
-          <small>sales minus configured recipe ingredient cost</small>
+          <small>sales left after food cost, before all other business expenses</small>
         </div>
         <div>
-          <span>CONTRIBUTION MARGIN</span>
+          <span>MARGIN AFTER FOOD COST</span>
           <strong>
             {current.ingredientMarginPercent === null
               ? "—"
@@ -124,6 +124,34 @@ export default function SalesAnalyticsPanel({
               : `${change > 0 ? "+" : ""}${change}% sales vs previous period`}
           </small>
         </div>
+      </div>
+
+      <div className={styles.salesMoneyEquation} aria-label="Sales breakdown">
+        <div>
+          <span>SALES</span>
+          <strong>{formatMoney(current.revenue)}</strong>
+          <small>money from the dishes sold</small>
+        </div>
+        <b>=</b>
+        <div>
+          <span>FOOD COST</span>
+          <strong>{formatMoney(current.ingredientCost)}</strong>
+          <small>estimated ingredient cost</small>
+        </div>
+        <b>+</b>
+        <div>
+          <span>REMAINING AFTER FOOD COST</span>
+          <strong>{formatMoney(current.ingredientContribution)}</strong>
+          <small>still needs to cover labor, rent, utilities, taxes, fees, and other expenses</small>
+        </div>
+      </div>
+
+      <div className={styles.salesProfitWarning}>
+        <strong>Not profit</strong>
+        <span>
+          “Remaining after food cost” is not earnings or net profit. It only
+          subtracts the estimated ingredients used in the dishes sold.
+        </span>
       </div>
 
       <div className={styles.salesAnalyticsChart}>
@@ -170,14 +198,14 @@ export default function SalesAnalyticsPanel({
             />
             <Bar
               dataKey="ingredientCost"
-              name="Ingredient cost"
+              name="Food cost"
               stackId="sales"
               fill="var(--gold)"
               maxBarSize={44}
             />
             <Bar
               dataKey="ingredientContribution"
-              name="Ingredient contribution"
+              name="Remaining after food cost"
               stackId="sales"
               fill="var(--mint)"
               maxBarSize={44}
@@ -194,8 +222,9 @@ export default function SalesAnalyticsPanel({
           {analytics.simulatedRecordCount === 1 ? "" : "s"}
         </span>
         <small>
-          The stacked bars total demo sales revenue. This is not verified
-          production revenue or net profit.
+          Each stacked bar equals total demo sales: food cost plus the
+          amount remaining after food cost. This is not verified production
+          revenue or net profit.
         </small>
       </footer>
     </article>

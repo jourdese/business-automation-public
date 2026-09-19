@@ -115,18 +115,18 @@ export const commandCenterInsightMethods: CommandCenterInsightMethod[] = [
   },
   {
     id: "contribution-margin",
-    label: "Menu contribution margin",
+    label: "Menu amount remaining after food cost",
     formula: "Selling price − recipe ingredient cost",
     status: "active",
-    purpose: "Estimate ingredient-only contribution per menu item sold.",
+    purpose: "Estimate how much of the selling price remains after the configured recipe food cost.",
     requires: ["recipe ingredient cost", "selling price"],
   },
   {
     id: "gross-margin",
-    label: "Ingredient-only gross margin",
+    label: "Margin after food cost",
     formula: "Contribution margin ÷ selling price × 100",
     status: "active",
-    purpose: "Express ingredient-only contribution as a percentage of selling price.",
+    purpose: "Express the amount remaining after food cost as a percentage of selling price.",
     requires: ["contribution margin", "selling price"],
   },
   {
@@ -139,10 +139,10 @@ export const commandCenterInsightMethods: CommandCenterInsightMethod[] = [
   },
   {
     id: "sales-contribution-margin",
-    label: "Recorded ingredient contribution margin",
+    label: "Recorded margin after food cost",
     formula: "(Recorded sales − recorded recipe ingredient cost) ÷ recorded sales × 100",
     status: "active",
-    purpose: "Measure ingredient-only contribution across the recorded sales mix.",
+    purpose: "Measure the share of recorded sales remaining after estimated recipe food cost.",
     requires: ["dated priced sales ledger", "recipe ingredient-cost snapshots"],
   },
   {
@@ -510,11 +510,11 @@ export function buildCommandCenterInsights(
       href: `/command-center/${state.business.id}/operations/menu`,
       calculations: [
         {
-          label: "Recipe ingredient cost",
+          label: "Estimated food cost",
           formula: "Σ((pack price ÷ pack size) × recipe quantity)",
           substitution: "Sum of configured ingredient unit costs × recipe quantities",
           result: money(economics.ingredientCost ?? 0),
-          meaning: "Theoretical ingredient cost for one configured serving.",
+          meaning: "Estimated ingredient cost for one configured serving.",
         },
         {
           label: "Food cost percentage",
@@ -525,20 +525,20 @@ export function buildCommandCenterInsights(
           meaning: "Share of the menu price consumed by configured ingredients.",
         },
         {
-          label: "Contribution margin",
+          label: "Remaining after food cost",
           formula: "Selling price − recipe ingredient cost",
           substitution:
             `${money(menuItem.currentPrice ?? 0)} − ${money(economics.ingredientCost ?? 0)}`,
           result: money(economics.grossProfit ?? 0),
-          meaning: "Ingredient-only contribution per sale before labor, overhead, tax, discounts, and waste.",
+          meaning: "Amount left after estimated food cost. This is not profit because labor, rent, utilities, taxes, fees, waste, discounts, and other expenses are not subtracted.",
         },
         {
-          label: "Ingredient-only gross margin",
+          label: "Margin after food cost",
           formula: "Contribution margin ÷ selling price × 100",
           substitution:
             `${money(economics.grossProfit ?? 0)} ÷ ${money(menuItem.currentPrice ?? 0)} × 100`,
           result: `${number(economics.grossMarginPercent ?? 0, 1)}%`,
-          meaning: "Contribution expressed as a percentage of the configured selling price.",
+          meaning: "Share of the selling price remaining after estimated food cost only.",
         },
       ],
       dataLimit:
@@ -568,7 +568,7 @@ export function buildCommandCenterInsights(
         `This week's demo sales are ${number(Math.abs(weeklySalesChange), 1)}% ${direction} the previous week`,
       summary:
         `The dated demo POS ledger records ${money(weeklySales.current.revenue)} this week versus ${money(weeklySales.previous.revenue)} in the previous week. ` +
-        `Current ingredient contribution is ${money(weeklySales.current.ingredientContribution)} at ${number(weeklySales.current.ingredientMarginPercent ?? 0, 1)}% ingredient-only margin.`,
+        `Current remaining-after-food-cost amount is ${money(weeklySales.current.ingredientContribution)} at ${number(weeklySales.current.ingredientMarginPercent ?? 0, 1)}% margin after food cost.`,
       href: `/command-center/${state.business.id}/finance`,
       calculations: [
         {
@@ -582,23 +582,23 @@ export function buildCommandCenterInsights(
             "Compares the current Monday-start demo week with the immediately previous Monday-start week.",
         },
         {
-          label: "Recorded ingredient contribution",
+          label: "Recorded remaining after food cost",
           formula: "Recorded sales − recorded recipe ingredient cost",
           substitution:
             `${money(weeklySales.current.revenue)} − ${money(weeklySales.current.ingredientCost)}`,
           result: money(weeklySales.current.ingredientContribution),
           meaning:
-            "Ingredient-only contribution for the current recorded demo sales mix.",
+            "Amount left from the current recorded demo sales mix after estimated recipe food cost only.",
         },
         {
-          label: "Recorded ingredient contribution margin",
+          label: "Recorded margin after food cost",
           formula:
             "Ingredient contribution ÷ recorded sales × 100",
           substitution:
             `${money(weeklySales.current.ingredientContribution)} ÷ ${money(weeklySales.current.revenue)} × 100`,
           result: `${number(weeklySales.current.ingredientMarginPercent ?? 0, 1)}%`,
           meaning:
-            "Contribution after configured recipe ingredient cost only; it is not net profit.",
+            "Percentage of recorded sales remaining after estimated recipe food cost only. It is not net profit.",
         },
       ],
       dataLimit:

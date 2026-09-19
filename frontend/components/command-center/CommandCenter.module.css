@@ -461,6 +461,77 @@
   line-height: 1.4;
 }
 
+
+.salesMoneyEquation {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1.35fr);
+  gap: 0.6rem;
+  align-items: center;
+  padding: 0.75rem;
+  border-bottom: 1px solid var(--cc-line);
+  background: rgba(247, 244, 238, 0.018);
+}
+
+.salesMoneyEquation > div {
+  min-width: 0;
+  padding: 0.62rem 0.68rem;
+  border: 1px solid #314750;
+  background: #08161e;
+}
+
+.salesMoneyEquation > b {
+  color: var(--cc-muted);
+  font: 0.9rem var(--font-mono);
+  text-align: center;
+}
+
+.salesMoneyEquation span,
+.salesMoneyEquation strong,
+.salesMoneyEquation small {
+  display: block;
+}
+
+.salesMoneyEquation span {
+  color: var(--mint);
+  font: 0.49rem var(--font-mono);
+  letter-spacing: 0.07em;
+}
+
+.salesMoneyEquation strong {
+  margin-top: 0.13rem;
+  font-size: 0.8rem;
+}
+
+.salesMoneyEquation small {
+  margin-top: 0.1rem;
+  color: var(--cc-muted);
+  font-size: 0.51rem;
+  line-height: 1.4;
+}
+
+.salesProfitWarning {
+  display: flex;
+  gap: 0.55rem;
+  align-items: baseline;
+  padding: 0.55rem 0.75rem;
+  border-bottom: 1px solid var(--cc-line);
+  background: rgba(200, 169, 107, 0.055);
+}
+
+.salesProfitWarning strong {
+  flex: 0 0 auto;
+  color: var(--gold);
+  font: 0.53rem var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.salesProfitWarning span {
+  color: var(--cc-muted);
+  font-size: 0.54rem;
+  line-height: 1.45;
+}
+
 .salesAnalyticsChart {
   min-height: 300px;
   padding: 0.7rem 0.6rem 0.25rem;
@@ -3162,6 +3233,15 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .salesMoneyEquation {
+    grid-template-columns: 1fr;
+  }
+
+  .salesMoneyEquation > b {
+    transform: rotate(90deg);
+    line-height: 1;
+  }
+
   .salesAnalyticsSummary > div {
     border-bottom: 1px solid var(--cc-line);
   }
@@ -3321,6 +3401,12 @@
 
   .salesAnalyticsFooter {
     flex-direction: column;
+  }
+
+  .salesProfitWarning {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.2rem;
   }
 
   .financePrimaryGrid {
