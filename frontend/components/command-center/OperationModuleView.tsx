@@ -9,12 +9,17 @@ import {
 } from "react";
 import {
   Archive,
+  ArrowDown,
   ArrowLeft,
   ArrowRight,
+  ArrowUp,
   Bot,
   CheckCircle2,
   ChefHat,
+  ChevronDown,
+  ChevronUp,
   CircleDollarSign,
+  Copy,
   PackageCheck,
   Pencil,
   PlusCircle,
@@ -26,6 +31,8 @@ import {
   Truck,
 } from "lucide-react";
 import { operationCatalog } from "@/command-center/core/business-registry";
+import { buildCommandCenterMenuEconomics } from "@/command-center/core/menu-economics";
+import { buildCommandCenterRecipeImpact } from "@/command-center/core/recipe-impact";
 import { buildCommandCenterSupplierPerformance } from "@/command-center/core/supplier-performance-engine";
 import {
   estimatedPurchaseTotal,
@@ -115,6 +122,14 @@ export default function OperationModuleView({
   const [inventoryZone, setInventoryZone] = useState("All");
   const [menuSearch, setMenuSearch] = useState("");
   const [menuCategory, setMenuCategory] = useState("All");
+  const [menuStatus, setMenuStatus] = useState<
+    "all" | "active" | "unavailable" | "archived"
+  >("active");
+  const [menuExpandedId, setMenuExpandedId] = useState<string | null>(null);
+  const [menuCategoryEditor, setMenuCategoryEditor] = useState<{
+    from: string;
+    to: string;
+  } | null>(null);
   const [menuEditor, setMenuEditor] = useState<MenuEditorDraft | null>(null);
   const [recipeEditor, setRecipeEditor] = useState<RecipeEditorDraft | null>(null);
   const [purchaseFilter, setPurchaseFilter] = useState<"active" | "history" | "all">("active");
@@ -128,8 +143,13 @@ export default function OperationModuleView({
     startOwnerPurchase,
     saveMenuItem,
     archiveMenuItem,
+    duplicateMenuItem,
+    setMenuAvailability,
+    renameMenuCategory,
+    moveMenuItem,
     saveRecipe,
     archiveRecipe,
+    duplicateRecipe,
     createInventoryItem,
     recordRecipeSale,
   } = useCommandCenterRuntime();
