@@ -19,6 +19,7 @@ import { operationCatalog } from "@/command-center/core/business-registry";
 import { jourvisAutonomyLoop } from "@/command-center/core/autonomy";
 import { buildCommandCenterFinance } from "@/command-center/core/finance-engine";
 import { buildCommandCenterForecast } from "@/command-center/core/forecast-engine";
+import { buildCommandCenterHistoryTrend } from "@/command-center/core/history-engine";
 import { buildCommandCenterPerformance } from "@/command-center/core/performance-engine";
 import {
   estimatedPurchaseTotal,
@@ -51,6 +52,16 @@ function humanizeAction(action: string) {
     .join(" ");
 }
 
+function formatSigned(value: number | null, suffix = "") {
+  if (value === null) return "—";
+  return `${value > 0 ? "+" : ""}${value}${suffix}`;
+}
+
+function formatSignedMoney(value: number) {
+  const rounded = Math.round(value);
+  return `${rounded > 0 ? "+" : rounded < 0 ? "-" : ""}₱${Math.abs(rounded).toLocaleString("en-PH")}`;
+}
+
 export default function CommandCenterSectionView({
   section,
 }: {
@@ -72,6 +83,8 @@ export default function CommandCenterSectionView({
   const lowStockCount = state.inventory.filter(
     (item) => item.current <= item.reorderAt,
   ).length;
+  const historyTrend = buildCommandCenterHistoryTrend(state);
+  const hasHistoricalComparison = historyTrend.snapshotCount >= 2;
 
   if (section === "overview") {
     const overviewPerformance = buildCommandCenterPerformance(
@@ -445,6 +458,53 @@ export default function CommandCenterSectionView({
         <article className={styles.panelCard}>
           <PanelHeading
             icon={<LineChart size={17} />}
+            eyebrow="OBSERVED MOVEMENT"
+            title="How the operating state has changed"
+          />
+          <div className={styles.historyTrendGrid}>
+            <div>
+              <span>7-DAY RISK</span>
+              <strong>
+                {hasHistoricalComparison
+                  ? formatSigned(historyTrend.inventoryRiskDelta)
+                  : "—"}
+              </strong>
+              <small>lower is better</small>
+            </div>
+            <div>
+              <span>INVENTORY READINESS</span>
+              <strong>
+                {hasHistoricalComparison
+                  ? formatSigned(historyTrend.inventoryReadinessDelta, " pts")
+                  : "—"}
+              </strong>
+              <small>change since first snapshot</small>
+            </div>
+            <div>
+              <span>ACTIVE WORKFLOWS</span>
+              <strong>
+                {hasHistoricalComparison
+                  ? formatSigned(historyTrend.activeWorkflowDelta)
+                  : "—"}
+              </strong>
+              <small>purchasing workload movement</small>
+            </div>
+            <div>
+              <span>HISTORY</span>
+              <strong>{historyTrend.snapshotCount}</strong>
+              <small>deduplicated operating snapshots</small>
+            </div>
+          </div>
+          <p className={styles.historyTrendNote}>
+            {hasHistoricalComparison
+              ? `Observed from ${formatActivityTime(historyTrend.oldestAt ?? "", business.timezone)} to ${formatActivityTime(historyTrend.latestAt ?? "", business.timezone)}. This is runtime history, not yet POS-based forecast accuracy.`
+              : "Jourvis has started capturing historical operating snapshots. Trend comparisons appear after the business state changes."}
+          </p>
+        </article>
+
+        <article className={styles.panelCard}>
+          <PanelHeading
+            icon={<LineChart size={17} />}
             eyebrow="INVENTORY FORECAST"
             title="Projected stock, shortage pressure, and next action"
           />
@@ -637,6 +697,57 @@ export default function CommandCenterSectionView({
 
         <article className={styles.panelCard}>
           <PanelHeading
+            icon={<LineChart size={17} />}
+            eyebrow="PERFORMANCE TREND"
+            title="Observed KPI movement"
+          />
+          <div className={styles.historyTrendGrid}>
+            <div>
+              <span>INVENTORY READINESS</span>
+              <strong>
+                {hasHistoricalComparison
+                  ? formatSigned(historyTrend.inventoryReadinessDelta, " pts")
+                  : "—"}
+              </strong>
+              <small>stock readiness change</small>
+            </div>
+            <div>
+              <span>RECIPE COVERAGE</span>
+              <strong>
+                {hasHistoricalComparison
+                  ? formatSigned(historyTrend.recipeCoverageDelta, " pts")
+                  : "—"}
+              </strong>
+              <small>active menu mapping change</small>
+            </div>
+            <div>
+              <span>FOOD COST</span>
+              <strong>
+                {hasHistoricalComparison
+                  ? formatSigned(historyTrend.foodCostDelta, " pts")
+                  : "—"}
+              </strong>
+              <small>ingredient-cost ratio movement</small>
+            </div>
+            <div>
+              <span>OWNER EXCEPTIONS</span>
+              <strong>
+                {hasHistoricalComparison
+                  ? formatSigned(historyTrend.ownerExceptionDelta)
+                  : "—"}
+              </strong>
+              <small>human-dependency movement</small>
+            </div>
+          </div>
+          <p className={styles.historyTrendNote}>
+            {hasHistoricalComparison
+              ? `${historyTrend.snapshotCount} operating snapshots are available in the current business history.`
+              : "A baseline snapshot exists; make operational changes to begin measuring performance movement."}
+          </p>
+        </article>
+
+        <article className={styles.panelCard}>
+          <PanelHeading
             icon={<Sparkles size={17} />}
             eyebrow="JOURVIS EXPLAINS"
             title="Operational causes behind the numbers"
@@ -785,6 +896,55 @@ export default function CommandCenterSectionView({
             </article>
           ))}
         </div>
+
+        <article className={styles.panelCard}>
+          <PanelHeading
+            icon={<WalletCards size={17} />}
+            eyebrow="FINANCIAL MOVEMENT"
+            title="What changed in the observed runtime"
+          />
+          <div className={styles.historyTrendGrid}>
+            <div>
+              <span>OPEN COMMITMENTS</span>
+              <strong>
+                {hasHistoricalComparison
+                  ? formatSignedMoney(historyTrend.openCommitmentDelta)
+                  : "—"}
+              </strong>
+              <small>active purchasing movement</small>
+            </div>
+            <div>
+              <span>RECEIVED SPEND</span>
+              <strong>
+                {hasHistoricalComparison
+                  ? formatSignedMoney(historyTrend.receivedSpendDelta)
+                  : "—"}
+              </strong>
+              <small>received purchasing movement</small>
+            </div>
+            <div>
+              <span>INVENTORY VALUE</span>
+              <strong>
+                {hasHistoricalComparison
+                  ? formatSignedMoney(historyTrend.inventoryValueDelta)
+                  : "—"}
+              </strong>
+              <small>configured on-hand value movement</small>
+            </div>
+            <div>
+              <span>MENU GROSS MARGIN</span>
+              <strong>
+                {hasHistoricalComparison
+                  ? formatSigned(historyTrend.grossMarginDelta, " pts")
+                  : "—"}
+              </strong>
+              <small>ingredient-only margin movement</small>
+            </div>
+          </div>
+          <p className={styles.historyTrendNote}>
+            These are changes in Command Center operating values only. They do not represent accounting-period cash flow or P&amp;L until verified financial providers are connected.
+          </p>
+        </article>
 
         <article className={styles.panelCard}>
           <PanelHeading
@@ -1069,8 +1229,23 @@ export default function CommandCenterSectionView({
           )}
         </article>
 
+        <article className={styles.panelCard}>
+          <PanelHeading
+            icon={<LineChart size={17} />}
+            eyebrow="OBSERVED HISTORY"
+            title={hasHistoricalComparison ? "Jourvis can now compare operating states" : "Building the first comparison"}
+          />
+          <div className={styles.explainer}>
+            <p>
+              {hasHistoricalComparison
+                ? `Across ${historyTrend.snapshotCount} captured operating snapshots, inventory readiness changed ${formatSigned(historyTrend.inventoryReadinessDelta, " points")}, seven-day inventory risk changed ${formatSigned(historyTrend.inventoryRiskDelta)}, and open purchasing commitments changed ${formatSignedMoney(historyTrend.openCommitmentDelta)}.`
+                : "Jourvis is now capturing deduplicated, timestamped business snapshots. A second meaningful state change will unlock observed-period trend comparisons."}
+            </p>
+          </div>
+        </article>
+
         <p className={styles.demoNote}>
-          Weekly/monthly trend comparisons, forecast accuracy, and period-over-period financial reporting are intentionally deferred until Command Center has durable dated history rather than only current browser state.
+          Browser history now supports observed-state comparisons. True weekly/monthly business reporting still requires durable server-side history plus dated POS/accounting/provider records.
         </p>
       </SectionFrame>
     );
@@ -1136,6 +1311,17 @@ export default function CommandCenterSectionView({
                 {tasks.length
                   ? `${tasks.length} exception${tasks.length === 1 ? " currently requires" : "s currently require"} human authority. Jourvis keeps those cases in Decisions instead of silently exceeding configured limits.`
                   : "No current workflow requires owner authority."}
+              </p>
+            </div>
+          </article>
+          <article>
+            <LineChart size={16} />
+            <div>
+              <strong>Direction of travel</strong>
+              <p>
+                {hasHistoricalComparison
+                  ? `Since the first captured snapshot, inventory readiness moved ${formatSigned(historyTrend.inventoryReadinessDelta, " points")}, inventory risk moved ${formatSigned(historyTrend.inventoryRiskDelta)}, owner exceptions moved ${formatSigned(historyTrend.ownerExceptionDelta)}, and purchasing commitments moved ${formatSignedMoney(historyTrend.openCommitmentDelta)}.`
+                  : "Jourvis has begun capturing operating history. Direction-of-travel insights will appear after another meaningful business-state change."}
               </p>
             </div>
           </article>
