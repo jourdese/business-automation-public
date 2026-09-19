@@ -506,6 +506,55 @@ await test('Forecast links ingredient risk to active recipes', () => {
 });
 
 
+await test('Performance ignores untouched archived-reference menu rows until they become operational', () => {
+  const shrimp = item({
+    packSize: 5,
+    packPrice: 2800,
+  });
+  const runtime = state(shrimp);
+  runtime.recipes = [
+    {
+      id: 'recipe-shrimp',
+      name: 'Shrimp Pasta',
+      description: 'Test recipe',
+      active: true,
+      ingredients: { shrimp: 0.1 },
+    },
+  ];
+  runtime.menuItems = [
+    {
+      id: 'menu-configured',
+      name: 'Configured Dish',
+      printedName: 'Configured Dish',
+      dishKey: 'configured-dish',
+      category: 'Pasta',
+      referenceSource: 'archived-menu-photo',
+      currentPriceVerified: false,
+      active: true,
+      available: true,
+      recipeId: 'recipe-shrimp',
+    },
+    {
+      id: 'menu-reference-only',
+      name: 'Reference Only',
+      printedName: 'Reference Only',
+      dishKey: 'reference-only',
+      category: 'Pasta',
+      referencePrice: 500,
+      referenceSource: 'archived-menu-photo',
+      currentPriceVerified: false,
+      active: true,
+      available: true,
+    },
+  ];
+
+  const performance = buildCommandCenterPerformance(runtime, 0);
+
+  assert.equal(performance.activeMenuItemCount, 1);
+  assert.equal(performance.recipeMappedMenuCount, 1);
+  assert.equal(performance.recipeCoveragePercent, 100);
+});
+
 await test('Performance derives menu recipe coverage and food cost from live runtime data', () => {
   const shrimp = item({
     packSize: 5,
