@@ -215,6 +215,7 @@ export default function OperationModuleView({
   }
 
   function openNewMenuItem() {
+    setMenuDetailId(null);
     setMenuEditor({
       name: "",
       category: "Pasta",
@@ -228,6 +229,7 @@ export default function OperationModuleView({
   }
 
   function openMenuItemEditor(item: CommandCenterMenuItem) {
+    setMenuDetailId(item.id);
     setMenuEditor({
       id: item.id,
       name: item.name,
@@ -1267,8 +1269,8 @@ export default function OperationModuleView({
             <h2>Compact menu library with actions one click away.</h2>
             <p>
               Browse fixed-size menu tiles. Clicking a tile opens a compact detail modal
-              with the important economics and actions; Add/Edit still uses a fixed drawer
-              so the grid never shifts or loses your place.
+              with the important economics and actions. Edit switches that same modal into
+              edit mode; only Add Menu Item uses the fixed drawer.
             </p>
           </div>
           <ChefHat size={36} aria-hidden />
@@ -1355,7 +1357,7 @@ export default function OperationModuleView({
           </section>
         ) : null}
 
-        {menuEditor ? (
+        {menuEditor && !menuEditor.id ? (
           <div
             className={styles.entityDrawerBackdrop}
             role="presentation"
@@ -1391,14 +1393,30 @@ export default function OperationModuleView({
             onMouseDown={(event) => {
               if (event.target === event.currentTarget) {
                 setMenuDetailId(null);
+                setMenuEditor(null);
               }
             }}
           >
             <dialog
               open
               className={styles.menuDetailModal}
-              aria-label={`${selectedMenuItem.name} menu details`}
+              aria-label={
+                menuEditor?.id === selectedMenuItem.id
+                  ? `Edit ${selectedMenuItem.name}`
+                  : `${selectedMenuItem.name} menu details`
+              }
             >
+              {menuEditor?.id === selectedMenuItem.id ? (
+                <MenuEditorPanel
+                  draft={menuEditor}
+                  setDraft={setMenuEditor}
+                  existing={selectedMenuItem}
+                  recipes={state.recipes}
+                  onSave={submitMenuEditor}
+                  onCancel={() => setMenuEditor(null)}
+                />
+              ) : (
+                <>
               <header className={styles.menuModalHeader}>
                 <div className={styles.menuModalThumb}>
                   {selectedMenuRecipe ? (
@@ -1424,7 +1442,10 @@ export default function OperationModuleView({
                 </div>
                 <button
                   type="button"
-                  onClick={() => setMenuDetailId(null)}
+                  onClick={() => {
+                    setMenuDetailId(null);
+                    setMenuEditor(null);
+                  }}
                   aria-label="Close menu details"
                 >
                   <X size={16} aria-hidden />
@@ -1483,10 +1504,7 @@ export default function OperationModuleView({
                 ) : null}
                 <button
                   type="button"
-                  onClick={() => {
-                    setMenuDetailId(null);
-                    openMenuItemEditor(selectedMenuItem);
-                  }}
+                  onClick={() => openMenuItemEditor(selectedMenuItem)}
                 >
                   <Pencil size={14} aria-hidden /> Edit
                 </button>
@@ -1660,6 +1678,8 @@ export default function OperationModuleView({
                   </div>
                 ) : null}
               </details>
+                </>
+              )}
             </dialog>
           </div>
         ) : null}
