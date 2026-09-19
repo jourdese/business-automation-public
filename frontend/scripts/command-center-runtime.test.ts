@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   canAdvancePurchase,
+  canMenuItemBeAvailable,
   canReceivePurchaseStatus,
   canTransitionPurchaseStatus,
   evaluateAutomaticPurchaseStart,
@@ -10,6 +11,7 @@ import {
   projectedInventoryAtDelivery,
   purchaseProgressStage,
   projectedInventoryPercentAtDelivery,
+  reconcileMenuItemsForRecipeStatus,
   suggestedPurchaseQuantity,
   validateCommandCenterRuntimeState,
   type CommandCenterInventoryItem,
@@ -1206,5 +1208,118 @@ await test('Runtime integrity validator catches invalid confirmed purchase and d
   assert.equal(
     codes.has('confirmed_purchase_without_supplier_confirmation'),
     true,
+  );
+});
+
+
+await test('Menu availability requires an active linked recipe', () => {
+  const activeRecipe = {
+    id: 'recipe-active',
+    name: 'Active',
+    description: 'Active recipe',
+    active: true,
+    ingredients: {},
+  };
+  const archivedRecipe = {
+    id: 'recipe-archived',
+    name: 'Archived',
+    description: 'Archived recipe',
+    active: false,
+    ingredients: {},
+  };
+
+  assert.equal(
+    canMenuItemBeAvailable(
+      { recipeId: activeRecipe.id },
+      [activeRecipe, archivedRecipe],
+    ),
+    true,
+  );
+  assert.equal(
+    canMenuItemBeAvailable(
+      { recipeId: archivedRecipe.id },
+      [activeRecipe, archivedRecipe],
+    ),
+    false,
+  );
+  assert.equal(
+    canMenuItemBeAvailable(
+      {},
+      [activeRecipe, archivedRecipe],
+    ),
+    true,
+  );
+});
+
+await test('Recipe archive and restore reconcile linked active menu availability', () => {
+  const menuItems = [
+    {
+      id: 'menu-linked',
+      name: 'Linked',
+      printedName: 'Linked',
+      dishKey: 'linked',
+      category: 'Pasta',
+      referenceSource: 'demo' as const,
+      currentPriceVerified: false,
+      active: true,
+      available: true,
+      recipeId: 'recipe-one',
+    },
+    {
+      id: 'menu-other',
+      name: 'Other',
+      printedName: 'Other',
+      dishKey: 'other',
+      category: 'Pasta',
+      referenceSource: 'demo' as const,
+      currentPriceVerified: false,
+      active: true,
+      available: true,
+      recipeId: 'recipe-two',
+    },
+    {
+      id: 'menu-archived',
+      name: 'Archived menu',
+      printedName: 'Archived menu',
+      dishKey: 'archived-menu',
+      category: 'Pasta',
+      referenceSource: 'demo' as const,
+      currentPriceVerified: false,
+      active: false,
+      available: false,
+      recipeId: 'recipe-one',
+    },
+  ];
+
+  const archived = reconcileMenuItemsForRecipeStatus(
+    menuItems,
+    'recipe-one',
+    false,
+  );
+  assert.equal(
+    archived.find((item) => item.id === 'menu-linked')?.available,
+    false,
+  );
+  assert.equal(
+    archived.find((item) => item.id === 'menu-other')?.available,
+    true,
+  );
+  assert.equal(
+    archived.find((item) => item.id === 'menu-archived')?.available,
+    false,
+  );
+
+  const restored = reconcileMenuItemsForRecipeStatus(
+    archived,
+    'recipe-one',
+    true,
+  );
+  assert.equal(
+    restored.find((item) => item.id === 'menu-linked')?.available,
+    true,
+  );
+  assert.equal(
+    restored.find((item) => item.id === 'menu-archived')?.available,
+    false,
   );
 });
