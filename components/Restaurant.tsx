@@ -1,13 +1,14 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { ArrowDown, ArrowUpRight, Minus, Plus, ShoppingBag, X } from "lucide-react";
+import { ArrowUpRight, Minus, Plus, ShoppingBag, X } from "lucide-react";
 import type { PublicMenu, MenuItem, Order } from "@/lib/types";
 import { money, friendlyStatus } from "@/lib/format";
 import { send, ApiClientError } from "@/lib/client-api";
 import JourvisLauncher from "./jourvis/JourvisLauncher";
 import CompanionMark from "./jourvis/CompanionMark";
 import styles from "./Restaurant.module.css";
+import MarinaraWebsite from "./marinara/MarinaraWebsite";
 type PreparedOrder = {
   stationToken: string;
   requestKey: string;
@@ -204,212 +205,155 @@ export default function Restaurant({
     setGuide(false);
     document.getElementById("marinara-menu")?.scrollIntoView({ behavior: "smooth" });
   }
+  const menuContent = (
+    <>
+      {menu.slug.startsWith("private-") && (
+        <section className="private-demo-banner" aria-label="Private practice menu">
+          <strong>Your private Marinara practice menu</strong>
+          <p>Test orders go only to your own demo workspace. No real payment or food delivery.</p>
+          <a href="/command-center">Return to your workspace →</a>
+        </section>
+      )}
+      <section className={styles.menuSection} id="marinara-menu">
+        <div className={styles.sectionTitle}>
+          <div>
+            <p className={styles.eyebrow}>
+              {stationToken ? "WELCOME TO YOUR TABLE" : "SOMETHING FOR EVERY APPETITE"}
+            </p>
+            {stationToken ? (
+              <h1>Make yourself at home.</h1>
+            ) : (
+              <h2>What are you in the mood for?</h2>
+            )}
+          </div>
+          <p>
+            Twelve photographed favorites.
+            <br />A little inspiration for your next gathering.
+          </p>
+        </div>
+        <div className={styles.qrWelcome}>
+          <div>
+            <p className={styles.eyebrow}>
+              {stationToken ? "YOUR TABLE’S QR MENU" : "DINE IN. SCAN. MAKE IT YOURS."}
+            </p>
+            <h3>
+              {stationToken
+                ? "Choose something lovely for your table."
+                : "Your next order starts at the table."}
+            </h3>
+            <p>
+              {stationToken
+                ? "Add your dishes, review quantities and notes, then send your order for the kitchen to accept."
+                : "Scan the QR on your table to open its ordering menu. Here on the website, you can explore the dishes and keep your choices together."}
+            </p>
+          </div>
+          <ol>
+            <li>Scan your table’s QR</li>
+            <li>Choose and review your dishes</li>
+            <li>Send your order and follow its status</li>
+          </ol>
+          <button className={styles.primary} onClick={() => setBasket(true)}>
+            {stationToken ? "Review my order" : "View my choices"} · {count}
+          </button>
+        </div>
+        <div className={styles.demoNote}>
+          <span>DEMONSTRATION MENU</span>
+          <p>
+            Sample prices and recipe details. Confirm current availability and dietary needs with
+            the restaurant. No payment is collected.
+          </p>
+        </div>
+        {!connected && (
+          <p className={styles.warning}>
+            Ordering is temporarily unavailable. You can still explore the photographed menu.
+          </p>
+        )}
+        {stationToken && !menu.acceptingOrders && (
+          <p className={styles.warning}>
+            This restaurant is not taking QR orders right now. Please ask a team member.
+          </p>
+        )}
+        <div className={styles.categories} role="group" aria-label="Menu categories">
+          {["All", ...new Set(menu.items.map((i) => i.category))].map((c) => (
+            <button
+              className={category === c ? styles.activeCategory : ""}
+              onClick={() => setCategory(c)}
+              key={c}
+            >
+              {c}
+            </button>
+          ))}
+        </div>
+        <div className={styles.dishes}>
+          {menu.items
+            .filter((i) => category === "All" || i.category === category)
+            .map((i, index) => (
+              <Dish
+                key={i.id}
+                item={i}
+                index={index}
+                quantity={cart[i.id] || 0}
+                locked={Boolean(pending)}
+                change={(delta) => change(i.id, delta)}
+              />
+            ))}
+        </div>
+        <div className={styles.menuClosing}>
+          <span>A little help choosing?</span>
+          <button
+            onClick={() => ask("Help me choose pasta or pizza")}
+            className={styles.linkButton}
+          >
+            Ask Jourvis <ArrowUpRight size={15} />
+          </button>
+        </div>
+      </section>
+    </>
+  );
   return (
     <div className={styles.page}>
-      <header className={styles.header}>
-        <a className={styles.logo} href={`/restaurant/${menu.slug}`} aria-label="Marinara home">
-          <Image
-            src="/marinara/branding/marinara-buon-cibo-logo-full.png"
-            alt="Marinara · Buon Cibo"
-            width={160}
-            height={85}
-            preload
-          />
-        </a>
-        <nav aria-label="Restaurant navigation">
-          <a href="#marinara-menu">Our menu</a>
-          <a href="#the-room">The setting</a>
-          <a href="#visit">Come over</a>
-        </nav>
-        <button
-          className={styles.basketButton}
-          onClick={() => setBasket(true)}
-          aria-label={`Your table, ${count} dishes`}
+      {!stationToken ? (
+        <MarinaraWebsite
+          count={count}
+          onBasket={() => setBasket(true)}
+          onAsk={(draft) => {
+            setGuide(true);
+            if (draft)
+              setGuideMessage(
+                `Your enquiry draft: ${draft} Nothing has been sent or booked. Please contact the restaurant to confirm your table.`,
+              );
+          }}
         >
-          <ShoppingBag size={16} />
-          <span>Your table</span>
-          <b>{count}</b>
-        </button>
-      </header>
-      <main id="main">
-        {menu.slug.startsWith("private-") && (
-          <section className="private-demo-banner" aria-label="Private practice menu">
-            <strong>Your private Marinara practice menu</strong>
-            <p>Test orders go only to your own demo workspace. No real payment or food delivery.</p>
-            <a href="/command-center">Return to your workspace →</a>
-          </section>
-        )}
-        {!stationToken && (
-          <section className={styles.hero}>
-            <div className={styles.heroCopy}>
-              <p className={styles.eyebrow}>BUON CIBO. BELLA COMPAGNIA.</p>
-              <h1>
-                A table worth
-                <br />
-                <em>lingering at.</em>
-              </h1>
-              <p>
-                Good food. Familiar faces.
-                <br />
-                And a little room for something wonderful.
-              </p>
-              <a className={styles.primary} href="#marinara-menu">
-                Find your kind of delicious <ArrowDown size={17} />
-              </a>
-              <span className={styles.heroFootnote}>ITALIAN-AMERICAN BISTRO · DAVAO CITY</span>
-            </div>
-            <div className={styles.heroPhoto}>
+          {menuContent}
+        </MarinaraWebsite>
+      ) : (
+        <>
+          <header className={styles.header}>
+            <a className={styles.logo} href={`/restaurant/${menu.slug}`} aria-label="Marinara home">
               <Image
-                src="/marinara/food/marinara-menu-Burrata Pizza.jpg"
-                alt="Burrata pizza, fresh basil and tomato at Marinara"
-                fill
+                src="/marinara/branding/marinara-buon-cibo-logo-full.png"
+                alt="Marinara · Buon Cibo"
+                width={160}
+                height={85}
                 preload
-                sizes="(max-width: 700px) 100vw, 55vw"
               />
-              <span className={styles.photoNote}>Made for the middle of the table.</span>
-              <div className={styles.roundel}>
-                GOOD FOOD
-                <br />
-                <i>better</i>
-                <br />
-                TOGETHER
-              </div>
-            </div>
-          </section>
-        )}
-        <div className={styles.ribbon}>
-          <span>Pasta with a little soul.</span>
-          <i>✦</i>
-          <span>Pizza worth sharing.</span>
-          <i>✦</i>
-          <span>Stay for one more story.</span>
-        </div>
-        <section className={styles.menuSection} id="marinara-menu">
-          <div className={styles.sectionTitle}>
-            <div>
-              <p className={styles.eyebrow}>
-                {stationToken ? "WELCOME TO YOUR TABLE" : "SOMETHING FOR EVERY APPETITE"}
-              </p>
-              <h2>{stationToken ? "Make yourself at home." : "What are you in the mood for?"}</h2>
-            </div>
-            <p>
-              Twelve photographed favorites.
-              <br />A little inspiration for your next gathering.
-            </p>
-          </div>
-          <div className={styles.demoNote}>
-            <span>DEMONSTRATION MENU</span>
-            <p>
-              Sample prices and recipe details. Confirm current availability and dietary needs with
-              the restaurant. No payment is collected.
-            </p>
-          </div>
-          {!connected && (
-            <p className={styles.warning}>
-              Ordering is temporarily unavailable. You can still explore the photographed menu.
-            </p>
-          )}
-          {stationToken && !menu.acceptingOrders && (
-            <p className={styles.warning}>
-              This restaurant is not taking QR orders right now. Please ask a team member.
-            </p>
-          )}
-          <div className={styles.categories} role="group" aria-label="Menu categories">
-            {["All", ...new Set(menu.items.map((i) => i.category))].map((c) => (
-              <button
-                className={category === c ? styles.activeCategory : ""}
-                onClick={() => setCategory(c)}
-                key={c}
-              >
-                {c}
-              </button>
-            ))}
-          </div>
-          <div className={styles.dishes}>
-            {menu.items
-              .filter((i) => category === "All" || i.category === category)
-              .map((i, index) => (
-                <Dish
-                  key={i.id}
-                  item={i}
-                  index={index}
-                  quantity={cart[i.id] || 0}
-                  locked={Boolean(pending)}
-                  change={(delta) => change(i.id, delta)}
-                />
-              ))}
-          </div>
-          <div className={styles.menuClosing}>
-            <span>A little help choosing?</span>
+            </a>
+            <nav aria-label="Restaurant navigation">
+              <a href="#marinara-menu">Our menu</a>
+            </nav>
             <button
-              onClick={() => ask("Help me choose pasta or pizza")}
-              className={styles.linkButton}
+              className={styles.basketButton}
+              onClick={() => setBasket(true)}
+              aria-label={`Your table, ${count} ${count === 1 ? "dish" : "dishes"}`}
             >
-              Ask Jourvis <ArrowUpRight size={15} />
+              <ShoppingBag size={16} />
+              <span>Your table</span>
+              <b>{count}</b>
             </button>
-          </div>
-        </section>
-        {!stationToken && (
-          <>
-            <section className={styles.room} id="the-room">
-              <div className={styles.roomPhoto}>
-                <Image
-                  src="/marinara/atmosphere/marinara-interior.jpg"
-                  alt="The warm, welcoming dining room at Marinara"
-                  fill
-                  sizes="(max-width: 700px) 100vw, 55vw"
-                />
-              </div>
-              <div className={styles.roomCopy}>
-                <p className={styles.eyebrow}>MORE THAN WHAT’S ON THE PLATE</p>
-                <h2>
-                  A little theatre.
-                  <br />
-                  <em>A lot of comfort.</em>
-                </h2>
-                <p>
-                  The best evenings don’t need a grand plan. Just a shared pizza, another forkful of
-                  pasta, and company that makes you forget to check the time.
-                </p>
-                <p>Pull up a chair. Let the table do the talking.</p>
-                <span className={styles.handwritten}>Ci vediamo a tavola.</span>
-              </div>
-            </section>
-            <section className={styles.visit} id="visit">
-              <p className={styles.eyebrow}>MAKE A LITTLE ROOM FOR MARINARA</p>
-              <h2>
-                Bring your people.
-                <br />
-                We’ll bring the feeling.
-              </h2>
-              <p>
-                Explore a plate, plan a table, or ask Jourvis for a little guidance.
-                <br />
-                For a visit, confirm current hours and arrangements with the restaurant.
-              </p>
-              <button className={styles.primary} onClick={() => ask("How do we order?")}>
-                Let Jourvis help <ArrowUpRight size={16} />
-              </button>
-            </section>
-          </>
-        )}
-      </main>
-      <footer className={styles.footer}>
-        <Image
-          src="/marinara/branding/marinara-buon-cibo-logo-full.png"
-          alt="Marinara"
-          width={140}
-          height={74}
-        />
-        <p>
-          Good food. Good company.
-          <br />A little more to remember.
-        </p>
-        <div>
-          <a href="/">Made easier with Jourvis ↗</a>
-          <small>Marinara demonstration experience</small>
-        </div>
-      </footer>
+          </header>
+          <main id="main">{menuContent}</main>
+        </>
+      )}
       {receipt && (
         <button className={styles.receiptBanner} onClick={() => setBasket(true)}>
           Order #{receipt.id.slice(0, 6)}{" "}

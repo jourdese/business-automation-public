@@ -151,3 +151,14 @@ Run `npm run typecheck`, `npm run lint`, `npm test`, `npm --prefix frontend run 
 Database tests execute the actual migration and deterministic seed in isolated PGlite, including role grants, membership isolation, public order validation, stock transitions, quote permissions, authority ceilings, receiving and external-action recovery. They do not establish multi-connection PostgreSQL concurrency or production Realtime delivery. Browser checks use the isolated fixture and must be described as local checks. Live email verification, production Realtime and provider delivery require separate verification after configuration; do not infer them from a passing local build.
 
 Reference behavior: [n8n Webhook authentication](https://docs.n8n.io/integrations/builtin/core-nodes/n8n-nodes-base.webhook/) and [Execute Sub-workflow completion](https://docs.n8n.io/integrations/builtin/core-nodes/n8n-nodes-base.executeworkflow/).
+
+## Original restaurant design with QR ordering
+
+The customer-facing Marinara page retains the original hero, photo collage, ritual, branding, gallery and visit sections from the preserved website. `components/marinara/` adapts those original editorial components and assets to the root Next.js app; the preserved V1 source is unchanged. The menu slot in `components/Restaurant.tsx` supplies the 12 photographed, database-backed dishes and shared basket/receipt behavior. The owner Command Center is unaffected.
+
+- `/restaurant/marinara-ristorante` is the public browsing experience. Guests can collect choices, but cannot submit a kitchen order without a table link.
+- `/order/marinara-ristorante/<stationToken>` is the menu opened by the table QR generated in the owner's Menu area. The database validates its station, ordering state, availability, quantities and submitted prices. A saved order is **new**, awaiting kitchen acceptance; it is not a reservation or payment.
+- The separate private demo uses its own authenticated table link and stays isolated. Local browser verification submitted one Burrata Pizza demo order and verified the matching new receipt and owner queue entry. No provider or production writes were made.
+- Reservation enquiries in the preserved editorial section remain drafts. They do not check or reserve a table.
+
+This revision restores the original public design; the new editorial redesign previously shown in the V2 preview is superseded. QR/menu controls keep the readability improvements and the existing lower-right Jourvis launcher.

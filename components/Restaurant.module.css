@@ -1210,3 +1210,48 @@
     width: auto;
   }
 }
+
+.qrWelcome {
+  padding: 1.5rem;
+  margin: 1.5rem 0;
+  border: 1px solid #baa995;
+  border-radius: 14px;
+  background: #efe3d5;
+  color: #49352d;
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+  gap: 1.5rem;
+  align-items: center;
+}
+.qrWelcome h3 {
+  font:
+    1.6rem/1.2 Georgia,
+    serif;
+  margin: 0.5rem 0;
+}
+.qrWelcome p,
+.qrWelcome li {
+  font-size: 1rem;
+  line-height: 1.65;
+}
+.qrWelcome ol {
+  margin: 0;
+  padding-left: 1.5rem;
+}
+.qrWelcome .primary {
+  justify-self: start;
+}
+@media (max-width: 700px) {
+  .qrWelcome {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 1.25rem;
+  }
+}
+
+.sectionTitle h1 {
+  font:
+    2.6875rem/1.12 Georgia,
+    serif;
+  letter-spacing: -0.04em;
+  margin: 0.5rem 0;
+}
