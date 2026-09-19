@@ -17,6 +17,10 @@ import { deriveJourvisTasks } from '../command-center/core/task-engine.ts';
 import { buildCommandCenterForecast } from '../command-center/core/forecast-engine.ts';
 import { buildCommandCenterPerformance } from '../command-center/core/performance-engine.ts';
 import { buildCommandCenterFinance } from '../command-center/core/finance-engine.ts';
+import {
+  appendCommandCenterHistorySnapshot,
+  buildCommandCenterHistoryTrend,
+} from '../command-center/core/history-engine.ts';
 
 function item(
   patch: Partial<CommandCenterInventoryItem> = {},
@@ -688,4 +692,89 @@ await test('Finance computes menu gross profit and margin only for priced mapped
   assert.equal(finance.pricedMappedMenuCount, 1);
   assert.equal(finance.averageMenuGrossProfit, 144);
   assert.equal(finance.averageMenuGrossMarginPercent, 72);
+});
+
+
+await test('History snapshots dedupe identical business states', () => {
+  const runtime = state(item());
+  const once = appendCommandCenterHistorySnapshot(
+    runtime,
+    0,
+    '2026-09-19T00:00:00.000Z',
+  );
+  const twice = appendCommandCenterHistorySnapshot(
+    once,
+    0,
+    '2026-09-19T00:01:00.000Z',
+  );
+
+  assert.equal(once.history.length, 1);
+  assert.equal(twice.history.length, 1);
+});
+
+await test('History records KPI changes and calculates trend deltas', () => {
+  const initial = appendCommandCenterHistorySnapshot(
+    state(item({ current: 10, dailyUse: 1 })),
+    0,
+    '2026-09-19T00:00:00.000Z',
+  );
+  const changedState: CommandCenterRuntimeState = {
+    ...initial,
+    inventory: initial.inventory.map((entry) => ({
+      ...entry,
+      current: 2,
+    })),
+    activity: [
+      {
+        id: 'history-action',
+        at: '2026-09-19T01:00:00.000Z',
+        module: 'inventory',
+        action: 'stock_adjusted',
+        message: 'Stock changed',
+        actor: 'owner',
+        executionMode: 'manual',
+        reason: 'test',
+      },
+      ...initial.activity,
+    ],
+  };
+  const changed = appendCommandCenterHistorySnapshot(
+    changedState,
+    1,
+    '2026-09-19T01:00:00.000Z',
+  );
+  const trend = buildCommandCenterHistoryTrend(changed);
+
+  assert.equal(changed.history.length, 2);
+  assert.equal(trend.snapshotCount, 2);
+  assert.equal(trend.inventoryReadinessDelta, -80);
+  assert.equal(trend.ownerExceptionDelta, 1);
+  assert.equal(trend.manualActionDelta, 1);
+});
+
+await test('History preserves finance movement across snapshots', () => {
+  const shrimp = item();
+  const initial = appendCommandCenterHistorySnapshot(
+    state(shrimp),
+    0,
+    '2026-09-19T00:00:00.000Z',
+  );
+  const withPurchase: CommandCenterRuntimeState = {
+    ...initial,
+    purchases: [
+      purchase({
+        status: 'in_transit',
+        quotedTotal: 6000,
+      }),
+    ],
+  };
+  const changed = appendCommandCenterHistorySnapshot(
+    withPurchase,
+    0,
+    '2026-09-19T00:10:00.000Z',
+  );
+  const trend = buildCommandCenterHistoryTrend(changed);
+
+  assert.equal(trend.openCommitmentDelta, 6000);
+  assert.equal(trend.activeWorkflowDelta, 1);
 });
