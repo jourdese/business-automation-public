@@ -107,6 +107,17 @@ type InventoryEditorDraft = {
   maxAutoOrderSpend: string;
 };
 
+type SupplierEditorDraft = {
+  id?: string;
+  name: string;
+  contactId?: string;
+  contactName: string;
+  role: string;
+  channel: string;
+  email: string;
+  phone: string;
+};
+
 export default function OperationModuleView({
   businessId,
   moduleId,
@@ -135,6 +146,8 @@ export default function OperationModuleView({
   const [recipeStatus, setRecipeStatus] = useState<
     "active" | "archived" | "all"
   >("active");
+  const [supplierEditor, setSupplierEditor] =
+    useState<SupplierEditorDraft | null>(null);
   const [purchaseFilter, setPurchaseFilter] = useState<"active" | "history" | "all">("active");
 
   const {
@@ -154,6 +167,7 @@ export default function OperationModuleView({
     archiveRecipe,
     duplicateRecipe,
     createInventoryItem,
+    saveSupplier,
     recordRecipeSale,
   } = useCommandCenterRuntime();
 
@@ -171,6 +185,43 @@ export default function OperationModuleView({
     () => new Map(state.suppliers.map((supplier) => [supplier.id, supplier])),
     [state.suppliers],
   );
+
+  function supplierDraftFrom(
+    supplier?: CommandCenterSupplier,
+  ): SupplierEditorDraft {
+    const contact = supplier?.contacts[0];
+    return {
+      id: supplier?.id,
+      name: supplier?.name ?? "",
+      contactId: contact?.id,
+      contactName: contact?.name ?? "",
+      role: contact?.role ?? "Sales",
+      channel: contact?.channel ?? "Email",
+      email: contact?.email ?? "",
+      phone: contact?.phone ?? "",
+    };
+  }
+
+  function submitSupplierEditor(
+    draft: SupplierEditorDraft,
+  ) {
+    const id = saveSupplier({
+      id: draft.id,
+      name: draft.name,
+      contacts: [
+        {
+          id: draft.contactId,
+          name: draft.contactName,
+          role: draft.role,
+          channel: draft.channel,
+          email: draft.email,
+          phone: draft.phone,
+        },
+      ],
+    });
+    if (id) setSupplierEditor(null);
+    return id;
+  }
 
   function openNewMenuItem() {
     setMenuEditor({
@@ -1788,6 +1839,7 @@ export default function OperationModuleView({
                 suppliers={state.suppliers}
                 menuItems={state.menuItems}
                 onCreateInventoryItem={createInventoryItem}
+                onSaveSupplier={saveSupplier}
                 onSave={submitRecipeEditor}
                 onCancel={() => setRecipeEditor(null)}
               />
