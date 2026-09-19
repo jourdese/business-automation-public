@@ -6,7 +6,6 @@ import {
   Bot,
   CheckCircle2,
   CircleAlert,
-  CirclePause,
   LineChart,
   ShieldCheck,
   Sparkles,
@@ -16,7 +15,6 @@ import {
 import CompanionMark from "@/components/jourvis/CompanionMark";
 import SupplyPhoto from "./SupplyPhoto";
 import { operationCatalog } from "@/command-center/core/business-registry";
-import { jourvisAutonomyLoop } from "@/command-center/core/autonomy";
 import { buildCommandCenterFinance } from "@/command-center/core/finance-engine";
 import { buildCommandCenterForecast } from "@/command-center/core/forecast-engine";
 import {
@@ -25,12 +23,7 @@ import {
 } from "@/command-center/core/history-engine";
 import { buildCommandCenterPerformance } from "@/command-center/core/performance-engine";
 import { buildCommandCenterSupplierPerformance } from "@/command-center/core/supplier-performance-engine";
-import {
-  estimatedPurchaseTotal,
-  inventoryPercent,
-  isPurchaseActive,
-  suggestedPurchaseQuantity,
-} from "@/command-center/core/runtime";
+import { isPurchaseActive } from "@/command-center/core/runtime";
 import { useCommandCenterRuntime } from "@/command-center/core/runtime-provider";
 import type { CommandCenterSectionId } from "@/command-center/core/types";
 import styles from "./CommandCenter.module.css";
@@ -76,17 +69,12 @@ export default function CommandCenterSectionView({
     tasks,
     actOnTask,
     setAutomationMasterOn,
-    setItemAutomationEnabled,
-    resumeItem,
   } = useCommandCenterRuntime();
   const [activityFilter, setActivityFilter] = useState<ActivityFilter>("all");
   const business = state.business;
   const activePurchases = state.purchases.filter((purchase) =>
     isPurchaseActive(purchase.status),
   );
-  const lowStockCount = state.inventory.filter(
-    (item) => item.current <= item.reorderAt,
-  ).length;
   const historyTrend = buildCommandCenterHistoryTrend(state);
   const hasHistoricalComparison = historyTrend.snapshotCount >= 2;
 
@@ -95,25 +83,69 @@ export default function CommandCenterSectionView({
       state,
       tasks.length,
     );
-    const overviewFinance = buildCommandCenterFinance(state);
-    const activePurchaseByItem = new Map(
-      activePurchases.map((purchase) => [purchase.itemId, purchase]),
-    );
-    const workItems = state.inventory
-      .filter(
-        (item) =>
-          item.current <= item.reorderAt ||
-          inventoryPercent(item) <= item.automationTriggerPercent ||
-          activePurchaseByItem.has(item.id),
-      )
-      .sort((a, b) => inventoryPercent(a) - inventoryPercent(b));
-    const queuedWork = workItems.filter(
-      (item) => !activePurchaseByItem.has(item.id),
-    );
-    const managedWork = workItems.filter(
-      (item) => activePurchaseByItem.has(item.id),
-    );
+    const highPriorityTaskCount = tasks.filter(
+      (task) => task.priority === "high",
+    ).length;
+
+    const operatingCondition = highPriorityTaskCount
+      ? {
+          title: "Owner attention is required.",
+          detail:
+            highPriorityTaskCount +
+            " high-priority exception" +
+            (highPriorityTaskCount === 1 ? " is" : "s are") +
+            " waiting. Jourvis has stopped only where owner authority is required.",
+        }
+      : !state.automationMasterOn
+        ? {
+            title: "Jourvis is paused.",
+            detail:
+              "Automatic work is off. Jourvis still reflects the current business state, but it will not start new automatic work.",
+          }
+        : overviewPerformance.inventoryRiskCount
+          ? {
+              title: "Inventory needs watching.",
+              detail:
+                overviewPerformance.inventoryRiskCount +
+                " ingredient" +
+                (overviewPerformance.inventoryRiskCount === 1 ? " has" : "s have") +
+                " risk in the configured 7-day stock projection. Jourvis will act within the rules you set.",
+            }
+          : activePurchases.length
+            ? {
+                title: "Jourvis is managing replenishment.",
+                detail:
+                  activePurchases.length +
+                  " purchasing workflow" +
+                  (activePurchases.length === 1 ? " is" : "s are") +
+                  " active, with no owner exception currently blocking normal work.",
+              }
+            : {
+                title: "Operations are stable.",
+                detail:
+                  "No owner exceptions or projected 7-day inventory risks are currently active.",
+              };
+
     const overviewMetrics = [
+      {
+        label: "Needs owner",
+        value: String(tasks.length),
+        note: highPriorityTaskCount
+          ? highPriorityTaskCount +
+            " high-priority exception" +
+            (highPriorityTaskCount === 1 ? "" : "s")
+          : "no high-priority exceptions",
+      },
+      {
+        label: "Jourvis working",
+        value: String(activePurchases.length),
+        note: "active purchasing workflows",
+      },
+      {
+        label: "7-day inventory risk",
+        value: String(overviewPerformance.inventoryRiskCount),
+        note: "configured usage plus incoming stock",
+      },
       {
         label: "Inventory readiness",
         value:
@@ -122,230 +154,66 @@ export default function CommandCenterSectionView({
             : overviewPerformance.inventoryReadinessPercent + "%",
         note: "average stock vs configured full level",
       },
-      {
-        label: "Open commitments",
-        value:
-          "₱" +
-          Math.round(
-            overviewFinance.openPurchaseCommitments,
-          ).toLocaleString("en-PH"),
-        note: "active purchasing workflows",
-      },
-      {
-        label: "Jourvis working",
-        value: String(activePurchases.length),
-        note: "active operating workflows",
-      },
-      {
-        label: "Needs owner",
-        value: String(tasks.length),
-        note: "exceptions only",
-      },
-      ...(state.inventory.length
-        ? [
-            {
-              label: "Low stock",
-              value: String(lowStockCount),
-              note: "live Command Center demo state",
-            },
-          ]
-        : []),
     ];
 
     return (
       <SectionFrame
         eyebrow="OWNER OVERVIEW"
-        title={state.automationMasterOn ? "Jourvis is operating the business." : "Review the work before Jourvis starts."}
-        description={
-          state.automationMasterOn
-            ? "You supervise the business while Jourvis works through approved automatic tasks and escalates only genuine exceptions."
-            : "After a reset, Jourvis stays asleep. Review the queue, choose Manual or Jourvis per task, then switch automation on when you are ready."
-        }
+        title={operatingCondition.title}
+        description={operatingCondition.detail}
       >
-        <section className={styles.jourvisAutomationBoard} data-running={state.automationMasterOn}>
-          <div className={styles.jourvisAutomationCharacter} data-state={state.automationMasterOn ? "active" : "sleeping"}>
+        <section
+          className={styles.jourvisAutomationBoard}
+          data-running={state.automationMasterOn}
+        >
+          <div
+            className={styles.jourvisAutomationCharacter}
+            data-state={state.automationMasterOn ? "active" : "sleeping"}
+          >
             <div className={styles.jourvisCharacterHalo} />
             <CompanionMark className={styles.jourvisAutomationMark} />
             {state.automationMasterOn ? (
-              <span className={styles.jourvisActiveSpark}><Zap size={14} aria-hidden /></span>
+              <span className={styles.jourvisActiveSpark}>
+                <Zap size={14} aria-hidden />
+              </span>
             ) : (
               <span className={styles.jourvisSleepMarks} aria-hidden>
-                <i>Z</i><i>Z</i><i>Z</i>
+                <i>Z</i>
+                <i>Z</i>
+                <i>Z</i>
               </span>
             )}
           </div>
 
           <div className={styles.jourvisAutomationCopy}>
-            <span>{state.automationMasterOn ? "JOURVIS IS AWAKE" : "JOURVIS IS SLEEPING"}</span>
-            <h2>
-              {state.automationMasterOn
-                ? "Jourvis is working through the automatic queue."
-                : "Review the work first. Start Jourvis when you are ready."}
-            </h2>
-            <p>
-              {state.automationMasterOn
-                ? "Automatic tasks are picked up one at a time. Manual tasks stay with the owner, and anything outside Jourvis' authority moves to Decisions."
-                : "Nothing starts automatically after a demo reset. Choose which tasks Jourvis may handle, leave the rest Manual, then wake Jourvis with the main switch."}
-            </p>
+            <span>CURRENT OPERATING CONDITION</span>
+            <h2>{operatingCondition.title}</h2>
+            <p>{operatingCondition.detail}</p>
           </div>
 
           <label className={styles.masterAutomationSwitch}>
             <span>
-              <strong>{state.automationMasterOn ? "Automation ON" : "Automation OFF"}</strong>
-              <small>{state.automationMasterOn ? `${queuedWork.filter((item) => item.automationEnabled).length} automatic task${queuedWork.filter((item) => item.automationEnabled).length === 1 ? "" : "s"} waiting` : "Jourvis will not start new work"}</small>
+              <strong>
+                {state.automationMasterOn ? "Automation ON" : "Automation OFF"}
+              </strong>
+              <small>
+                {state.automationMasterOn
+                  ? activePurchases.length +
+                    " active workflow" +
+                    (activePurchases.length === 1 ? "" : "s")
+                  : "Jourvis will not start new automatic work"}
+              </small>
             </span>
             <input
               type="checkbox"
               checked={state.automationMasterOn}
-              onChange={(event) => setAutomationMasterOn(event.target.checked)}
+              onChange={(event) =>
+                setAutomationMasterOn(event.target.checked)
+              }
               aria-label="Toggle Jourvis automation"
             />
             <i aria-hidden />
           </label>
-        </section>
-
-        <section className={styles.taskQueuePanel}>
-          <header className={styles.taskQueueHeader}>
-            <div>
-              <span>WORK QUEUE</span>
-              <h2>Choose what Jourvis should handle.</h2>
-              <p>
-                Each task can stay Manual or be assigned to Jourvis. When automation is on,
-                Jourvis takes eligible tasks from this queue one by one.
-              </p>
-            </div>
-            <div className={styles.taskQueueCounts}>
-              <span><b>{queuedWork.length}</b> waiting</span>
-              <span><b>{managedWork.length}</b> managed</span>
-            </div>
-          </header>
-
-          <div className={styles.taskQueueList}>
-            {queuedWork.map((item) => {
-              const percent = inventoryPercent(item);
-              const suggestedQty = suggestedPurchaseQuantity(item);
-              const estimate = estimatedPurchaseTotal(item, suggestedQty);
-              const automatic = item.automationEnabled;
-              const paused = state.pausedItemIds.includes(item.id);
-              const readyForJourvis =
-                automatic && !paused && !state.automationMasterOn;
-
-              return (
-                <article
-                  className={styles.taskQueueRow}
-                  data-mode={automatic ? "automatic" : "manual"}
-                  key={item.id}
-                >
-                  <div className={styles.taskQueueIdentity}>
-                    <SupplyPhoto
-                      supplyId={item.id}
-                      className={styles.taskQueuePhoto}
-                      size={48}
-                    />
-                    <span className={styles.taskQueueIcon} data-mode={automatic ? "automatic" : "manual"}>
-                      {automatic ? <Sparkles size={15} aria-hidden /> : <CirclePause size={15} aria-hidden />}
-                    </span>
-                    <div>
-                      <strong>Restock {item.name}</strong>
-                      <small>
-                        {percent}% stock · suggested {suggestedQty} {item.unit} · est. ₱{Math.round(estimate).toLocaleString("en-PH")}
-                      </small>
-                    </div>
-                  </div>
-
-                  <div className={styles.taskQueueStatus}>
-                    <span
-                      data-state={
-                        paused
-                          ? "paused"
-                          : automatic
-                            ? readyForJourvis
-                              ? "ready"
-                              : "queued"
-                            : "manual"
-                      }
-                    >
-                      {paused
-                        ? "Paused by you"
-                        : automatic
-                          ? readyForJourvis
-                            ? "Ready for Jourvis"
-                            : "Queued"
-                          : "Manual"}
-                    </span>
-                    <small>
-                      {paused
-                        ? "Jourvis will not retry until you resume this item."
-                        : `Trigger ${item.automationTriggerPercent}% · current ${percent}%`}
-                    </small>
-                  </div>
-
-                  {paused ? (
-                    <button
-                      type="button"
-                      className={styles.taskResumeButton}
-                      onClick={() => resumeItem(item.id)}
-                    >
-                      Resume Jourvis
-                    </button>
-                  ) : null}
-
-                  <label className={styles.taskModeSwitch}>
-                    <span>Manual</span>
-                    <input
-                      type="checkbox"
-                      checked={automatic}
-                      onChange={(event) =>
-                        setItemAutomationEnabled(item.id, event.target.checked)
-                      }
-                      aria-label={`Set Restock ${item.name} to ${automatic ? "manual" : "automatic"}`}
-                    />
-                    <i aria-hidden />
-                    <span>Jourvis</span>
-                  </label>
-                </article>
-              );
-            })}
-
-            {!queuedWork.length ? (
-              <div className={styles.taskQueueEmpty}>
-                <CheckCircle2 size={18} aria-hidden />
-                <div>
-                  <strong>No waiting tasks.</strong>
-                  <small>Everything in this queue has either been handled or moved into active work.</small>
-                </div>
-              </div>
-            ) : null}
-          </div>
-
-          {managedWork.length ? (
-            <div className={styles.jourvisManagingList}>
-              <span className={styles.managingEyebrow}>JOURVIS MANAGING NOW</span>
-              {managedWork.map((item) => {
-                const purchase = activePurchaseByItem.get(item.id);
-                return (
-                  <article key={item.id}>
-                    <div className={styles.managingCharacter}>
-                      <CompanionMark className={styles.managingMark} />
-                      <span />
-                    </div>
-                    <SupplyPhoto
-                      supplyId={item.id}
-                      className={styles.managingSupplyPhoto}
-                      size={38}
-                    />
-                    <div>
-                      <strong>{item.name}</strong>
-                      <small>
-                        {purchase?.id} · {(purchase?.status ?? "working").replaceAll("_", " ")}
-                      </small>
-                    </div>
-                    <b>Managed by Jourvis</b>
-                  </article>
-                );
-              })}
-            </div>
-          ) : null}
         </section>
 
         <div className={styles.metricGrid}>
@@ -364,29 +232,25 @@ export default function CommandCenterSectionView({
         <div className={styles.overviewColumns}>
           <article className={styles.panelCard}>
             <PanelHeading
-              icon={<Bot size={17} />}
-              eyebrow="AUTONOMOUS OPERATING LOOP"
-              title="What Jourvis is doing continuously"
-            />
-            <div className={styles.autonomyLoop}>
-              {jourvisAutonomyLoop.map((step, index) => (
-                <div key={step.id}>
-                  <span>{String(index + 1).padStart(2, "0")}</span>
-                  <div><strong>{step.label}</strong><small>{step.description}</small></div>
-                </div>
-              ))}
-            </div>
-          </article>
-
-          <article className={styles.panelCard}>
-            <PanelHeading
               icon={<ShieldCheck size={17} />}
               eyebrow="NEEDS YOU"
-              title={tasks.length ? `${tasks.length} exception${tasks.length === 1 ? "" : "s"} need the owner` : "No owner decisions waiting"}
+              title={
+                tasks.length
+                  ? tasks.length +
+                    " exception" +
+                    (tasks.length === 1 ? "" : "s") +
+                    " need the owner"
+                  : "No owner decisions waiting"
+              }
             />
             <div className={styles.decisionPreview}>
-              {tasks.slice(0, 2).map((task) => (
-                <div key={task.id} data-priority={task.priority === "high" ? "high" : undefined}>
+              {tasks.slice(0, 3).map((task) => (
+                <div
+                  key={task.id}
+                  data-priority={
+                    task.priority === "high" ? "high" : undefined
+                  }
+                >
                   <CircleAlert size={16} />
                   <span>
                     <strong>{task.title}</strong>
@@ -399,13 +263,72 @@ export default function CommandCenterSectionView({
                   <CheckCircle2 size={16} />
                   <span>
                     <strong>Jourvis is inside its authority.</strong>
-                    <small>Normal work can continue automatically without owner intervention.</small>
+                    <small>
+                      Normal work can continue without an owner decision.
+                    </small>
                   </span>
                 </div>
               ) : null}
             </div>
-            <a className={styles.cardLink} href={`/command-center/${business.id}/decisions`}>
+            <a
+              className={styles.cardLink}
+              href={"/command-center/" + business.id + "/decisions"}
+            >
               Open decisions <ArrowRight size={14} />
+            </a>
+          </article>
+
+          <article className={styles.panelCard}>
+            <PanelHeading
+              icon={<Bot size={17} />}
+              eyebrow="JOURVIS NOW"
+              title={
+                activePurchases.length
+                  ? activePurchases.length +
+                    " active purchasing workflow" +
+                    (activePurchases.length === 1 ? "" : "s")
+                  : "No active purchasing workflow"
+              }
+            />
+            <div className={styles.decisionPreview}>
+              {activePurchases.slice(0, 3).map((purchase) => {
+                const item = state.inventory.find(
+                  (candidate) => candidate.id === purchase.itemId,
+                );
+                return (
+                  <div key={purchase.id}>
+                    <Sparkles size={16} />
+                    <span>
+                      <strong>{item?.name ?? purchase.itemId}</strong>
+                      <small>
+                        {humanizeAction(purchase.status)} · {purchase.id}
+                      </small>
+                    </span>
+                  </div>
+                );
+              })}
+              {!activePurchases.length ? (
+                <div>
+                  <CheckCircle2 size={16} />
+                  <span>
+                    <strong>No replenishment work is active.</strong>
+                    <small>
+                      Jourvis will start new work only when a configured trigger
+                      is reached and its authority allows it.
+                    </small>
+                  </span>
+                </div>
+              ) : null}
+            </div>
+            <a
+              className={styles.cardLink}
+              href={
+                "/command-center/" +
+                business.id +
+                "/operations/purchasing"
+              }
+            >
+              Open purchasing <ArrowRight size={14} />
             </a>
           </article>
         </div>
