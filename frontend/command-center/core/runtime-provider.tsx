@@ -11,6 +11,7 @@ import {
   useState,
 } from "react";
 import { resolveCommandCenterBusiness } from "./business-registry";
+import { recipeIngredientCost } from "./menu-economics";
 import {
   canAdvancePurchase,
   estimatedPurchaseTotal,
@@ -75,10 +76,15 @@ type CommandCenterRuntimeContextValue = {
     > & { id?: string },
   ) => void;
   archiveMenuItem: (itemId: string) => void;
+  duplicateMenuItem: (itemId: string) => string | null;
+  setMenuAvailability: (itemIds: string[], available: boolean) => void;
+  renameMenuCategory: (from: string, to: string) => void;
+  moveMenuItem: (itemId: string, direction: "up" | "down") => void;
   saveRecipe: (
     recipe: Omit<CommandCenterRecipe, "id"> & { id?: string },
   ) => void;
   archiveRecipe: (recipeId: string) => void;
+  duplicateRecipe: (recipeId: string) => string | null;
   createInventoryItem: (
     item: Omit<CommandCenterInventoryItem, "id">,
   ) => string;
@@ -199,10 +205,17 @@ function normalizeStoredState(
     suppliers: stored.suppliers ?? seed.suppliers,
     recipes: (stored.recipes ?? seed.recipes).map((recipe) => {
       const seeded = seed.recipes.find((entry) => entry.id === recipe.id);
-      return {
+      const normalized = {
         ...seeded,
         ...recipe,
         active: recipe.active ?? seeded?.active ?? true,
+      };
+      return {
+        ...normalized,
+        savedIngredientCost:
+          recipe.savedIngredientCost ??
+          seeded?.savedIngredientCost ??
+          recipeIngredientCost(normalized, stored.inventory ?? seed.inventory),
       };
     }),
     menuItems: (stored.menuItems ?? seed.menuItems).map((item) => {
@@ -214,6 +227,12 @@ function normalizeStoredState(
         currentPrice: item.currentPrice ?? seeded?.currentPrice,
         active: item.active ?? seeded?.active ?? true,
         available: item.available ?? seeded?.available ?? true,
+        displayOrder:
+          item.displayOrder ??
+          seeded?.displayOrder ??
+          (stored.menuItems ?? seed.menuItems).findIndex(
+            (entry) => entry.id === item.id,
+          ),
       };
     }),
     pausedItemIds: stored.pausedItemIds ?? [],
@@ -1194,6 +1213,11 @@ export function CommandCenterRuntimeProvider({
         const existing = draft.id
           ? current.menuItems.find((item) => item.id === draft.id)
           : undefined;
+        const linkedRecipe = draft.recipeId
+          ? current.recipes.find((recipe) => recipe.id === draft.recipeId)
+          : undefined;
+        if (draft.recipeId && !linkedRecipe) return current;
+
         const currentPrice =
           draft.currentPrice !== undefined &&
           Number.isFinite(draft.currentPrice) &&
@@ -1219,6 +1243,10 @@ export function CommandCenterRuntimeProvider({
               active: draft.active,
               available: draft.available,
               recipeId: draft.recipeId || undefined,
+              displayOrder:
+                draft.displayOrder ??
+                existing.displayOrder ??
+                current.menuItems.findIndex((item) => item.id === existing.id),
             }
           : {
               id,
@@ -1234,6 +1262,15 @@ export function CommandCenterRuntimeProvider({
               active: draft.active,
               available: draft.available,
               recipeId: draft.recipeId || undefined,
+              displayOrder:
+                draft.displayOrder ??
+                (current.menuItems.length
+                  ? Math.max(
+                      ...current.menuItems.map(
+                        (item, index) => item.displayOrder ?? index,
+                      ),
+                    ) + 1
+                  : 0),
             };
 
         return {
@@ -1287,6 +1324,171 @@ export function CommandCenterRuntimeProvider({
     });
   }, []);
 
+  const duplicateMenuItem = useCallback((itemId: string) => {
+    let createdId: string | null = null;
+    setState((current) => {
+      const source = current.menuItems.find((item) => item.id === itemId);
+      if (!source) return current;
+      const name = `${source.name} Copy`;
+      const id = nextEntityId(
+        "menu",
+        name,
+        current.menuItems.map((item) => item.id),
+      );
+      const displayOrder = current.menuItems.length
+        ? Math.max(
+            ...current.menuItems.map(
+              (item, index) => item.displayOrder ?? index,
+            ),
+          ) + 1
+        : 0;
+      const copy: CommandCenterMenuItem = {
+        ...source,
+        id,
+        name,
+        printedName: name,
+        dishKey: entitySlug(name),
+        referencePrice: undefined,
+        referencePublicationDate: undefined,
+        referenceSource: "demo",
+        currentPriceVerified: source.currentPrice !== undefined,
+        active: true,
+        available: source.available,
+        displayOrder,
+      };
+      createdId = id;
+      return {
+        ...current,
+        menuItems: [...current.menuItems, copy],
+        activity: addActivity(current, {
+          module: "menu",
+          action: "menu_item_duplicated",
+          message: `Owner duplicated ${source.name} as ${name}.`,
+          actor: "owner",
+          executionMode: "manual",
+          reason:
+            "The owner created a new live menu item from an existing item. Archived historical reference fields were not copied as current truth.",
+          relatedEntityId: id,
+        }),
+      };
+    });
+    return createdId;
+  }, []);
+
+  const setMenuAvailability = useCallback(
+    (itemIds: string[], available: boolean) => {
+      const ids = new Set(itemIds);
+      if (!ids.size) return;
+      setState((current) => {
+        const affected = current.menuItems.filter(
+          (item) => ids.has(item.id) && item.active,
+        );
+        if (!affected.length) return current;
+        return {
+          ...current,
+          menuItems: current.menuItems.map((item) =>
+            ids.has(item.id) && item.active
+              ? { ...item, available }
+              : item,
+          ),
+          activity: addActivity(current, {
+            module: "menu",
+            action: available
+              ? "menu_items_available"
+              : "menu_items_unavailable",
+            message: `Owner marked ${affected.length} menu item${affected.length === 1 ? "" : "s"} ${available ? "available" : "unavailable"}.`,
+            actor: "owner",
+            executionMode: "manual",
+            reason:
+              "The owner applied a bulk availability change from Menu management.",
+          }),
+        };
+      });
+    },
+    [],
+  );
+
+  const renameMenuCategory = useCallback(
+    (from: string, to: string) => {
+      const nextName = to.trim();
+      if (!from.trim() || !nextName || from === nextName) return;
+      setState((current) => {
+        const affected = current.menuItems.filter(
+          (item) => item.category === from,
+        );
+        if (!affected.length) return current;
+        return {
+          ...current,
+          menuItems: current.menuItems.map((item) =>
+            item.category === from
+              ? { ...item, category: nextName }
+              : item,
+          ),
+          activity: addActivity(current, {
+            module: "menu",
+            action: "menu_category_renamed",
+            message: `Owner renamed menu category ${from} to ${nextName}.`,
+            actor: "owner",
+            executionMode: "manual",
+            reason:
+              `The owner updated the category for ${affected.length} menu item${affected.length === 1 ? "" : "s"} in one operation.`,
+          }),
+        };
+      });
+    },
+    [],
+  );
+
+  const moveMenuItem = useCallback(
+    (itemId: string, direction: "up" | "down") => {
+      setState((current) => {
+        const ordered = current.menuItems
+          .slice()
+          .sort(
+            (a, b) =>
+              (a.displayOrder ?? current.menuItems.indexOf(a)) -
+              (b.displayOrder ?? current.menuItems.indexOf(b)),
+          );
+        const index = ordered.findIndex((item) => item.id === itemId);
+        const targetIndex = direction === "up" ? index - 1 : index + 1;
+        if (
+          index < 0 ||
+          targetIndex < 0 ||
+          targetIndex >= ordered.length
+        ) {
+          return current;
+        }
+        const currentItem = ordered[index];
+        const targetItem = ordered[targetIndex];
+        const currentOrder = currentItem.displayOrder ?? index;
+        const targetOrder = targetItem.displayOrder ?? targetIndex;
+        return {
+          ...current,
+          menuItems: current.menuItems.map((item) => {
+            if (item.id === currentItem.id) {
+              return { ...item, displayOrder: targetOrder };
+            }
+            if (item.id === targetItem.id) {
+              return { ...item, displayOrder: currentOrder };
+            }
+            return item;
+          }),
+          activity: addActivity(current, {
+            module: "menu",
+            action: "menu_item_reordered",
+            message: `Owner moved ${currentItem.name} ${direction} in menu order.`,
+            actor: "owner",
+            executionMode: "manual",
+            reason:
+              "The owner changed the presentation order of menu items.",
+            relatedEntityId: itemId,
+          }),
+        };
+      });
+    },
+    [],
+  );
+
   const saveRecipe = useCallback(
     (draft: Omit<CommandCenterRecipe, "id"> & { id?: string }) => {
       setState((current) => {
@@ -1317,13 +1519,21 @@ export function CommandCenterRuntimeProvider({
             name,
             current.recipes.map((recipe) => recipe.id),
           );
-        const nextRecipe: CommandCenterRecipe = {
+        const baseRecipe: CommandCenterRecipe = {
           id,
           name,
           description: draft.description.trim(),
           notes: draft.notes?.trim() || undefined,
           active: draft.active,
           ingredients,
+        };
+        const nextRecipe: CommandCenterRecipe = {
+          ...baseRecipe,
+          savedIngredientCost: recipeIngredientCost(
+            baseRecipe,
+            current.inventory,
+          ),
+          updatedAt: new Date().toISOString(),
         };
 
         return {
@@ -1350,6 +1560,50 @@ export function CommandCenterRuntimeProvider({
     },
     [],
   );
+
+  const duplicateRecipe = useCallback((recipeId: string) => {
+    let createdId: string | null = null;
+    setState((current) => {
+      const source = current.recipes.find((recipe) => recipe.id === recipeId);
+      if (!source) return current;
+      const name = `${source.name} Copy`;
+      const id = nextEntityId(
+        "recipe",
+        name,
+        current.recipes.map((recipe) => recipe.id),
+      );
+      const copyBase: CommandCenterRecipe = {
+        ...source,
+        id,
+        name,
+        active: true,
+        updatedAt: new Date().toISOString(),
+      };
+      const copy: CommandCenterRecipe = {
+        ...copyBase,
+        savedIngredientCost: recipeIngredientCost(
+          copyBase,
+          current.inventory,
+        ),
+      };
+      createdId = id;
+      return {
+        ...current,
+        recipes: [copy, ...current.recipes],
+        activity: addActivity(current, {
+          module: "recipes",
+          action: "recipe_duplicated",
+          message: `Owner duplicated ${source.name} as ${name}.`,
+          actor: "owner",
+          executionMode: "manual",
+          reason:
+            "The owner created a separate editable recipe from an existing recipe while keeping the original recipe unchanged.",
+          relatedEntityId: id,
+        }),
+      };
+    });
+    return createdId;
+  }, []);
 
   const archiveRecipe = useCallback((recipeId: string) => {
     setState((current) => {
@@ -1568,8 +1822,13 @@ export function CommandCenterRuntimeProvider({
       startOwnerPurchase,
       saveMenuItem,
       archiveMenuItem,
+      duplicateMenuItem,
+      setMenuAvailability,
+      renameMenuCategory,
+      moveMenuItem,
       saveRecipe,
       archiveRecipe,
+      duplicateRecipe,
       createInventoryItem,
       recordRecipeSale,
       resumeItem,
@@ -1590,8 +1849,13 @@ export function CommandCenterRuntimeProvider({
       startOwnerPurchase,
       saveMenuItem,
       archiveMenuItem,
+      duplicateMenuItem,
+      setMenuAvailability,
+      renameMenuCategory,
+      moveMenuItem,
       saveRecipe,
       archiveRecipe,
+      duplicateRecipe,
       createInventoryItem,
       recordRecipeSale,
       state,
