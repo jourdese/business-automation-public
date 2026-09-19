@@ -1506,7 +1506,7 @@ await test('Insight engine derives menu food cost and contribution math only fro
   );
   assert.equal(
     menu?.calculations.some(
-      (step) => step.label === 'Contribution margin',
+      (step) => step.label === 'Remaining after food cost',
     ),
     true,
   );
