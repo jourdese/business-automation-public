@@ -821,6 +821,11 @@ export default function CommandCenterSectionView({
         formatSupplierMinutes(supplierPerformance.averageViewMinutes),
         "average request creation → supplier viewed",
       ],
+      [
+        "Waste records",
+        String(performance.wasteEventCount),
+        "manual waste/spoilage events recorded in Activity",
+      ],
     ];
 
     return (
@@ -1348,7 +1353,7 @@ export default function CommandCenterSectionView({
             <span>OPERATING HEALTH</span>
             <h3>Performance briefing</h3>
             <p>
-              Inventory readiness is {briefingPerformance.inventoryReadinessPercent === null ? "not available" : briefingPerformance.inventoryReadinessPercent + "%"}, menu recipe coverage is {briefingPerformance.recipeCoveragePercent === null ? "not available" : briefingPerformance.recipeCoveragePercent + "%"}, and automation accounts for {briefingPerformance.automationSharePercent === null ? "no recorded action mix yet" : briefingPerformance.automationSharePercent + "% of recorded automatic/manual actions"}.
+              Inventory readiness is {briefingPerformance.inventoryReadinessPercent === null ? "not available" : briefingPerformance.inventoryReadinessPercent + "%"}, menu recipe coverage is {briefingPerformance.recipeCoveragePercent === null ? "not available" : briefingPerformance.recipeCoveragePercent + "%"}, automation accounts for {briefingPerformance.automationSharePercent === null ? "no recorded action mix yet" : briefingPerformance.automationSharePercent + "% of recorded automatic/manual actions"}, and {briefingPerformance.wasteEventCount} waste/spoilage event{briefingPerformance.wasteEventCount === 1 ? " has" : "s have"} been recorded in the current demo history.
             </p>
             <b><CheckCircle2 size={13} /> Performance engine</b>
           </article>
