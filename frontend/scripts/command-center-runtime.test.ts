@@ -11,6 +11,7 @@ import {
   purchaseProgressStage,
   projectedInventoryPercentAtDelivery,
   suggestedPurchaseQuantity,
+  validateCommandCenterRuntimeState,
   type CommandCenterInventoryItem,
   type CommandCenterPurchase,
   type CommandCenterRuntimeState,
@@ -1076,4 +1077,134 @@ await test('Recipe impact models quantity, food cost and stockout movement', () 
   assert.equal(impact.ingredientChanges[0]?.stockoutDaysBefore, 3);
   assert.equal(impact.ingredientChanges[0]?.stockoutDaysAfter, 2.3);
   assert.equal(impact.ingredientChanges[0]?.stockoutDaysDelta, -0.7);
+});
+
+
+await test('Runtime integrity validator accepts a coherent business graph', () => {
+  const shrimp = item();
+  const runtime = state(shrimp);
+  runtime.suppliers = [
+    {
+      id: 'supplier',
+      name: 'Supplier',
+      contacts: [
+        {
+          id: 'contact',
+          name: 'Contact',
+          role: 'Sales',
+          channel: 'Email',
+          email: 'contact@example.com',
+          phone: '',
+        },
+      ],
+      itemIds: ['shrimp'],
+    },
+  ];
+  runtime.recipes = [
+    {
+      id: 'recipe-shrimp',
+      name: 'Shrimp Pasta',
+      description: 'Test',
+      active: true,
+      ingredients: { shrimp: 0.1 },
+    },
+  ];
+  runtime.menuItems = [
+    {
+      id: 'menu-shrimp',
+      name: 'Shrimp Pasta',
+      printedName: 'Shrimp Pasta',
+      dishKey: 'shrimp-pasta',
+      category: 'Pasta',
+      currentPrice: 200,
+      referenceSource: 'demo',
+      currentPriceVerified: true,
+      active: true,
+      available: true,
+      recipeId: 'recipe-shrimp',
+    },
+  ];
+
+  assert.deepEqual(validateCommandCenterRuntimeState(runtime), []);
+});
+
+await test('Runtime integrity validator catches broken Menu Recipe Inventory Supplier relationships', () => {
+  const shrimp = item();
+  const runtime = state(shrimp);
+  runtime.suppliers = [
+    {
+      id: 'supplier',
+      name: 'Supplier',
+      contacts: [],
+      itemIds: [],
+    },
+  ];
+  runtime.recipes = [
+    {
+      id: 'recipe-archived',
+      name: 'Archived',
+      description: 'Test',
+      active: false,
+      ingredients: { missing: 0.1 },
+    },
+  ];
+  runtime.menuItems = [
+    {
+      id: 'menu-broken',
+      name: 'Broken',
+      printedName: 'Broken',
+      dishKey: 'broken',
+      category: 'Pasta',
+      referenceSource: 'demo',
+      currentPriceVerified: false,
+      active: true,
+      available: true,
+      recipeId: 'recipe-archived',
+    },
+  ];
+
+  const issues = validateCommandCenterRuntimeState(runtime);
+  const codes = new Set(issues.map((issue) => issue.code));
+
+  assert.equal(codes.has('recipe_missing_inventory'), true);
+  assert.equal(codes.has('available_menu_archived_recipe'), true);
+  assert.equal(codes.has('inventory_missing_supplier_contact'), true);
+  assert.equal(codes.has('supplier_item_link_missing'), true);
+});
+
+await test('Runtime integrity validator catches invalid confirmed purchase and duplicate ids', () => {
+  const shrimp = item();
+  const runtime = state(shrimp, [
+    purchase({
+      status: 'confirmed',
+      supplierConfirmed: false,
+    }),
+  ]);
+  runtime.inventory.push({ ...shrimp });
+  runtime.suppliers = [
+    {
+      id: 'supplier',
+      name: 'Supplier',
+      contacts: [
+        {
+          id: 'contact',
+          name: 'Contact',
+          role: 'Sales',
+          channel: 'Email',
+          email: '',
+          phone: '',
+        },
+      ],
+      itemIds: ['shrimp'],
+    },
+  ];
+
+  const issues = validateCommandCenterRuntimeState(runtime);
+  const codes = new Set(issues.map((issue) => issue.code));
+
+  assert.equal(codes.has('duplicate_id'), true);
+  assert.equal(
+    codes.has('confirmed_purchase_without_supplier_confirmation'),
+    true,
+  );
 });
