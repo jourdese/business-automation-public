@@ -1520,7 +1520,11 @@ export default function OperationModuleView({
                     type="button"
                     data-primary
                     onClick={() =>
-                      recordRecipeSale(selectedMenuRecipe.id, 1)
+                      recordRecipeSale(
+                        selectedMenuRecipe.id,
+                        1,
+                        selectedMenuItem.id,
+                      )
                     }
                   >
                     Simulate sale

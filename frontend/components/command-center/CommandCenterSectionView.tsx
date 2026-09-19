@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import CompanionMark from "@/components/jourvis/CompanionMark";
 import SupplyPhoto from "./SupplyPhoto";
+import SalesAnalyticsPanel from "./SalesAnalyticsPanel";
 import { operationCatalog } from "@/command-center/core/business-registry";
 import { buildCommandCenterFinance } from "@/command-center/core/finance-engine";
 import { buildCommandCenterForecast } from "@/command-center/core/forecast-engine";
@@ -29,6 +30,7 @@ import {
 } from "@/command-center/core/insight-engine";
 import { buildCommandCenterPerformance } from "@/command-center/core/performance-engine";
 import { buildCommandCenterSupplierPerformance } from "@/command-center/core/supplier-performance-engine";
+import { buildCommandCenterSalesAnalytics } from "@/command-center/core/sales-engine";
 import { isPurchaseActive } from "@/command-center/core/runtime";
 import { useCommandCenterRuntime } from "@/command-center/core/runtime-provider";
 import type { CommandCenterSectionId } from "@/command-center/core/types";
@@ -707,6 +709,21 @@ export default function CommandCenterSectionView({
     const activeSupplierRows = supplierPerformance.suppliers.filter(
       (supplier) => supplier.requestCount > 0,
     );
+    const dailySales = buildCommandCenterSalesAnalytics(
+      state.sales,
+      business.timezone,
+      "daily",
+    );
+    const weeklySales = buildCommandCenterSalesAnalytics(
+      state.sales,
+      business.timezone,
+      "weekly",
+    );
+    const monthlySales = buildCommandCenterSalesAnalytics(
+      state.sales,
+      business.timezone,
+      "monthly",
+    );
     const formatSupplierMinutes = (value: number | null) =>
       value === null
         ? "—"
@@ -760,7 +777,7 @@ export default function CommandCenterSectionView({
       <SectionFrame
         eyebrow="PERFORMANCE"
         title={performanceHeadline}
-        description="Performance is limited to operating KPIs that the current Command Center runtime can actually support. Revenue, AOV, operating profit, and business-wide financial margins remain provider-gated."
+        description="Performance uses operating KPIs the current runtime can support. The synthetic demo POS ledger adds dated sales-volume analysis; verified production revenue, AOV, operating profit, and business-wide margins remain provider-gated."
       >
         <div className={styles.performancePrimaryGrid}>
           {primaryMetrics.map((metric) => (
@@ -771,6 +788,44 @@ export default function CommandCenterSectionView({
             </article>
           ))}
         </div>
+
+        <article className={styles.performanceSalesPulse}>
+          <header>
+            <div>
+              <span>DEMO SALES PULSE</span>
+              <h2>Today, this week, and this month</h2>
+            </div>
+            <a href={`/command-center/${business.id}/finance`}>
+              Open sales analysis <ArrowRight size={13} />
+            </a>
+          </header>
+          <div>
+            {[
+              ["TODAY", dailySales.current],
+              ["THIS WEEK", weeklySales.current],
+              ["THIS MONTH", monthlySales.current],
+            ].map(([label, bucket]) => (
+              <section key={label as string}>
+                <span>{label as string}</span>
+                <strong>
+                  ₱{Math.round(
+                    (bucket as typeof dailySales.current).revenue,
+                  ).toLocaleString("en-PH")}
+                </strong>
+                <small>
+                  ₱{Math.round(
+                    (bucket as typeof dailySales.current)
+                      .ingredientContribution,
+                  ).toLocaleString("en-PH")} ingredient contribution
+                </small>
+              </section>
+            ))}
+          </div>
+          <p>
+            Synthetic demo POS history only. Simulated sales update these
+            periods immediately; production sales remain provider-gated.
+          </p>
+        </article>
 
         <article className={styles.performanceExecutionPanel}>
           <header>
@@ -1040,6 +1095,11 @@ export default function CommandCenterSectionView({
             <small>configured on-hand quantity × ingredient unit cost</small>
           </article>
         </div>
+
+        <SalesAnalyticsPanel
+          sales={state.sales}
+          timeZone={business.timezone}
+        />
 
         <article className={styles.financeCommitmentPanel}>
           <header>
