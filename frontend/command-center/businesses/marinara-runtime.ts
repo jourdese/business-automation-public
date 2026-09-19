@@ -135,5 +135,6 @@ export function createMarinaraRuntimeSeed(): CommandCenterRuntimeState {
     })),
     pausedItemIds: [],
     activity: [],
+    history: [],
   };
 }
