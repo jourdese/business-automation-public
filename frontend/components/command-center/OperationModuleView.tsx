@@ -1728,8 +1728,8 @@ export default function OperationModuleView({
           </article>
         </div>
 
-        <div className={styles.menuLibraryToolbar}>
-          {businessId === "marinara-ristorante" ? (
+        {businessId === "marinara-ristorante" ? (
+          <div className={styles.menuScopeBar}>
             <div className={styles.menuStatusFilters}>
               <button
                 type="button"
@@ -1752,7 +1752,13 @@ export default function OperationModuleView({
                 Full catalog
               </button>
             </div>
-          ) : null}
+            <span>
+              {scopedMenuItems.length} of {state.menuItems.length} items
+            </span>
+          </div>
+        ) : null}
+
+        <div className={styles.menuLibraryToolbar}>
           <input
             type="search"
             value={menuSearch}
