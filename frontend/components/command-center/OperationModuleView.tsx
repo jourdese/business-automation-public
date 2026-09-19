@@ -17,7 +17,6 @@ import {
   ChefHat,
   ChevronDown,
   ChevronUp,
-  CircleDollarSign,
   Copy,
   PackageCheck,
   Pencil,
