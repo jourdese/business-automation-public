@@ -1295,3 +1295,34 @@ await test('Operating signals fall back to stable when no exception or watch con
   assert.equal(health.signals[0]?.severity, 'stable');
   assert.equal(health.attentionCount, 0);
 });
+
+
+await test('Performance counts waste/spoilage audit events from the shared Activity log', () => {
+  const runtime = state(item());
+  runtime.activity = [
+    {
+      id: 'w1',
+      at: '2026-09-19T00:00:00.000Z',
+      module: 'waste',
+      action: 'waste_recorded',
+      message: 'Waste',
+      actor: 'owner',
+      executionMode: 'manual',
+      reason: 'test',
+    },
+    {
+      id: 'i1',
+      at: '2026-09-19T00:01:00.000Z',
+      module: 'inventory',
+      action: 'stock_adjusted',
+      message: 'Count',
+      actor: 'owner',
+      executionMode: 'manual',
+      reason: 'test',
+    },
+  ];
+
+  const performance = buildCommandCenterPerformance(runtime, 0);
+
+  assert.equal(performance.wasteEventCount, 1);
+});
