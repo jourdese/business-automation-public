@@ -353,253 +353,344 @@ export default function CommandCenterSectionView({
     const connectedInventoryRows = forecast.inventoryRows.filter(
       (row) => row.dailyUse > 0,
     );
+    const riskRows = forecast.inventoryRows.filter(
+      (row) => row.risk !== "covered",
+    );
+    const coveredRows = forecast.inventoryRows.filter(
+      (row) => row.risk === "covered",
+    );
+    const activeReplenishmentCount = forecast.inventoryRows.filter(
+      (row) => row.activePurchaseId,
+    ).length;
 
     return (
       <SectionFrame
         eyebrow="FORECAST"
-        title="What Jourvis expects next."
-        description="Forecasts are operating inputs, not decoration. This first runtime-backed forecast uses live inventory, expected daily consumption, incoming stock, supplier lead time, recipes, purchasing rules, and active purchase workflows."
+        title={
+          riskRows.length
+            ? `${riskRows.length} ingredient${riskRows.length === 1 ? " needs" : "s need"} attention over the next 7 days.`
+            : "No configured ingredient is currently in a 7-day risk state."
+        }
+        description="Jourvis projects inventory from current stock, confirmed incoming quantities, configured average daily use, and supplier lead time. The daily-use value is a planning baseline—not a claim of POS-driven demand forecasting."
       >
-        <div className={styles.metricGrid}>
-          {[
-            [
-              "Lead-time risk",
-              String(forecast.leadTimeRiskCount),
-              "ingredients exposed before or near supplier arrival",
-            ],
-            [
-              "7-day exposure",
-              String(forecast.horizonRiskCount),
-              "ingredients projected to reach a risk state",
-            ],
-            [
-              "Restock pressure",
-              String(forecast.purchasePressureCount),
-              "ingredients with a calculated replenishment need",
-            ],
-            [
-              "Demand inputs",
-              `${forecast.configuredDemandInputs}/${state.inventory.length}`,
-              "inventory items with configured daily usage",
-            ],
-          ].map(([label, value, note]) => (
-            <article className={styles.metricCard} key={label}>
-              <span>{label}</span>
-              <strong>{value}</strong>
-              <div>
-                <b>{forecast.horizonDays} days</b>
-                <small>{note}</small>
-              </div>
-            </article>
-          ))}
+        <div className={styles.forecastOwnerSummary}>
+          <article data-state={forecast.leadTimeRiskCount ? "risk" : "clear"}>
+            <span>BEFORE / NEAR ARRIVAL</span>
+            <strong>{forecast.leadTimeRiskCount}</strong>
+            <small>ingredients exposed around supplier lead time</small>
+          </article>
+          <article data-state={forecast.horizonRiskCount ? "risk" : "clear"}>
+            <span>7-DAY RISK</span>
+            <strong>{forecast.horizonRiskCount}</strong>
+            <small>ingredients projected into a risk state</small>
+          </article>
+          <article data-state={activeReplenishmentCount ? "active" : "clear"}>
+            <span>REPLENISHMENT ACTIVE</span>
+            <strong>{activeReplenishmentCount}</strong>
+            <small>ingredients already tied to an active purchase</small>
+          </article>
+          <article data-state={forecast.protectedByIncomingCount ? "protected" : "clear"}>
+            <span>PROTECTED BY INCOMING</span>
+            <strong>{forecast.protectedByIncomingCount}</strong>
+            <small>ingredients with confirmed incoming quantity</small>
+          </article>
         </div>
 
-        <article className={styles.panelCard}>
-          <PanelHeading
-            icon={<LineChart size={17} />}
-            eyebrow="OBSERVED MOVEMENT"
-            title="How the operating state has changed"
-          />
-          <div className={styles.historyTrendGrid}>
-            <div>
-              <span>7-DAY RISK</span>
-              <strong>
-                {hasHistoricalComparison
-                  ? formatSigned(historyTrend.inventoryRiskDelta)
-                  : "—"}
-              </strong>
-              <small>lower is better</small>
-            </div>
-            <div>
-              <span>INVENTORY READINESS</span>
-              <strong>
-                {hasHistoricalComparison
-                  ? formatSigned(historyTrend.inventoryReadinessDelta, " pts")
-                  : "—"}
-              </strong>
-              <small>change since first snapshot</small>
-            </div>
-            <div>
-              <span>ACTIVE WORKFLOWS</span>
-              <strong>
-                {hasHistoricalComparison
-                  ? formatSigned(historyTrend.activeWorkflowDelta)
-                  : "—"}
-              </strong>
-              <small>purchasing workload movement</small>
-            </div>
-            <div>
-              <span>HISTORY</span>
-              <strong>{historyTrend.snapshotCount}</strong>
-              <small>deduplicated operating snapshots</small>
-            </div>
+        <div className={styles.forecastBaselineNote}>
+          <LineChart size={15} aria-hidden />
+          <div>
+            <strong>Current model: configured-use inventory projection</strong>
+            <p>
+              {connectedInventoryRows.length}/{state.inventory.length} inventory items have a configured daily-use input.
+              Production demand forecasting will replace these baselines with dated POS/orders, seasonality, promotions, reservations, and observed forecast error when those providers exist.
+            </p>
           </div>
-          <p className={styles.historyTrendNote}>
-            {hasHistoricalComparison
-              ? `Observed from ${formatActivityTime(historyTrend.oldestAt ?? "", business.timezone)} to ${formatActivityTime(historyTrend.latestAt ?? "", business.timezone)}. This is runtime history, not yet POS-based forecast accuracy.`
-              : "Jourvis has started capturing historical operating snapshots. Trend comparisons appear after the business state changes."}
-          </p>
-        </article>
+        </div>
 
-        <article className={styles.panelCard}>
-          <PanelHeading
-            icon={<CheckCircle2 size={17} />}
-            eyebrow="FORECAST ACCURACY"
-            title={
-              forecastAccuracy.matured
-                ? "Compare earlier 7-day projections with later actual stock"
-                : "Collecting a matured 7-day comparison"
-            }
-          />
-          <div className={styles.historyTrendGrid}>
+        <article className={styles.forecastRiskBoard}>
+          <header className={styles.forecastRiskBoardHeader}>
             <div>
-              <span>STATUS</span>
-              <strong>{forecastAccuracy.matured ? "Matured" : "Collecting"}</strong>
-              <small>requires observations at least 7 days apart</small>
+              <span>PRIORITY INVENTORY</span>
+              <h2>Highest-risk ingredients first</h2>
+              <p>
+                Each row shows how long stock can cover configured use, what remains when the supplier could arrive, the seven-day position, current incoming protection, affected menu/recipes, and Jourvis' next move.
+              </p>
             </div>
-            <div>
-              <span>COMPARED ITEMS</span>
-              <strong>{forecastAccuracy.itemCount}</strong>
-              <small>items with configured daily-use inputs</small>
-            </div>
-            <div>
-              <span>MEAN NORMALIZED ERROR</span>
-              <strong>
-                {forecastAccuracy.meanNormalizedErrorPercent === null
-                  ? "—"
-                  : forecastAccuracy.meanNormalizedErrorPercent + "%"}
-              </strong>
-              <small>absolute error as % of configured full stock</small>
-            </div>
-            <div>
-              <span>HORIZON</span>
-              <strong>{forecastAccuracy.horizonDays} days</strong>
-              <small>prediction window currently evaluated</small>
-            </div>
-          </div>
+            <b>{riskRows.length} open risk{riskRows.length === 1 ? "" : "s"}</b>
+          </header>
 
-          {forecastAccuracy.rows.length ? (
-            <div className={styles.forecastAccuracyList}>
-              {forecastAccuracy.rows
-                .slice()
-                .sort(
-                  (left, right) =>
-                    right.errorPercentOfFullLevel -
-                    left.errorPercentOfFullLevel,
-                )
-                .slice(0, 6)
-                .map((row) => {
-                  const item = state.inventory.find(
-                    (entry) => entry.id === row.itemId,
-                  );
-                  return (
-                    <div key={row.itemId}>
-                      <strong>{item?.name ?? row.itemId}</strong>
-                      <span>
-                        predicted {row.predicted} {row.unit} · actual {row.actual} {row.unit}
-                      </span>
-                      <b>
-                        {row.absoluteError} {row.unit} error · {row.errorPercentOfFullLevel}%
-                      </b>
-                    </div>
-                  );
-                })}
-            </div>
-          ) : null}
-
-          <p className={styles.historyTrendNote}>
-            {forecastAccuracy.matured
-              ? `Baseline ${formatActivityTime(forecastAccuracy.baselineAt ?? "", business.timezone)} → actual ${formatActivityTime(forecastAccuracy.actualAt ?? "", business.timezone)}. This measures the configured inventory-demand baseline only; POS-driven demand-model accuracy comes later.`
-              : "Jourvis will not label the forecast accurate or inaccurate until the configured horizon has actually elapsed and a later observation exists."}
-          </p>
-        </article>
-
-        <article className={styles.panelCard}>
-          <PanelHeading
-            icon={<LineChart size={17} />}
-            eyebrow="INVENTORY FORECAST"
-            title="Projected stock, shortage pressure, and next action"
-          />
-          <div className={styles.forecastList}>
-            {forecast.inventoryRows.map((row) => (
+          <div className={styles.forecastPriorityList}>
+            {riskRows.map((row, index) => (
               <article
-                className={styles.forecastRow}
+                className={styles.forecastPriorityRow}
                 data-risk={row.risk}
+                data-primary={index === 0 ? "true" : undefined}
                 key={row.itemId}
               >
-                <div className={styles.forecastIdentity}>
+                <div className={styles.forecastPriorityIdentity}>
                   <SupplyPhoto
                     supplyId={row.itemId}
                     className={styles.forecastSupplyPhoto}
-                    size={48}
+                    size={54}
                   />
                   <div>
                     <span>{row.risk.toUpperCase()}</span>
                     <strong>{row.name}</strong>
                     <small>
-                      {row.daysCover !== null
-                        ? `${row.daysCover} days cover`
-                        : "No daily-use forecast configured"}
-                      {" · "}
-                      lead time {row.leadDays} day{row.leadDays === 1 ? "" : "s"}
+                      {row.daysCover === null
+                        ? "Days of cover unavailable"
+                        : `${row.daysCover} days of cover`}
+                      {" · "}supplier lead time {row.leadDays} day{row.leadDays === 1 ? "" : "s"}
                     </small>
+                  </div>
+                  {row.activePurchaseId ? (
+                    <b>{row.activePurchaseId}</b>
+                  ) : null}
+                </div>
+
+                <div className={styles.forecastPriorityFacts}>
+                  <div>
+                    <span>ON HAND</span>
+                    <strong>{row.current} {row.unit}</strong>
+                  </div>
+                  <div data-positive={row.incoming > 0 ? "true" : undefined}>
+                    <span>INCOMING</span>
+                    <strong>{row.incoming} {row.unit}</strong>
+                  </div>
+                  <div data-danger={row.projectedAtDelivery <= 0 ? "true" : undefined}>
+                    <span>AT SUPPLIER ARRIVAL</span>
+                    <strong>{row.projectedAtDelivery} {row.unit}</strong>
+                  </div>
+                  <div data-danger={row.projectedAtHorizon <= 0 ? "true" : undefined}>
+                    <span>AFTER {forecast.horizonDays} DAYS</span>
+                    <strong>{row.projectedAtHorizon} {row.unit}</strong>
+                  </div>
+                  <div>
+                    <span>RECOMMENDED ORDER</span>
+                    <strong>{row.recommendedQuantity} {row.unit}</strong>
                   </div>
                 </div>
 
-                <div className={styles.forecastFacts}>
-                  <span>
-                    <small>On hand</small>
-                    <strong>{row.current} {row.unit}</strong>
-                  </span>
-                  <span>
-                    <small>Incoming</small>
-                    <strong>{row.incoming} {row.unit}</strong>
-                  </span>
-                  <span>
-                    <small>At supplier arrival</small>
-                    <strong>{row.projectedAtDelivery} {row.unit}</strong>
-                  </span>
-                  <span>
-                    <small>After {forecast.horizonDays} days</small>
-                    <strong>{row.projectedAtHorizon} {row.unit}</strong>
-                  </span>
-                  <span>
-                    <small>Recommended order</small>
-                    <strong>{row.recommendedQuantity} {row.unit}</strong>
-                  </span>
+                <div className={styles.forecastPriorityImpact}>
+                  <div>
+                    <span>AFFECTED RECIPES</span>
+                    <p>
+                      {row.affectedRecipes.length
+                        ? row.affectedRecipes.join(", ")
+                        : "No active recipe currently uses this ingredient."}
+                    </p>
+                  </div>
+                  <div>
+                    <span>AFFECTED MENU</span>
+                    <p>
+                      {row.affectedMenuItems.length
+                        ? row.affectedMenuItems.join(", ")
+                        : "No configured active menu item is linked through an affected recipe."}
+                    </p>
+                  </div>
                 </div>
 
-                <div className={styles.forecastReason}>
-                  <span>NEXT JOURVIS ACTION</span>
-                  <p>{row.nextAction}</p>
-                  {row.affectedRecipes.length ? (
-                    <small>
-                      Menu/recipe impact: {row.affectedRecipes.join(", ")}
-                    </small>
-                  ) : null}
+                <div className={styles.forecastNextMove}>
+                  <div>
+                    <span>NEXT JOURVIS ACTION</span>
+                    <p>{row.nextAction}</p>
+                  </div>
+                  <a
+                    href={`/command-center/${business.id}/operations/${row.activePurchaseId ? "purchasing" : "inventory"}`}
+                  >
+                    {row.activePurchaseId ? "Open purchasing" : "Open inventory"}
+                    <ArrowRight size={13} />
+                  </a>
                 </div>
               </article>
             ))}
 
-            {!forecast.inventoryRows.length ? (
-              <div className={styles.activityEmpty}>
-                No inventory data is connected for this business yet.
+            {!riskRows.length ? (
+              <div className={styles.forecastClearState}>
+                <CheckCircle2 size={18} aria-hidden />
+                <div>
+                  <strong>No ingredient is currently in a configured forecast risk state.</strong>
+                  <small>
+                    Jourvis will surface a priority row when lead-time or seven-day stock projections cross the current risk rules.
+                  </small>
+                </div>
               </div>
             ) : null}
           </div>
-          <p className={styles.demoNote}>
-            {connectedInventoryRows.length} ingredient{connectedInventoryRows.length === 1 ? "" : "s"} currently have demand inputs. Production forecasting will replace configured daily-use baselines with POS history, reservations/orders, seasonality, promotions, supplier history, and other verified providers.
-          </p>
         </article>
 
+        {coveredRows.length ? (
+          <details className={styles.forecastSecondaryDisclosure}>
+            <summary>
+              <span>
+                <ShieldCheck size={15} aria-hidden />
+                Covered inventory
+              </span>
+              <b>{coveredRows.length}</b>
+            </summary>
+            <div className={styles.forecastCoveredGrid}>
+              {coveredRows.map((row) => (
+                <article key={row.itemId}>
+                  <SupplyPhoto
+                    supplyId={row.itemId}
+                    className={styles.forecastCoveredPhoto}
+                    size={38}
+                  />
+                  <div>
+                    <strong>{row.name}</strong>
+                    <small>
+                      {row.daysCover === null
+                        ? "No configured daily use"
+                        : `${row.daysCover} days cover`}
+                      {" · "}{row.projectedAtHorizon} {row.unit} after {forecast.horizonDays} days
+                    </small>
+                  </div>
+                  {row.incoming > 0 ? <b>+{row.incoming} {row.unit} incoming</b> : null}
+                </article>
+              ))}
+            </div>
+          </details>
+        ) : null}
+
+        <details className={styles.forecastSecondaryDisclosure}>
+          <summary>
+            <span>
+              <LineChart size={15} aria-hidden />
+              Forecast evaluation &amp; observed history
+            </span>
+            <b>{forecastAccuracy.matured ? "Matured" : "Secondary"}</b>
+          </summary>
+          <div className={styles.forecastEvaluationGrid}>
+            <article>
+              <PanelHeading
+                icon={<LineChart size={17} />}
+                eyebrow="OBSERVED MOVEMENT"
+                title="How the operating state has changed"
+              />
+              <div className={styles.historyTrendGrid}>
+                <div>
+                  <span>7-DAY RISK</span>
+                  <strong>
+                    {hasHistoricalComparison
+                      ? formatSigned(historyTrend.inventoryRiskDelta)
+                      : "—"}
+                  </strong>
+                  <small>lower is better</small>
+                </div>
+                <div>
+                  <span>INVENTORY READINESS</span>
+                  <strong>
+                    {hasHistoricalComparison
+                      ? formatSigned(historyTrend.inventoryReadinessDelta, " pts")
+                      : "—"}
+                  </strong>
+                  <small>change since first snapshot</small>
+                </div>
+                <div>
+                  <span>ACTIVE WORKFLOWS</span>
+                  <strong>
+                    {hasHistoricalComparison
+                      ? formatSigned(historyTrend.activeWorkflowDelta)
+                      : "—"}
+                  </strong>
+                  <small>purchasing workload movement</small>
+                </div>
+                <div>
+                  <span>HISTORY</span>
+                  <strong>{historyTrend.snapshotCount}</strong>
+                  <small>deduplicated operating snapshots</small>
+                </div>
+              </div>
+              <p className={styles.historyTrendNote}>
+                {hasHistoricalComparison
+                  ? `Observed from ${formatActivityTime(historyTrend.oldestAt ?? "", business.timezone)} to ${formatActivityTime(historyTrend.latestAt ?? "", business.timezone)}. This is runtime history, not POS-based forecast accuracy.`
+                  : "Jourvis has started capturing historical operating snapshots. Trend comparisons appear after the business state changes."}
+              </p>
+            </article>
+
+            <article>
+              <PanelHeading
+                icon={<CheckCircle2 size={17} />}
+                eyebrow="FORECAST ACCURACY"
+                title={
+                  forecastAccuracy.matured
+                    ? "Earlier 7-day projections vs later observed stock"
+                    : "Waiting for a matured 7-day comparison"
+                }
+              />
+              <div className={styles.historyTrendGrid}>
+                <div>
+                  <span>STATUS</span>
+                  <strong>{forecastAccuracy.matured ? "Matured" : "Collecting"}</strong>
+                  <small>requires observations at least 7 days apart</small>
+                </div>
+                <div>
+                  <span>COMPARED ITEMS</span>
+                  <strong>{forecastAccuracy.itemCount}</strong>
+                  <small>items with configured daily-use inputs</small>
+                </div>
+                <div>
+                  <span>NORMALIZED ERROR</span>
+                  <strong>
+                    {forecastAccuracy.meanNormalizedErrorPercent === null
+                      ? "—"
+                      : forecastAccuracy.meanNormalizedErrorPercent + "%"}
+                  </strong>
+                  <small>absolute error as % of configured full stock</small>
+                </div>
+                <div>
+                  <span>HORIZON</span>
+                  <strong>{forecastAccuracy.horizonDays} days</strong>
+                  <small>current evaluation window</small>
+                </div>
+              </div>
+
+              {forecastAccuracy.rows.length ? (
+                <div className={styles.forecastAccuracyList}>
+                  {forecastAccuracy.rows
+                    .slice()
+                    .sort(
+                      (left, right) =>
+                        right.errorPercentOfFullLevel -
+                        left.errorPercentOfFullLevel,
+                    )
+                    .slice(0, 6)
+                    .map((row) => {
+                      const item = state.inventory.find(
+                        (entry) => entry.id === row.itemId,
+                      );
+                      return (
+                        <div key={row.itemId}>
+                          <strong>{item?.name ?? row.itemId}</strong>
+                          <span>
+                            predicted {row.predicted} {row.unit} · actual {row.actual} {row.unit}
+                          </span>
+                          <b>
+                            {row.absoluteError} {row.unit} error · {row.errorPercentOfFullLevel}%
+                          </b>
+                        </div>
+                      );
+                    })}
+                </div>
+              ) : null}
+
+              <p className={styles.historyTrendNote}>
+                {forecastAccuracy.matured
+                  ? `Baseline ${formatActivityTime(forecastAccuracy.baselineAt ?? "", business.timezone)} → actual ${formatActivityTime(forecastAccuracy.actualAt ?? "", business.timezone)}. This measures the configured inventory-use baseline only; POS-driven forecast accuracy comes later.`
+                  : "Jourvis will not label the baseline accurate or inaccurate until the configured horizon has elapsed and a later observation exists."}
+              </p>
+            </article>
+          </div>
+        </details>
+
         <PendingDataSources
-          title="Production forecast inputs"
-          description="The demo forecast is intentionally inventory-led. These expand only when real providers are connected."
+          title="Production demand inputs"
+          description="The demo projection is intentionally inventory-led. These inputs stay provider-gated until real sources are connected."
           items={[
-            ["Revenue", "POS / accounting", "Real sales history"],
-            ["Customer demand", "POS / reservations", "Covers and forward demand"],
-            ["Cash", "Finance", "Balances, payables and receivables"],
-            ["Labor", "Scheduling / timeclock", "Staffing and labor cost"],
+            ["POS demand", "POS / orders", "Dated item-level demand history"],
+            ["Reservations", "Reservations / bookings", "Forward covers and expected demand"],
+            ["Promotions", "POS / campaign data", "Demand lifts and campaign effects"],
+            ["Seasonality", "Historical operations", "Observed weekly/monthly demand patterns"],
           ]}
         />
       </SectionFrame>
