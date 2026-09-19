@@ -114,6 +114,21 @@ type SupplierEditorDraft = {
   phone: string;
 };
 
+const MARINARA_DEMO_MENU_IDS = new Set([
+  "spicy_grilled_octopus",
+  "garlic_shrimp_jalapeno",
+  "seafood_marinara_solo",
+  "shrimp_mushroom_alfredo_solo",
+  "quattro_formaggi_pizza_12",
+  "classic_margherita_pizza_12",
+  "truffle_mushroom_burger",
+  "braised_beef_shortribs",
+  "grilled_salmon",
+  "key_lime_cheesecake",
+  "mango_shake",
+  "cappuccino",
+]);
+
 export default function OperationModuleView({
   businessId,
   moduleId,
@@ -128,6 +143,7 @@ export default function OperationModuleView({
   const [inventorySearch, setInventorySearch] = useState("");
   const [inventoryZone, setInventoryZone] = useState("All");
   const [menuSearch, setMenuSearch] = useState("");
+  const [menuScope, setMenuScope] = useState<"demo" | "all">("demo");
   const [menuCategory, setMenuCategory] = useState("All");
   const [menuStatus, setMenuStatus] = useState<
     "all" | "active" | "unavailable" | "archived"
@@ -1179,12 +1195,22 @@ export default function OperationModuleView({
   }
 
   if (moduleId === "menu") {
+    const scopedMenuItems =
+      businessId === "marinara-ristorante" && menuScope === "demo"
+        ? state.menuItems.filter(
+            (item) =>
+              MARINARA_DEMO_MENU_IDS.has(item.id) ||
+              item.referenceSource === "demo",
+          )
+        : state.menuItems;
     const categories = [
       "All",
-      ...Array.from(new Set(state.menuItems.map((item) => item.category))),
+      ...Array.from(
+        new Set(scopedMenuItems.map((item) => item.category)),
+      ),
     ];
     const normalizedSearch = menuSearch.trim().toLowerCase();
-    const visibleMenuItems = state.menuItems
+    const visibleMenuItems = scopedMenuItems
       .filter((item) => {
         const matchesCategory =
           menuCategory === "All" || item.category === menuCategory;
@@ -1212,16 +1238,12 @@ export default function OperationModuleView({
           (left.displayOrder ?? state.menuItems.indexOf(left)) -
           (right.displayOrder ?? state.menuItems.indexOf(right)),
       );
-    const mappedCount = state.menuItems.filter((item) => item.recipeId).length;
-    const pricedCount = state.menuItems.filter(
+    const mappedCount = scopedMenuItems.filter(
+      (item) => item.recipeId,
+    ).length;
+    const pricedCount = scopedMenuItems.filter(
       (item) => item.currentPrice !== undefined,
     ).length;
-    const archivedReferenceCount = state.menuItems.filter(
-      (item) => item.referenceSource === "archived-menu-photo",
-    ).length;
-    const referenceYear =
-      state.menuItems.find((item) => item.referencePublicationDate)
-        ?.referencePublicationDate?.slice(0, 4) ?? "archived";
     const editingMenuItem = menuEditor?.id
       ? state.menuItems.find((item) => item.id === menuEditor.id)
       : undefined;
@@ -1268,9 +1290,9 @@ export default function OperationModuleView({
             <span>MENU MANAGEMENT</span>
             <h2>Compact menu library with actions one click away.</h2>
             <p>
-              Browse fixed-size menu tiles. Clicking a tile opens a compact detail modal
-              with the important economics and actions. Edit switches that same modal into
-              edit mode; only Add Menu Item uses the fixed drawer.
+              The Marinara demo opens with a curated selection instead of the full
+              archived catalog. Use Full catalog only when you need to inspect the complete
+              reference menu.
             </p>
           </div>
           <ChefHat size={36} aria-hidden />
@@ -1686,9 +1708,13 @@ export default function OperationModuleView({
 
         <div className={styles.activitySummary}>
           <article>
-            <span>ARCHIVED REFERENCES</span>
-            <strong>{archivedReferenceCount}</strong>
-            <small>source-backed entries from {referenceYear}</small>
+            <span>{menuScope === "demo" ? "DEMO SELECTION" : "FULL CATALOG"}</span>
+            <strong>{scopedMenuItems.length}</strong>
+            <small>
+              {menuScope === "demo"
+                ? "curated items for the Marinara demo"
+                : "all archived/reference and demo-created items"}
+            </small>
           </article>
           <article>
             <span>RECIPE MAPPED</span>
@@ -1703,6 +1729,30 @@ export default function OperationModuleView({
         </div>
 
         <div className={styles.menuLibraryToolbar}>
+          {businessId === "marinara-ristorante" ? (
+            <div className={styles.menuStatusFilters}>
+              <button
+                type="button"
+                data-active={menuScope === "demo"}
+                onClick={() => {
+                  setMenuScope("demo");
+                  setMenuCategory("All");
+                }}
+              >
+                Demo selection
+              </button>
+              <button
+                type="button"
+                data-active={menuScope === "all"}
+                onClick={() => {
+                  setMenuScope("all");
+                  setMenuCategory("All");
+                }}
+              >
+                Full catalog
+              </button>
+            </div>
+          ) : null}
           <input
             type="search"
             value={menuSearch}
