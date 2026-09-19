@@ -17,7 +17,6 @@ import CompanionMark from "@/components/jourvis/CompanionMark";
 import SupplyPhoto from "./SupplyPhoto";
 import { operationCatalog } from "@/command-center/core/business-registry";
 import { jourvisAutonomyLoop } from "@/command-center/core/autonomy";
-import { buildCommandCenterOperatingHealth } from "@/command-center/core/business-health-engine";
 import { buildCommandCenterFinance } from "@/command-center/core/finance-engine";
 import { buildCommandCenterForecast } from "@/command-center/core/forecast-engine";
 import {
@@ -90,10 +89,6 @@ export default function CommandCenterSectionView({
   ).length;
   const historyTrend = buildCommandCenterHistoryTrend(state);
   const hasHistoricalComparison = historyTrend.snapshotCount >= 2;
-  const operatingHealth = buildCommandCenterOperatingHealth(
-    state,
-    tasks,
-  );
 
   if (section === "overview") {
     const overviewPerformance = buildCommandCenterPerformance(
@@ -145,14 +140,6 @@ export default function CommandCenterSectionView({
         label: "Needs owner",
         value: String(tasks.length),
         note: "exceptions only",
-      },
-      {
-        label: "Attention signals",
-        value: String(operatingHealth.attentionCount),
-        note:
-          operatingHealth.attentionCount
-            ? operatingHealth.highestSeverity + " priority operating signals"
-            : "no critical/warning operating signal",
       },
       ...(state.inventory.length
         ? [
@@ -373,39 +360,6 @@ export default function CommandCenterSectionView({
             </article>
           ))}
         </div>
-
-        <article className={styles.panelCard}>
-          <PanelHeading
-            icon={<CircleAlert size={17} />}
-            eyebrow="OPERATING SIGNALS"
-            title={
-              operatingHealth.attentionCount
-                ? operatingHealth.attentionCount +
-                  " item" +
-                  (operatingHealth.attentionCount === 1 ? "" : "s") +
-                  " need attention"
-                : "Jourvis sees no immediate exception"
-            }
-          />
-          <div className={styles.operatingSignalList}>
-            {operatingHealth.signals.slice(0, 4).map((signal) => (
-              <article
-                key={signal.id}
-                data-severity={signal.severity}
-              >
-                <div>
-                  <span>{signal.severity.toUpperCase()}</span>
-                  <small>{signal.module.toUpperCase()}</small>
-                </div>
-                <section>
-                  <strong>{signal.title}</strong>
-                  <p>{signal.summary}</p>
-                  <small>{signal.nextAction}</small>
-                </section>
-              </article>
-            ))}
-          </div>
-        </article>
 
         <div className={styles.overviewColumns}>
           <article className={styles.panelCard}>
@@ -820,11 +774,6 @@ export default function CommandCenterSectionView({
         "Supplier response",
         formatSupplierMinutes(supplierPerformance.averageViewMinutes),
         "average request creation → supplier viewed",
-      ],
-      [
-        "Waste records",
-        String(performance.wasteEventCount),
-        "manual waste/spoilage events recorded in Activity",
       ],
     ];
 
@@ -1353,7 +1302,7 @@ export default function CommandCenterSectionView({
             <span>OPERATING HEALTH</span>
             <h3>Performance briefing</h3>
             <p>
-              Inventory readiness is {briefingPerformance.inventoryReadinessPercent === null ? "not available" : briefingPerformance.inventoryReadinessPercent + "%"}, menu recipe coverage is {briefingPerformance.recipeCoveragePercent === null ? "not available" : briefingPerformance.recipeCoveragePercent + "%"}, automation accounts for {briefingPerformance.automationSharePercent === null ? "no recorded action mix yet" : briefingPerformance.automationSharePercent + "% of recorded automatic/manual actions"}, and {briefingPerformance.wasteEventCount} waste/spoilage event{briefingPerformance.wasteEventCount === 1 ? " has" : "s have"} been recorded in the current demo history.
+              Inventory readiness is {briefingPerformance.inventoryReadinessPercent === null ? "not available" : briefingPerformance.inventoryReadinessPercent + "%"}, menu recipe coverage is {briefingPerformance.recipeCoveragePercent === null ? "not available" : briefingPerformance.recipeCoveragePercent + "%"}, and automation accounts for {briefingPerformance.automationSharePercent === null ? "no recorded action mix yet" : briefingPerformance.automationSharePercent + "% of recorded automatic/manual actions"}.
             </p>
             <b><CheckCircle2 size={13} /> Performance engine</b>
           </article>
@@ -1366,32 +1315,6 @@ export default function CommandCenterSectionView({
             <b><CheckCircle2 size={13} /> Finance engine</b>
           </article>
         </div>
-
-        <article className={styles.panelCard}>
-          <PanelHeading
-            icon={<CircleAlert size={17} />}
-            eyebrow="NEXT PRIORITIES"
-            title="What Jourvis would focus on next"
-          />
-          <div className={styles.operatingSignalList}>
-            {operatingHealth.signals.slice(0, 5).map((signal) => (
-              <article
-                key={signal.id}
-                data-severity={signal.severity}
-              >
-                <div>
-                  <span>{signal.severity.toUpperCase()}</span>
-                  <small>{signal.module.toUpperCase()}</small>
-                </div>
-                <section>
-                  <strong>{signal.title}</strong>
-                  <p>{signal.summary}</p>
-                  <small>{signal.nextAction}</small>
-                </section>
-              </article>
-            ))}
-          </div>
-        </article>
 
         <article className={styles.panelCard}>
           <PanelHeading
@@ -1460,32 +1383,6 @@ export default function CommandCenterSectionView({
         title="What Jourvis noticed before you asked."
         description="Insights now combine Forecast, Performance, Finance, Operations, Decisions, and Activity instead of treating each tab as an isolated dashboard."
       >
-        <article className={styles.panelCard}>
-          <PanelHeading
-            icon={<Sparkles size={17} />}
-            eyebrow="PRIORITIZED SIGNALS"
-            title="The same operating picture, ranked by urgency"
-          />
-          <div className={styles.operatingSignalList}>
-            {operatingHealth.signals.slice(0, 6).map((signal) => (
-              <article
-                key={signal.id}
-                data-severity={signal.severity}
-              >
-                <div>
-                  <span>{signal.severity.toUpperCase()}</span>
-                  <small>{signal.module.toUpperCase()}</small>
-                </div>
-                <section>
-                  <strong>{signal.title}</strong>
-                  <p>{signal.summary}</p>
-                  <small>{signal.nextAction}</small>
-                </section>
-              </article>
-            ))}
-          </div>
-        </article>
-
         <div className={styles.insightList}>
           <article>
             <LineChart size={16} />
