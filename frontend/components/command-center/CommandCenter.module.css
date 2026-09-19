@@ -3632,6 +3632,12 @@
   font-size: 0.58rem;
 }
 
+.entityToolbar button[data-active="true"] {
+  border-color: #4e7c68;
+  background: rgba(46, 107, 87, 0.14);
+  color: var(--mint);
+}
+
 .entityToolbar button[data-primary],
 .entityEditor button[data-primary],
 .entityActions button[data-primary] {
@@ -3836,6 +3842,92 @@
   padding: 0.55rem;
   border: 1px solid #314750;
   background: #08161e;
+}
+
+.recipeChangeImpact {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0.65rem;
+  border: 1px solid #53684e;
+  background: rgba(46, 107, 87, 0.045);
+}
+
+.recipeChangeImpact > header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.recipeChangeImpact > header span,
+.recipeChangeImpact > header strong {
+  display: block;
+}
+
+.recipeChangeImpact > header span {
+  color: var(--mint);
+  font: 0.5rem var(--font-mono);
+  letter-spacing: 0.08em;
+}
+
+.recipeChangeImpact > header strong {
+  margin-top: 0.12rem;
+  font-size: 0.66rem;
+}
+
+.recipeChangeImpact > header > small {
+  max-width: 520px;
+  color: var(--cc-muted);
+  font-size: 0.5rem;
+  line-height: 1.45;
+  text-align: right;
+}
+
+.recipeChangeImpact > div {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.recipeChangeImpact article {
+  display: grid;
+  grid-template-columns: minmax(120px, 0.8fr) repeat(3, minmax(145px, 1fr));
+  gap: 0.45rem;
+  align-items: center;
+  padding: 0.5rem;
+  border: 1px solid #314750;
+  background: #08161e;
+}
+
+.recipeChangeImpact article > strong {
+  font-size: 0.6rem;
+}
+
+.recipeChangeImpact article > span {
+  min-width: 0;
+}
+
+.recipeChangeImpact article small,
+.recipeChangeImpact article b,
+.recipeChangeImpact article em {
+  display: block;
+}
+
+.recipeChangeImpact article small {
+  color: var(--cc-muted);
+  font-size: 0.47rem;
+}
+
+.recipeChangeImpact article b {
+  margin-top: 0.08rem;
+  color: var(--ivory);
+  font-size: 0.54rem;
+}
+
+.recipeChangeImpact article em {
+  margin-top: 0.07rem;
+  color: var(--gold);
+  font-size: 0.48rem;
+  font-style: normal;
 }
 
 .recipeImpact span,
@@ -4267,6 +4359,14 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .recipeChangeImpact article {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .recipeChangeImpact article > strong {
+    grid-column: 1 / -1;
+  }
+
   .recipeBuilderLines > div:not(.recipeBuilderEmpty) {
     grid-template-columns: minmax(140px, 1fr) minmax(140px, 1fr) auto;
   }
@@ -4342,6 +4442,22 @@
 
   .entityEditorActions button {
     width: 100%;
+  }
+
+  .recipeChangeImpact > header {
+    flex-direction: column;
+  }
+
+  .recipeChangeImpact > header > small {
+    text-align: left;
+  }
+
+  .recipeChangeImpact article {
+    grid-template-columns: 1fr;
+  }
+
+  .recipeChangeImpact article > strong {
+    grid-column: auto;
   }
 
   .recipeBuilderActions,
