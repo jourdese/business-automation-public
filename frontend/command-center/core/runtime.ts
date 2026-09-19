@@ -173,6 +173,16 @@ export type CommandCenterActivity = {
   relatedRequestId?: string;
 };
 
+export type CommandCenterHistoryInventoryObservation = {
+  itemId: string;
+  unit: string;
+  onHand: number;
+  incoming: number;
+  fullLevel: number;
+  dailyUse: number;
+  projected7d: number;
+};
+
 export type CommandCenterHistorySnapshot = {
   id: string;
   capturedAt: string;
@@ -191,6 +201,7 @@ export type CommandCenterHistorySnapshot = {
   averageMenuGrossMarginPercent: number | null;
   automaticActivityCount: number;
   manualActivityCount: number;
+  inventoryForecast7d: CommandCenterHistoryInventoryObservation[];
 };
 
 export type CommandCenterRuntimeState = {
