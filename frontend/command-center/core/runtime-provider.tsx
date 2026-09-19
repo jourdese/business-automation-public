@@ -1806,10 +1806,21 @@ export function CommandCenterRuntimeProvider({
         const currentExisting = current.suppliers.find(
           (supplier) => supplier.id === id,
         );
+        const mergedContacts = currentExisting
+          ? [
+              ...contacts,
+              ...currentExisting.contacts.filter(
+                (existingContact) =>
+                  !contacts.some(
+                    (contact) => contact.id === existingContact.id,
+                  ),
+              ),
+            ]
+          : contacts;
         const nextSupplier: CommandCenterSupplier = {
           id,
           name,
-          contacts,
+          contacts: mergedContacts,
           itemIds: currentExisting?.itemIds ?? [],
         };
 
