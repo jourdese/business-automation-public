@@ -6,11 +6,13 @@ import {
   Bot,
   CheckCircle2,
   CircleAlert,
+  HelpCircle,
   LineChart,
   ShieldCheck,
   Sparkles,
   Zap,
   WalletCards,
+  X,
 } from "lucide-react";
 import CompanionMark from "@/components/jourvis/CompanionMark";
 import SupplyPhoto from "./SupplyPhoto";
@@ -21,7 +23,10 @@ import {
   buildCommandCenterForecastAccuracy,
   buildCommandCenterHistoryTrend,
 } from "@/command-center/core/history-engine";
-import { buildCommandCenterMenuEconomics } from "@/command-center/core/menu-economics";
+import {
+  buildCommandCenterInsights,
+  commandCenterInsightMethods,
+} from "@/command-center/core/insight-engine";
 import { buildCommandCenterPerformance } from "@/command-center/core/performance-engine";
 import { buildCommandCenterSupplierPerformance } from "@/command-center/core/supplier-performance-engine";
 import { isPurchaseActive } from "@/command-center/core/runtime";
@@ -72,6 +77,8 @@ export default function CommandCenterSectionView({
     setAutomationMasterOn,
   } = useCommandCenterRuntime();
   const [activityFilter, setActivityFilter] = useState<ActivityFilter>("all");
+  const [insightModalId, setInsightModalId] = useState<string | null>(null);
+  const [insightMethodsOpen, setInsightMethodsOpen] = useState(false);
   const business = state.business;
   const activePurchases = state.purchases.filter((purchase) =>
     isPurchaseActive(purchase.status),
@@ -1353,249 +1360,266 @@ export default function CommandCenterSectionView({
   }
 
   if (section === "insights") {
-    const insightForecast = buildCommandCenterForecast(state, 7);
-    const activeRecipeById = new Map(
-      state.recipes
-        .filter((recipe) => recipe.active)
-        .map((recipe) => [recipe.id, recipe]),
-    );
-    const highestRisk = insightForecast.inventoryRows.find(
-      (row) => row.risk === "critical" || row.risk === "high",
-    );
-    const highestRiskTask = highestRisk
-      ? tasks.find((task) => task.entityId === highestRisk.itemId)
+    const insights = buildCommandCenterInsights(state, tasks);
+    const selectedInsight = insightModalId
+      ? insights.find((insight) => insight.id === insightModalId)
       : undefined;
-    const incomingProtection = insightForecast.inventoryRows.find(
-      (row) => row.incoming > 0 && row.activePurchaseId,
+    const activeMethods = commandCenterInsightMethods.filter(
+      (method) => method.status === "active",
     );
-    const supplierWait = activePurchases.find(
-      (purchase) =>
-        purchase.status === "requested" ||
-        purchase.status === "quote_requested" ||
-        purchase.status === "supplier_viewed",
+    const waitingMethods = commandCenterInsightMethods.filter(
+      (method) => method.status === "waiting_for_data",
     );
-    const supplierWaitItem = supplierWait
-      ? state.inventory.find((item) => item.id === supplierWait.itemId)
-      : undefined;
-    const supplierWaitTask = supplierWait
-      ? tasks.find((task) => task.requestId === supplierWait.id)
-      : undefined;
-    const menuPressure = state.menuItems
-      .flatMap((menuItem) => {
-        if (
-          !menuItem.active ||
-          menuItem.currentPrice === undefined ||
-          menuItem.currentPrice <= 0 ||
-          !menuItem.recipeId
-        ) {
-          return [];
-        }
-        const recipe = activeRecipeById.get(menuItem.recipeId);
-        if (!recipe) return [];
-        const economics = buildCommandCenterMenuEconomics(
-          menuItem,
-          recipe,
-          state.inventory,
-        );
-        return economics.warning === "none"
-          ? []
-          : [{ menuItem, economics }];
-      })
-      .sort(
-        (left, right) =>
-          (right.economics.foodCostPercent ?? 0) -
-          (left.economics.foodCostPercent ?? 0),
-      )[0];
-    const separateAuthorityTask = tasks.find(
-      (task) =>
-        task.priority === "high" &&
-        task.id !== highestRiskTask?.id &&
-        task.id !== supplierWaitTask?.id,
-    );
-    const meaningfulTrend =
-      hasHistoricalComparison &&
-      (
-        (historyTrend.inventoryReadinessDelta ?? 0) !== 0 ||
-        (historyTrend.inventoryRiskDelta ?? 0) !== 0 ||
-        (historyTrend.ownerExceptionDelta ?? 0) !== 0
-      );
-
-    const insightCount =
-      (highestRisk ? 1 : 0) +
-      (incomingProtection ? 1 : 0) +
-      (supplierWait && supplierWaitItem && supplierWait.id !== highestRisk?.activePurchaseId ? 1 : 0) +
-      (menuPressure ? 1 : 0) +
-      (separateAuthorityTask ? 1 : 0) +
-      (meaningfulTrend ? 1 : 0);
 
     return (
       <SectionFrame
         eyebrow="INSIGHTS"
         title="Only what is worth noticing."
-        description="Jourvis surfaces a finding only when the current runtime supports it. No generic observations, invented trends, or provider-gated business claims."
+        description="Jourvis uses auditable business math and runtime rules. Every surfaced insight can show exactly how it was calculated, and advanced formulas remain visible even when the required data is not connected yet."
       >
         <div className={styles.insightSummary}>
           <span>SELECTIVE SIGNALS</span>
-          <strong>{insightCount}</strong>
+          <strong>{insights.length}</strong>
           <small>
-            runtime-supported insight{insightCount === 1 ? "" : "s"} right now
+            runtime-supported insight{insights.length === 1 ? "" : "s"} right now
           </small>
+          <button
+            type="button"
+            className={styles.insightMethodsButton}
+            onClick={() => {
+              setInsightModalId(null);
+              setInsightMethodsOpen(true);
+            }}
+          >
+            <HelpCircle size={14} aria-hidden />
+            Methods &amp; equations
+          </button>
         </div>
 
         <div className={styles.insightList}>
-          {highestRisk ? (
-            <article
-              data-severity={
-                highestRisk.risk === "critical" ? "critical" : "high"
-              }
-            >
-              <CircleAlert size={16} />
-              <div>
-                <strong>{highestRisk.name} is the clearest stock risk</strong>
-                <p>
-                  {highestRisk.daysCover === null
-                    ? "Configured usage is not available for a days-of-cover estimate."
-                    : `About ${highestRisk.daysCover} days of cover remain.`}
-                  {" "}Projected stock at supplier arrival is {highestRisk.projectedAtDelivery} {highestRisk.unit},
-                  and the 7-day projection is {highestRisk.projectedAtHorizon} {highestRisk.unit}.
-                  {highestRisk.affectedRecipes.length
-                    ? ` Affected recipes: ${highestRisk.affectedRecipes.join(", ")}.`
-                    : ""}
-                  {highestRiskTask
-                    ? ` The workflow is currently stopped for owner authority: ${highestRiskTask.why}`
-                    : highestRisk.activePurchaseId
-                      ? ` Replenishment ${highestRisk.activePurchaseId} is already active.`
-                      : ""}
-                </p>
-                <div className={styles.insightMeta}>
-                  <span>{highestRisk.risk.toUpperCase()} RISK</span>
-                  <a href={`/command-center/${business.id}/forecast`}>
-                    Open forecast <ArrowRight size={12} />
-                  </a>
-                </div>
-              </div>
-            </article>
-          ) : null}
+          {insights.map((insight) => {
+            const InsightIcon =
+              insight.severity === "protected"
+                ? ShieldCheck
+                : insight.severity === "trend"
+                  ? LineChart
+                  : insight.tag === "MENU ECONOMICS"
+                    ? WalletCards
+                    : insight.tag.includes("PRICE")
+                      ? Sparkles
+                      : CircleAlert;
 
-          {supplierWait && supplierWaitItem && supplierWait.id !== highestRisk?.activePurchaseId ? (
-            <article data-severity={supplierWaitTask ? "attention" : "watch"}>
-              <Bot size={16} />
-              <div>
-                <strong>{supplierWaitItem.name} replenishment is waiting</strong>
-                <p>
-                  {supplierWait.id} is currently {humanizeAction(supplierWait.status).toLowerCase()}.
-                  {" "}{supplierWaitTask
-                    ? `Jourvis cannot continue yet: ${supplierWaitTask.why}`
-                    : "The supplier workflow has not reached final confirmation yet, so Jourvis is keeping the purchase separate from confirmed incoming stock."}
-                </p>
-                <div className={styles.insightMeta}>
-                  <span>WORKFLOW STATE</span>
-                  <a href={`/command-center/${business.id}/operations/purchasing`}>
-                    Open purchasing <ArrowRight size={12} />
-                  </a>
+            return (
+              <article
+                key={insight.id}
+                data-severity={insight.severity}
+              >
+                <InsightIcon size={16} />
+                <div>
+                  <strong>{insight.title}</strong>
+                  <p>{insight.summary}</p>
+                  <div className={styles.insightMeta}>
+                    <span>{insight.tag}</span>
+                    <div>
+                      <button
+                        type="button"
+                        className={styles.insightExplainButton}
+                        onClick={() => {
+                          setInsightMethodsOpen(false);
+                          setInsightModalId(insight.id);
+                        }}
+                        aria-label={`Show how Jourvis calculated ${insight.title}`}
+                      >
+                        <HelpCircle size={12} aria-hidden />
+                        How?
+                      </button>
+                      {insight.href ? (
+                        <a href={insight.href}>
+                          Open details <ArrowRight size={12} />
+                        </a>
+                      ) : null}
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </article>
-          ) : null}
+              </article>
+            );
+          })}
 
-          {incomingProtection ? (
-            <article data-severity="protected">
-              <ShieldCheck size={16} />
-              <div>
-                <strong>{incomingProtection.name} risk is being protected by incoming stock</strong>
-                <p>
-                  {incomingProtection.incoming} {incomingProtection.unit} is confirmed incoming under {incomingProtection.activePurchaseId}.
-                  Jourvis still keeps it separate from on-hand inventory until physical receiving is confirmed.
-                  {" "}Projected 7-day stock is {incomingProtection.projectedAtHorizon} {incomingProtection.unit}.
-                </p>
-                <div className={styles.insightMeta}>
-                  <span>INCOMING PROTECTION</span>
-                  <a href={`/command-center/${business.id}/operations/inventory`}>
-                    Open inventory <ArrowRight size={12} />
-                  </a>
-                </div>
-              </div>
-            </article>
-          ) : null}
-
-          {menuPressure ? (
-            <article
-              data-severity={
-                menuPressure.economics.warning === "high" ? "high" : "watch"
-              }
-            >
-              <WalletCards size={16} />
-              <div>
-                <strong>{menuPressure.menuItem.name} is under food-cost pressure</strong>
-                <p>
-                  Configured ingredient cost is approximately ₱{Math.round(menuPressure.economics.ingredientCost ?? 0).toLocaleString("en-PH")}
-                  {" "}against a selling price of ₱{Math.round(menuPressure.menuItem.currentPrice ?? 0).toLocaleString("en-PH")},
-                  for an ingredient-only food cost of {menuPressure.economics.foodCostPercent}%.
-                  {menuPressure.economics.riskyIngredientIds.length
-                    ? ` ${menuPressure.economics.riskyIngredientIds.length} ingredient${menuPressure.economics.riskyIngredientIds.length === 1 ? " is" : "s are"} also at or below reorder level.`
-                    : ""}
-                </p>
-                <div className={styles.insightMeta}>
-                  <span>MENU ECONOMICS</span>
-                  <a href={`/command-center/${business.id}/operations/menu`}>
-                    Open menu <ArrowRight size={12} />
-                  </a>
-                </div>
-              </div>
-            </article>
-          ) : null}
-
-          {separateAuthorityTask ? (
-            <article data-severity="attention">
-              <Sparkles size={16} />
-              <div>
-                <strong>Jourvis deliberately stopped before exceeding authority</strong>
-                <p>
-                  {separateAuthorityTask.title}. {separateAuthorityTask.whatJourvisDid}
-                  {" "}{separateAuthorityTask.whyOwnerIsNeeded ?? separateAuthorityTask.why}
-                </p>
-                <div className={styles.insightMeta}>
-                  <span>HUMAN AUTHORITY</span>
-                  <a href={`/command-center/${business.id}/decisions`}>
-                    Open decisions <ArrowRight size={12} />
-                  </a>
-                </div>
-              </div>
-            </article>
-          ) : null}
-
-          {meaningfulTrend ? (
-            <article data-severity="trend">
-              <LineChart size={16} />
-              <div>
-                <strong>The captured operating state has materially moved</strong>
-                <p>
-                  Across {historyTrend.snapshotCount} observed states, inventory readiness changed {formatSigned(historyTrend.inventoryReadinessDelta, " points")},
-                  {" "}7-day inventory risk changed {formatSigned(historyTrend.inventoryRiskDelta)},
-                  and owner exceptions changed {formatSigned(historyTrend.ownerExceptionDelta)}.
-                </p>
-                <div className={styles.insightMeta}>
-                  <span>OBSERVED HISTORY</span>
-                  <a href={`/command-center/${business.id}/performance`}>
-                    Open performance <ArrowRight size={12} />
-                  </a>
-                </div>
-              </div>
-            </article>
-          ) : null}
-
-          {!insightCount ? (
+          {!insights.length ? (
             <article data-severity="clear">
               <CheckCircle2 size={16} />
               <div>
                 <strong>No material runtime insight needs surfacing right now</strong>
                 <p>
-                  Jourvis has no supported stock-risk, workflow-blocker, food-cost-pressure, authority, or observed-trend finding strong enough to call out.
+                  Jourvis found no supported stock-risk, price-variance,
+                  incoming-protection, menu-economics, or observed-trend signal
+                  strong enough to call out.
                 </p>
+                <div className={styles.insightMeta}>
+                  <span>CLEAR</span>
+                  <div>
+                    <button
+                      type="button"
+                      className={styles.insightExplainButton}
+                      onClick={() => setInsightMethodsOpen(true)}
+                    >
+                      <HelpCircle size={12} aria-hidden />
+                      See the math
+                    </button>
+                  </div>
+                </div>
               </div>
             </article>
           ) : null}
         </div>
+
+        {selectedInsight ? (
+          <div
+            className={styles.insightModalBackdrop}
+            role="presentation"
+            onMouseDown={() => setInsightModalId(null)}
+          >
+            <section
+              className={styles.insightMathModal}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="insight-calculation-title"
+              onMouseDown={(event) => event.stopPropagation()}
+            >
+              <header className={styles.insightMathModalHeader}>
+                <div>
+                  <span>HOW JOURVIS SOLVED IT</span>
+                  <h2 id="insight-calculation-title">{selectedInsight.title}</h2>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setInsightModalId(null)}
+                  aria-label="Close calculation"
+                >
+                  <X size={16} aria-hidden />
+                </button>
+              </header>
+
+              <div className={styles.insightMathModalBody}>
+                <p className={styles.insightMathIntro}>
+                  These are the deterministic equations and runtime inputs behind
+                  this insight. Jourvis explains the result; the displayed
+                  numbers come from the formulas below.
+                </p>
+
+                <div className={styles.insightEquationList}>
+                  {selectedInsight.calculations.map((calculation, index) => (
+                    <article key={calculation.label}>
+                      <div className={styles.insightEquationNumber}>
+                        {String(index + 1).padStart(2, "0")}
+                      </div>
+                      <div>
+                        <strong>{calculation.label}</strong>
+                        <dl>
+                          <div>
+                            <dt>Equation</dt>
+                            <dd><code>{calculation.formula}</code></dd>
+                          </div>
+                          <div>
+                            <dt>Inputs</dt>
+                            <dd><code>{calculation.substitution}</code></dd>
+                          </div>
+                          <div>
+                            <dt>Result</dt>
+                            <dd><b>{calculation.result}</b></dd>
+                          </div>
+                        </dl>
+                        <p>{calculation.meaning}</p>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+
+                {selectedInsight.dataLimit ? (
+                  <div className={styles.insightDataLimit}>
+                    <CircleAlert size={15} aria-hidden />
+                    <div>
+                      <strong>Data limit</strong>
+                      <p>{selectedInsight.dataLimit}</p>
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            </section>
+          </div>
+        ) : null}
+
+        {insightMethodsOpen ? (
+          <div
+            className={styles.insightModalBackdrop}
+            role="presentation"
+            onMouseDown={() => setInsightMethodsOpen(false)}
+          >
+            <section
+              className={styles.insightMathModal}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="insight-methods-title"
+              onMouseDown={(event) => event.stopPropagation()}
+            >
+              <header className={styles.insightMathModalHeader}>
+                <div>
+                  <span>TRANSPARENT ANALYTICS</span>
+                  <h2 id="insight-methods-title">Jourvis methods &amp; equations</h2>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setInsightMethodsOpen(false)}
+                  aria-label="Close methodology"
+                >
+                  <X size={16} aria-hidden />
+                </button>
+              </header>
+
+              <div className={styles.insightMathModalBody}>
+                <p className={styles.insightMathIntro}>
+                  Jourvis does not hide unavailable mathematics. Methods that
+                  have enough data are active; methods that need more history or
+                  providers stay visible and explicitly say what is missing.
+                </p>
+
+                <section className={styles.insightMethodGroup}>
+                  <div className={styles.insightMethodGroupHeading}>
+                    <span>ACTIVE NOW</span>
+                    <b>{activeMethods.length}</b>
+                  </div>
+                  <div className={styles.insightMethodList}>
+                    {activeMethods.map((method) => (
+                      <article key={method.id}>
+                        <strong>{method.label}</strong>
+                        <code>{method.formula}</code>
+                        <p>{method.purpose}</p>
+                        <small>Uses: {method.requires.join(" · ")}</small>
+                      </article>
+                    ))}
+                  </div>
+                </section>
+
+                <section className={styles.insightMethodGroup}>
+                  <div className={styles.insightMethodGroupHeading}>
+                    <span>WAITING FOR DATA</span>
+                    <b>{waitingMethods.length}</b>
+                  </div>
+                  <div className={styles.insightMethodList}>
+                    {waitingMethods.map((method) => (
+                      <article key={method.id} data-waiting>
+                        <strong>{method.label}</strong>
+                        <code>{method.formula}</code>
+                        <p>{method.purpose}</p>
+                        <small>Needs: {method.requires.join(" · ")}</small>
+                      </article>
+                    ))}
+                  </div>
+                </section>
+              </div>
+            </section>
+          </div>
+        ) : null}
       </SectionFrame>
     );
   }

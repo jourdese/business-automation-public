@@ -1107,6 +1107,285 @@
   font-size: 0.56rem;
 }
 
+
+.insightMeta > div {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.insightExplainButton,
+.insightMethodsButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  border: 1px solid #3a5059;
+  background: #091820;
+  color: var(--cc-muted);
+  font-size: 0.56rem;
+}
+
+.insightExplainButton {
+  min-height: 28px;
+  padding: 0.25rem 0.4rem;
+}
+
+.insightExplainButton:hover,
+.insightMethodsButton:hover {
+  border-color: var(--mint);
+  color: var(--ivory);
+}
+
+.insightMethodsButton {
+  min-height: 34px;
+  margin-left: 0.25rem;
+  padding: 0.35rem 0.55rem;
+}
+
+.insightModalBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 150;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgba(3, 9, 14, 0.76);
+  backdrop-filter: blur(8px);
+}
+
+.insightMathModal {
+  width: min(820px, calc(100vw - 2rem));
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid #425965;
+  background:
+    linear-gradient(rgba(167, 227, 197, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(167, 227, 197, 0.025) 1px, transparent 1px),
+    #08151d;
+  background-size: 18px 18px;
+  box-shadow:
+    inset 0 0 0 2px rgba(46, 107, 87, 0.06),
+    0 24px 70px rgba(0, 0, 0, 0.48);
+}
+
+.insightMathModalHeader {
+  min-height: 68px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.8rem 0.9rem;
+  border-bottom: 1px solid var(--cc-line);
+}
+
+.insightMathModalHeader span {
+  color: var(--mint);
+  font: 0.54rem var(--font-mono);
+  letter-spacing: 0.1em;
+}
+
+.insightMathModalHeader h2 {
+  margin-top: 0.2rem;
+  font-size: 1rem;
+  line-height: 1.3;
+}
+
+.insightMathModalHeader > button {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  border: 1px solid #314750;
+  background: #091820;
+  color: var(--cc-muted);
+}
+
+.insightMathModalHeader > button:hover {
+  border-color: var(--mint);
+  color: var(--ivory);
+}
+
+.insightMathModalBody {
+  min-height: 0;
+  overflow: auto;
+  padding: 0.9rem;
+  scrollbar-gutter: stable;
+}
+
+.insightMathIntro {
+  color: var(--cc-muted);
+  font-size: 0.64rem;
+  line-height: 1.6;
+}
+
+.insightEquationList {
+  display: grid;
+  gap: 0.6rem;
+  margin-top: 0.8rem;
+}
+
+.insightEquationList > article {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  gap: 0.65rem;
+  padding: 0.75rem;
+  border: 1px solid #30454f;
+  background: #091720;
+}
+
+.insightEquationNumber {
+  color: var(--mint);
+  font: 0.58rem var(--font-mono);
+}
+
+.insightEquationList strong {
+  font-size: 0.7rem;
+}
+
+.insightEquationList dl {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0.55rem 0 0;
+}
+
+.insightEquationList dl > div {
+  display: grid;
+  grid-template-columns: 76px minmax(0, 1fr);
+  gap: 0.5rem;
+}
+
+.insightEquationList dt {
+  color: #71838b;
+  font: 0.52rem var(--font-mono);
+  text-transform: uppercase;
+}
+
+.insightEquationList dd {
+  margin: 0;
+  min-width: 0;
+  color: var(--cc-muted);
+  font-size: 0.61rem;
+}
+
+.insightEquationList code,
+.insightMethodList code {
+  color: #e4d1a6;
+  font: 0.59rem/1.5 var(--font-mono);
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.insightEquationList dd b {
+  color: var(--ivory);
+}
+
+.insightEquationList article > div > p {
+  margin-top: 0.5rem;
+  color: var(--cc-muted);
+  font-size: 0.59rem;
+  line-height: 1.5;
+}
+
+.insightDataLimit {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  padding: 0.7rem;
+  border: 1px solid #6a5636;
+  background: rgba(200, 169, 107, 0.07);
+}
+
+.insightDataLimit svg {
+  color: var(--gold);
+}
+
+.insightDataLimit strong {
+  font-size: 0.65rem;
+}
+
+.insightDataLimit p {
+  margin-top: 0.2rem;
+  color: var(--cc-muted);
+  font-size: 0.6rem;
+  line-height: 1.5;
+}
+
+.insightMethodGroup {
+  margin-top: 1rem;
+}
+
+.insightMethodGroupHeading {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding-bottom: 0.45rem;
+  border-bottom: 1px solid var(--cc-line);
+}
+
+.insightMethodGroupHeading span {
+  color: var(--mint);
+  font: 0.54rem var(--font-mono);
+  letter-spacing: 0.08em;
+}
+
+.insightMethodGroupHeading b {
+  margin-left: auto;
+  color: var(--ivory);
+  font-size: 0.68rem;
+}
+
+.insightMethodList {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.55rem;
+  margin-top: 0.6rem;
+}
+
+.insightMethodList article {
+  min-width: 0;
+  padding: 0.65rem;
+  border: 1px solid #30454f;
+  background: #091720;
+}
+
+.insightMethodList article[data-waiting] {
+  border-color: #4c4537;
+  background: #111510;
+}
+
+.insightMethodList strong,
+.insightMethodList code,
+.insightMethodList p,
+.insightMethodList small {
+  display: block;
+}
+
+.insightMethodList strong {
+  font-size: 0.66rem;
+}
+
+.insightMethodList code {
+  margin-top: 0.35rem;
+}
+
+.insightMethodList p {
+  margin-top: 0.45rem;
+  color: var(--cc-muted);
+  font-size: 0.58rem;
+  line-height: 1.5;
+}
+
+.insightMethodList small {
+  margin-top: 0.45rem;
+  color: #71838b;
+  font-size: 0.53rem;
+  line-height: 1.45;
+}
+
 .insightList strong {
   font-size: 0.72rem;
 }
@@ -1774,6 +2053,31 @@
 @media (max-width: 520px) {
   .headerRuntimeActions {
     gap: 0.35rem;
+  }
+
+  .insightMethodsButton {
+    width: 100%;
+    margin-left: 0;
+    justify-content: center;
+  }
+
+  .insightMeta > div {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .insightMathModal {
+    width: calc(100vw - 1rem);
+    max-height: 94vh;
+  }
+
+  .insightEquationList dl > div {
+    grid-template-columns: 1fr;
+    gap: 0.12rem;
+  }
+
+  .insightMethodList {
+    grid-template-columns: 1fr;
   }
 
   .insightSummary {
