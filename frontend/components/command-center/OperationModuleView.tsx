@@ -15,8 +15,6 @@ import {
   Bot,
   CheckCircle2,
   ChefHat,
-  ChevronDown,
-  ChevronUp,
   Copy,
   PackageCheck,
   Pencil,
@@ -134,7 +132,7 @@ export default function OperationModuleView({
   const [menuStatus, setMenuStatus] = useState<
     "all" | "active" | "unavailable" | "archived"
   >("active");
-  const [menuExpandedId, setMenuExpandedId] = useState<string | null>(null);
+  const [menuDetailId, setMenuDetailId] = useState<string | null>(null);
   const [menuCategoryEditor, setMenuCategoryEditor] = useState<{
     from: string;
     to: string;
@@ -1228,6 +1226,32 @@ export default function OperationModuleView({
     const bulkItemIds = visibleMenuItems
       .filter((item) => item.active)
       .map((item) => item.id);
+    const selectedMenuItem = menuDetailId
+      ? state.menuItems.find((item) => item.id === menuDetailId)
+      : undefined;
+    const selectedMenuRecipe = selectedMenuItem?.recipeId
+      ? state.recipes.find(
+          (recipe) => recipe.id === selectedMenuItem.recipeId,
+        )
+      : undefined;
+    const selectedMenuEconomics = selectedMenuItem
+      ? buildCommandCenterMenuEconomics(
+          selectedMenuItem,
+          selectedMenuRecipe,
+          state.inventory,
+        )
+      : undefined;
+    const selectedMenuStatus = selectedMenuItem
+      ? !selectedMenuItem.active
+        ? "Archived"
+        : !selectedMenuItem.available
+          ? "Unavailable"
+          : selectedMenuEconomics?.riskyIngredientIds.length
+            ? selectedMenuEconomics.riskyIngredientIds.length + " stock risk"
+            : selectedMenuRecipe?.active
+              ? "Ready"
+              : "No recipe"
+      : "";
 
     return (
       <section className={styles.sectionPage}>
@@ -1240,11 +1264,11 @@ export default function OperationModuleView({
         <div className={styles.operationModuleHero}>
           <div>
             <span>MENU MANAGEMENT</span>
-            <h2>Compact menu library. Expand only what you need.</h2>
+            <h2>Compact menu library with actions one click away.</h2>
             <p>
-              Browse menu items like a visual catalog, then expand a tile for economics,
-              recipe details, and actions. Add/Edit opens in a fixed drawer so your scroll
-              position never jumps.
+              Browse fixed-size menu tiles. Clicking a tile opens a compact detail modal
+              with the important economics and actions; Add/Edit still uses a fixed drawer
+              so the grid never shifts or loses your place.
             </p>
           </div>
           <ChefHat size={36} aria-hidden />
@@ -1360,6 +1384,286 @@ export default function OperationModuleView({
           </div>
         ) : null}
 
+        {selectedMenuItem && selectedMenuEconomics ? (
+          <div
+            className={styles.menuModalBackdrop}
+            role="presentation"
+            onMouseDown={(event) => {
+              if (event.target === event.currentTarget) {
+                setMenuDetailId(null);
+              }
+            }}
+          >
+            <dialog
+              open
+              className={styles.menuDetailModal}
+              aria-label={`${selectedMenuItem.name} menu details`}
+            >
+              <header className={styles.menuModalHeader}>
+                <div className={styles.menuModalThumb}>
+                  {selectedMenuRecipe ? (
+                    <MenuPhoto
+                      menuId={selectedMenuRecipe.id}
+                      className={styles.menuCompactPhoto}
+                    />
+                  ) : (
+                    <span className={styles.menuCompactPlaceholder} aria-hidden>
+                      <ChefHat size={26} />
+                    </span>
+                  )}
+                </div>
+                <div>
+                  <span>
+                    {selectedMenuItem.category}
+                    {selectedMenuItem.variant
+                      ? " · " + selectedMenuItem.variant
+                      : ""}
+                  </span>
+                  <h3>{selectedMenuItem.name}</h3>
+                  <small>{selectedMenuStatus}</small>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setMenuDetailId(null)}
+                  aria-label="Close menu details"
+                >
+                  <X size={16} aria-hidden />
+                </button>
+              </header>
+
+              <div className={styles.menuQuickStats}>
+                <span>
+                  <small>Food cost</small>
+                  <strong>
+                    {selectedMenuEconomics.foodCostPercent !== null
+                      ? selectedMenuEconomics.foodCostPercent + "%"
+                      : "—"}
+                  </strong>
+                </span>
+                <span>
+                  <small>Gross profit</small>
+                  <strong>
+                    {selectedMenuEconomics.grossProfit !== null
+                      ? "₱" +
+                        Math.round(
+                          selectedMenuEconomics.grossProfit,
+                        ).toLocaleString("en-PH")
+                      : "—"}
+                  </strong>
+                </span>
+                <span>
+                  <small>Gross margin</small>
+                  <strong>
+                    {selectedMenuEconomics.grossMarginPercent !== null
+                      ? selectedMenuEconomics.grossMarginPercent + "%"
+                      : "—"}
+                  </strong>
+                </span>
+                <span>
+                  <small>Possible servings</small>
+                  <strong>
+                    {selectedMenuEconomics.possibleServings ?? "—"}
+                  </strong>
+                </span>
+              </div>
+
+              <div className={styles.menuQuickActions}>
+                {selectedMenuRecipe?.active &&
+                selectedMenuItem.active &&
+                selectedMenuItem.available ? (
+                  <button
+                    type="button"
+                    data-primary
+                    onClick={() =>
+                      recordRecipeSale(selectedMenuRecipe.id, 1)
+                    }
+                  >
+                    Simulate sale
+                  </button>
+                ) : null}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMenuDetailId(null);
+                    openMenuItemEditor(selectedMenuItem);
+                  }}
+                >
+                  <Pencil size={14} aria-hidden /> Edit
+                </button>
+                <button
+                  type="button"
+                  onClick={() => duplicateMenuItem(selectedMenuItem.id)}
+                >
+                  <Copy size={14} aria-hidden /> Duplicate
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    moveMenuItem(selectedMenuItem.id, "up")
+                  }
+                  aria-label="Move menu item earlier"
+                >
+                  <ArrowUp size={14} aria-hidden />
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    moveMenuItem(selectedMenuItem.id, "down")
+                  }
+                  aria-label="Move menu item later"
+                >
+                  <ArrowDown size={14} aria-hidden />
+                </button>
+                {selectedMenuItem.active ? (
+                  <button
+                    type="button"
+                    data-danger
+                    onClick={() => {
+                      archiveMenuItem(selectedMenuItem.id);
+                      setMenuDetailId(null);
+                    }}
+                  >
+                    <Archive size={14} aria-hidden /> Archive
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      saveMenuItem({
+                        id: selectedMenuItem.id,
+                        name: selectedMenuItem.name,
+                        category: selectedMenuItem.category,
+                        variant: selectedMenuItem.variant,
+                        currentPrice: selectedMenuItem.currentPrice,
+                        description: selectedMenuItem.description,
+                        active: true,
+                        available: selectedMenuItem.available,
+                        recipeId: selectedMenuItem.recipeId,
+                        displayOrder: selectedMenuItem.displayOrder,
+                      });
+                      setMenuDetailId(null);
+                    }}
+                  >
+                    Restore
+                  </button>
+                )}
+              </div>
+
+              {selectedMenuEconomics.warning !== "none" ||
+              (selectedMenuEconomics.costDriftSinceRecipeSavePercent ?? 0) > 0 ||
+              selectedMenuEconomics.riskyIngredientIds.length ? (
+                <div className={styles.menuQuickAlerts}>
+                  {selectedMenuEconomics.warning !== "none" ? (
+                    <span data-level={selectedMenuEconomics.warning}>
+                      {selectedMenuEconomics.foodCostPercent}% food cost
+                    </span>
+                  ) : null}
+                  {(selectedMenuEconomics.costDriftSinceRecipeSavePercent ??
+                    0) > 0 ? (
+                    <span>
+                      Cost +
+                      {selectedMenuEconomics.costDriftSinceRecipeSavePercent}%
+                      since recipe save
+                    </span>
+                  ) : null}
+                  {selectedMenuEconomics.riskyIngredientIds.length ? (
+                    <span>
+                      {selectedMenuEconomics.riskyIngredientIds.length} stock
+                      risk
+                    </span>
+                  ) : null}
+                </div>
+              ) : null}
+
+              <details className={styles.menuMoreDetails}>
+                <summary>More details</summary>
+                <div className={styles.menuMoreDetailGrid}>
+                  <span>
+                    <small>Current price</small>
+                    <strong>
+                      {selectedMenuItem.currentPrice !== undefined
+                        ? "₱" +
+                          Math.round(
+                            selectedMenuItem.currentPrice,
+                          ).toLocaleString("en-PH")
+                        : "Not set"}
+                    </strong>
+                  </span>
+                  <span>
+                    <small>Archived reference</small>
+                    <strong>
+                      {selectedMenuItem.referencePrice !== undefined
+                        ? "₱" +
+                          Math.round(
+                            selectedMenuItem.referencePrice,
+                          ).toLocaleString("en-PH")
+                        : "—"}
+                    </strong>
+                  </span>
+                  <span>
+                    <small>Ingredient cost</small>
+                    <strong>
+                      {selectedMenuEconomics.ingredientCost !== null
+                        ? "₱" +
+                          Math.round(
+                            selectedMenuEconomics.ingredientCost,
+                          ).toLocaleString("en-PH")
+                        : "—"}
+                    </strong>
+                  </span>
+                  <span>
+                    <small>Vs archived price</small>
+                    <strong>
+                      {selectedMenuEconomics.referencePriceDelta !== null
+                        ? `${selectedMenuEconomics.referencePriceDelta > 0 ? "+" : ""}₱${Math.round(
+                            selectedMenuEconomics.referencePriceDelta,
+                          ).toLocaleString("en-PH")}`
+                        : "—"}
+                    </strong>
+                  </span>
+                </div>
+
+                <p className={styles.menuDetailDescription}>
+                  {selectedMenuItem.description ||
+                    selectedMenuRecipe?.description ||
+                    "No live description configured."}
+                </p>
+
+                {selectedMenuRecipe ? (
+                  <div className={styles.menuIngredientStrip}>
+                    {Object.entries(selectedMenuRecipe.ingredients).map(
+                      ([itemId, amount]) => {
+                        const item = state.inventory.find(
+                          (entry) => entry.id === itemId,
+                        );
+                        if (!item) return null;
+                        return (
+                          <div
+                            key={item.id}
+                            data-low={item.current <= item.reorderAt}
+                          >
+                            <SupplyPhoto
+                              supplyId={item.id}
+                              className={styles.recipeSupplyPhoto}
+                              size={38}
+                            />
+                            <span>
+                              <strong>{item.name}</strong>
+                              <small>
+                                {amount} {item.unit} / sale
+                              </small>
+                            </span>
+                          </div>
+                        );
+                      },
+                    )}
+                  </div>
+                ) : null}
+              </details>
+            </dialog>
+          </div>
+        ) : null}
+
         <div className={styles.activitySummary}>
           <article>
             <span>ARCHIVED REFERENCES</span>
@@ -1441,7 +1745,6 @@ export default function OperationModuleView({
               recipe,
               state.inventory,
             );
-            const expanded = menuExpandedId === menuItem.id;
             const statusLabel = !menuItem.active
               ? "Archived"
               : !menuItem.available
@@ -1455,19 +1758,13 @@ export default function OperationModuleView({
             return (
               <article
                 className={styles.menuLibraryItem}
-                data-expanded={expanded}
                 data-inactive={!menuItem.active}
                 key={menuItem.id}
               >
                 <button
                   type="button"
                   className={styles.menuThumbnailButton}
-                  onClick={() =>
-                    setMenuExpandedId((current) =>
-                      current === menuItem.id ? null : menuItem.id,
-                    )
-                  }
-                  aria-expanded={expanded}
+                  onClick={() => setMenuDetailId(menuItem.id)}
                 >
                   <span className={styles.menuThumbnailMedia}>
                     {recipe ? (
@@ -1510,232 +1807,11 @@ export default function OperationModuleView({
                             )
                           : "No live price"}
                       </b>
-                      {expanded ? (
-                        <ChevronUp size={15} aria-hidden />
-                      ) : (
-                        <ChevronDown size={15} aria-hidden />
-                      )}
+                      <small className={styles.menuOpenLabel}>Open</small>
                     </span>
                   </span>
                 </button>
 
-                {expanded ? (
-                  <div className={styles.menuExpandedPanel}>
-                    <div className={styles.menuQuickStats}>
-                      <span>
-                        <small>Food cost</small>
-                        <strong>
-                          {economics.foodCostPercent !== null
-                            ? economics.foodCostPercent + "%"
-                            : "—"}
-                        </strong>
-                      </span>
-                      <span>
-                        <small>Gross profit</small>
-                        <strong>
-                          {economics.grossProfit !== null
-                            ? "₱" +
-                              Math.round(
-                                economics.grossProfit,
-                              ).toLocaleString("en-PH")
-                            : "—"}
-                        </strong>
-                      </span>
-                      <span>
-                        <small>Gross margin</small>
-                        <strong>
-                          {economics.grossMarginPercent !== null
-                            ? economics.grossMarginPercent + "%"
-                            : "—"}
-                        </strong>
-                      </span>
-                      <span>
-                        <small>Possible servings</small>
-                        <strong>
-                          {economics.possibleServings ?? "—"}
-                        </strong>
-                      </span>
-                    </div>
-
-                    <div className={styles.menuQuickActions}>
-                      {recipe?.active &&
-                      menuItem.active &&
-                      menuItem.available ? (
-                        <button
-                          type="button"
-                          data-primary
-                          onClick={() => recordRecipeSale(recipe.id, 1)}
-                        >
-                          Simulate sale
-                        </button>
-                      ) : null}
-                      <button
-                        type="button"
-                        onClick={() => openMenuItemEditor(menuItem)}
-                      >
-                        <Pencil size={14} aria-hidden /> Edit
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => duplicateMenuItem(menuItem.id)}
-                      >
-                        <Copy size={14} aria-hidden /> Duplicate
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => moveMenuItem(menuItem.id, "up")}
-                        aria-label="Move menu item earlier"
-                      >
-                        <ArrowUp size={14} aria-hidden />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => moveMenuItem(menuItem.id, "down")}
-                        aria-label="Move menu item later"
-                      >
-                        <ArrowDown size={14} aria-hidden />
-                      </button>
-                      {menuItem.active ? (
-                        <button
-                          type="button"
-                          data-danger
-                          onClick={() => archiveMenuItem(menuItem.id)}
-                        >
-                          <Archive size={14} aria-hidden /> Archive
-                        </button>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            saveMenuItem({
-                              id: menuItem.id,
-                              name: menuItem.name,
-                              category: menuItem.category,
-                              variant: menuItem.variant,
-                              currentPrice: menuItem.currentPrice,
-                              description: menuItem.description,
-                              active: true,
-                              available: menuItem.available,
-                              recipeId: menuItem.recipeId,
-                              displayOrder: menuItem.displayOrder,
-                            });
-                          }}
-                        >
-                          Restore
-                        </button>
-                      )}
-                    </div>
-
-                    {economics.warning !== "none" ||
-                    (economics.costDriftSinceRecipeSavePercent ?? 0) > 0 ||
-                    economics.riskyIngredientIds.length ? (
-                      <div className={styles.menuQuickAlerts}>
-                        {economics.warning !== "none" ? (
-                          <span data-level={economics.warning}>
-                            {economics.foodCostPercent}% food cost
-                          </span>
-                        ) : null}
-                        {(economics.costDriftSinceRecipeSavePercent ?? 0) > 0 ? (
-                          <span>
-                            Cost +{economics.costDriftSinceRecipeSavePercent}% since
-                            recipe save
-                          </span>
-                        ) : null}
-                        {economics.riskyIngredientIds.length ? (
-                          <span>
-                            {economics.riskyIngredientIds.length} stock risk
-                          </span>
-                        ) : null}
-                      </div>
-                    ) : null}
-
-                    <details className={styles.menuMoreDetails}>
-                      <summary>More details</summary>
-                      <div className={styles.menuMoreDetailGrid}>
-                        <span>
-                          <small>Current price</small>
-                          <strong>
-                            {menuItem.currentPrice !== undefined
-                              ? "₱" +
-                                Math.round(
-                                  menuItem.currentPrice,
-                                ).toLocaleString("en-PH")
-                              : "Not set"}
-                          </strong>
-                        </span>
-                        <span>
-                          <small>Archived reference</small>
-                          <strong>
-                            {menuItem.referencePrice !== undefined
-                              ? "₱" +
-                                Math.round(
-                                  menuItem.referencePrice,
-                                ).toLocaleString("en-PH")
-                              : "—"}
-                          </strong>
-                        </span>
-                        <span>
-                          <small>Ingredient cost</small>
-                          <strong>
-                            {economics.ingredientCost !== null
-                              ? "₱" +
-                                Math.round(
-                                  economics.ingredientCost,
-                                ).toLocaleString("en-PH")
-                              : "—"}
-                          </strong>
-                        </span>
-                        <span>
-                          <small>Vs archived price</small>
-                          <strong>
-                            {economics.referencePriceDelta !== null
-                              ? `${economics.referencePriceDelta > 0 ? "+" : ""}₱${Math.round(
-                                  economics.referencePriceDelta,
-                                ).toLocaleString("en-PH")}`
-                              : "—"}
-                          </strong>
-                        </span>
-                      </div>
-
-                      <p className={styles.menuDetailDescription}>
-                        {menuItem.description ||
-                          recipe?.description ||
-                          "No live description configured."}
-                      </p>
-
-                      {recipe ? (
-                        <div className={styles.menuIngredientStrip}>
-                          {Object.entries(recipe.ingredients).map(
-                            ([itemId, amount]) => {
-                              const item = state.inventory.find(
-                                (entry) => entry.id === itemId,
-                              );
-                              if (!item) return null;
-                              return (
-                                <div
-                                  key={item.id}
-                                  data-low={item.current <= item.reorderAt}
-                                >
-                                  <SupplyPhoto
-                                    supplyId={item.id}
-                                    className={styles.recipeSupplyPhoto}
-                                    size={38}
-                                  />
-                                  <span>
-                                    <strong>{item.name}</strong>
-                                    <small>
-                                      {amount} {item.unit} / sale
-                                    </small>
-                                  </span>
-                                </div>
-                              );
-                            },
-                          )}
-                        </div>
-                      ) : null}
-                    </details>
-                  </div>
-                ) : null}
               </article>
             );
           })}
