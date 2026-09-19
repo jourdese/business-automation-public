@@ -61,19 +61,21 @@ This checklist tracks migration from the legacy Marinara Autoinventory preview i
 - Legacy preview-only flags on individual supplier actions are not carried forward because the entire current Command Center runtime is explicitly a demo.
 - Command Center Activity replaces the legacy string-only activity log with structured audit events.
 
-## Compatibility retained temporarily
+## Legacy retirement
 
-- `/restaurant/marinara-ristorante/Autoinventory-preview` remains available as a migration reference.
-- Its local `inventory-config.ts` now only re-exports the canonical shared Marinara inventory configuration.
-- Command Center reads the canonical configuration from `lib/businesses/restaurant/marinara-ristorante/inventory-config.ts`.
+- Backup branch `archive/marinara-autoinventory-preview` preserves the complete legacy Autoinventory implementation before retirement.
+- `/restaurant/marinara-ristorante/Autoinventory-preview` now redirects to `/command-center/marinara-ristorante/operations/inventory`.
+- The legacy `/configure` route redirects to the same Command Center Inventory destination.
+- Legacy-only Autoinventory UI, stylesheet, StockIcon, and local compatibility config bridge were removed from `jourvis/command-center-v1`.
+- The canonical Marinara inventory configuration remains at `lib/businesses/restaurant/marinara-ristorante/inventory-config.ts`.
+- The Command Center legacy-reference card/link was removed.
+- The post-retirement code gate is green: typecheck, scoped lint, runtime regression tests, and production build.
 
-## Remaining before legacy retirement
+## Remaining visual review
 
-- Complete the visual local/browser review on the current branch, especially the new compact Menu tiles/drawers and the nested Recipe → Inventory → Supplier flow.
+- Review the compact Menu tile behavior locally: expansion should remain about two tiles wide with a thumbnail-sized image, quick KPIs/actions first, and deeper reference/ingredient information under `More details`.
+- Review the fixed Add/Edit drawers and nested Recipe → Inventory → Supplier flow.
 - Browser-flow checklist: edit recipe → Menu economics change; change Menu price → food-cost/margin change; simulate sale → ingredient stock decreases; low stock → restock work appears; purchasing → supplier lifecycle; physical receive → incoming becomes on-hand; Menu/Recipe archive/restore; supplier create/edit preserves contact/item links.
-- The code-level safety gate is already green: typecheck, scoped lint, runtime regression tests, production build, purchase-state tests, economics/recipe-impact tests, and runtime relationship validation.
-- No Vercel preview exists for `jourvis/command-center-v1`, so legacy remains available until that visual review is completed.
-- After visual sign-off: remove the legacy reference card/link, redirect the legacy Autoinventory route to `/command-center/marinara-ristorante/operations/inventory`, then remove legacy-only implementation.
 
 ## After legacy retirement
 
